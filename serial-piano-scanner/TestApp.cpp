@@ -204,5 +204,10 @@ int main()
 
 	while (!gShouldStop) {
 		ret = readAnalogFrame();
+		usleep(WAIT_MAIN_LOOP_US);
 	}
+
+	ret = requestStopScanning();
+	serialInterface.serialCleanup();
+
 }
