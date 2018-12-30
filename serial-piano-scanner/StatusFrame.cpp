@@ -47,7 +47,7 @@ int StatusFrame::parseFrame()
 	this->octaves = this->frameBuffer[len++];
 	this->lowestHardwareNote = this->frameBuffer[len++];
 
-	this->keysConnected = new unsigned char[this->octaves * 2];
+	this->keysConnected = new unsigned char[this->octaves * 2]();
 	for (unsigned int n = 0; n < (this->octaves * 2); ++n) {
 		this->keysConnected[n] = this->frameBuffer[len++];
 	}

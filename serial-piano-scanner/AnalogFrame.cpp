@@ -15,7 +15,7 @@ AnalogFrame::AnalogFrame(char* frameBuffer)
 {
 	this->frameBuffer = frameBuffer;
 	this->parseSuccessful = false;
-	this->data = new float(frameDataLength);
+	this->data = new float[frameDataLength]();
 	this->parseFrame();
 }
 
