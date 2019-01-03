@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <memory>
+#include <bitset>
 #include "StatusFrame.hpp"
 
 StatusFrame::StatusFrame(char* frameBuffer)
@@ -19,6 +20,18 @@ StatusFrame::StatusFrame(char* frameBuffer)
 
 StatusFrame::~StatusFrame() {
 	delete this->keysConnected;
+}
+
+unsigned int StatusFrame::numKeysConnected()
+{
+	unsigned int count = 0;
+
+	for (unsigned int n = 0; n < (this->octaves * 2); ++n) {
+		std::bitset<4> bitset(this->keysConnected[n]);
+		count += bitset.count();
+	}
+
+	return count;
 }
 
 int StatusFrame::parseFrame()

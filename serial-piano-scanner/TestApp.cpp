@@ -14,10 +14,7 @@
 #include "StatusFrame.hpp"
 #include "AnalogFrame.hpp"
 //#include "Keys.h"
-
-int gXenomaiInited = 0; // required by libbelaextra
-unsigned int gAuxiliaryTaskStackSize  = 1 << 17; // required by libbelaextra
-
+#include "KeyPositionTracker.h"
 
 const bool VERBOSE = true;
 const int SERIAL_BUFFER_SIZE = 1024;
@@ -25,13 +22,19 @@ const int ITERATIONS_STATUS_LOOP = 10;
 const int WAIT_STATUS_LOOP_US = 1E6;
 const int WAIT_MAIN_LOOP_US = 50000;
 
+int gXenomaiInited = 0; // required by libbelaextra
+unsigned int gAuxiliaryTaskStackSize = 1 << 17; // required by libbelaextra
 int gShouldStop;
 int gShouldSendScans;
 int frameDataLength = 25;
 
 //BoardsTopology bt;
 //Keys* keys;
+extern "C" int rt_printf(const char *format, ...);
 SerialInterface serialInterface = SerialInterface();
+KeyBuffers keyBuffers;
+std::vector<KeyBuffer> keyBuffer;
+std::vector<KeyPositionTracker> keyPositionTracker;
 
 void interrupt_handler(int)
 {
@@ -134,6 +137,33 @@ int readStatusFrame()
 	return ret;
 }
 
+int readStatusFrame(StatusFrame& statusFrame)
+{
+	char serialBuffer[SERIAL_BUFFER_SIZE];
+	int ret = serialInterface.serialRead(serialBuffer, SERIAL_BUFFER_SIZE, -1);
+
+	if (ret > 0) {
+		if (ESCAPE_CHARACTER == serialBuffer[0]) {
+			if (kControlCharacterFrameBegin == serialBuffer[1]) {
+				if (kFrameTypeStatus == serialBuffer[2]) {
+					statusFrame = StatusFrame(serialBuffer);
+				} else if (kFrameTypeAnalog == serialBuffer[2]) {
+					printf(
+							"Got analog frame instead of status frame, breaking\n");
+					return -1;
+				} else {
+					printf("Did not recognize frame type, breaking\n");
+					return -1;
+				}
+			}
+		}
+	} else {
+		printf("Received raw byte: %d\n", serialBuffer[0]);
+	}
+
+	return ret;
+}
+
 int readAnalogFrame()
 {
 	char serialBuffer[SERIAL_BUFFER_SIZE];
@@ -164,6 +194,34 @@ int readAnalogFrame()
 	return ret;
 }
 
+int readAnalogFrame(AnalogFrame& analogFrame)
+{
+	char serialBuffer[SERIAL_BUFFER_SIZE];
+	int ret = serialInterface.serialRead(serialBuffer, SERIAL_BUFFER_SIZE, -1);
+
+	if (ret > 0) {
+		if (ESCAPE_CHARACTER == serialBuffer[0]) {
+			if (kControlCharacterFrameBegin == serialBuffer[1]) {
+				if (kFrameTypeAnalog == serialBuffer[2]) {
+					analogFrame = AnalogFrame(serialBuffer);
+
+				} else if (kFrameTypeStatus == serialBuffer[2]) {
+					printf(
+							"Got status frame instead of analog frame, breaking\n");
+					return -1;
+				} else {
+					printf("Did not recognize frame type, breaking\n");
+					return -1;
+				}
+			}
+		}
+	} else {
+		printf("Received raw byte: %d\n", serialBuffer[0]);
+	}
+
+	return ret;
+}
+
 int main()
 {
 	/* FIXME: get correct device location */
@@ -172,6 +230,8 @@ int main()
 	signal(SIGTERM, interrupt_handler);
 
 	int ret;
+	StatusFrame statusFrame;
+	AnalogFrame analogFrame;
 
 	for (unsigned int n = 0; n < ITERATIONS_STATUS_LOOP; ++n) {
 		ret = requestStatusFrame();
@@ -191,6 +251,27 @@ int main()
 		}
 
 		usleep(WAIT_STATUS_LOOP_US);
+	}
+	ret = requestStatusFrame();
+
+	if (ret > 0) {
+		printf("Status frame request sent successfully\n");
+	} else {
+		/* TODO: message */
+	}
+
+	ret = readStatusFrame(statusFrame);
+
+	if (ret > 0) {
+		printf("Status frame read successfully, setting up key buffers\n");
+		unsigned int num_keys = statusFrame.numKeysConnected();
+		keyBuffers.setup(num_keys, 1000);
+		/* TODO: keyBuffers.reserve()
+		 keyBuffers.reserve(numKeys);
+		 */
+
+	} else {
+		/* TODO: message */
 	}
 
 	ret = requestStartScanning();

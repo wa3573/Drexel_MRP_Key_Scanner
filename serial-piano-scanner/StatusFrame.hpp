@@ -16,6 +16,7 @@ public:
 	StatusFrame(char* frameBuffer);
 	~StatusFrame();
 
+	unsigned int numKeysConnected();
 	void printFrame();
 
 private:
