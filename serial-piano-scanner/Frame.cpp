@@ -2,7 +2,7 @@
  * Frame.cpp
  *
  *  Created on: Jan 4, 2019
- *      Author: juniper
+ *      Author: William Anderson
  */
 
 #include "Frame.h"

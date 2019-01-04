@@ -2,7 +2,11 @@
  * CircularBuffer.cpp
  *
  *  Created on: Jan 4, 2019
- *      Author: juniper
+ *      Author: William Anderson
+ *
+ *  Based on:
+ *  https://embeddedartistry.com/blog/2017/4/6/circular-buffers-in-cc
+ *
  */
 
 #include <cstddef>

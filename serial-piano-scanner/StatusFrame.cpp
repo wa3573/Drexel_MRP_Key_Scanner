@@ -2,7 +2,7 @@
  * StatusFrame.cpp
  *
  *  Created on: Dec 28, 2018
- *      Author: Juniper
+ *      Author: William Anderson
  */
 
 #include "StatusFrame.h"
