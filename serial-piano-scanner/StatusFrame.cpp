@@ -5,10 +5,11 @@
  *      Author: Juniper
  */
 
+#include "StatusFrame.h"
+
 #include <iostream>
 #include <memory>
 #include <bitset>
-#include "StatusFrame.hpp"
 
 StatusFrame::StatusFrame(char* frameBuffer)
 {
@@ -16,6 +17,19 @@ StatusFrame::StatusFrame(char* frameBuffer)
 	this->parseSuccessful = false;
 	this->keysConnected = NULL;
 	this->parseFrame();
+}
+
+StatusFrame::StatusFrame()
+{
+	this->frameBuffer = frameBuffer;
+	this->parseSuccessful = false;
+	this->keysConnected = NULL;
+	this->lowestHardwareNote = 0;
+	this->octaves = 0;
+	this->softwareVersionMajor = 0;
+	this->softwareVersionMinor = 0;
+	this->hardwareVersion = 0;
+	this->flags = 0;
 }
 
 StatusFrame::~StatusFrame() {
@@ -60,7 +74,7 @@ int StatusFrame::parseFrame()
 	this->octaves = this->frameBuffer[len++];
 	this->lowestHardwareNote = this->frameBuffer[len++];
 
-	this->keysConnected = new unsigned char[this->octaves * 2]();
+	this->keysConnected = new char[this->octaves * 2]();
 	for (unsigned int n = 0; n < (this->octaves * 2); ++n) {
 		this->keysConnected[n] = this->frameBuffer[len++];
 	}
@@ -88,6 +102,7 @@ void StatusFrame::printFrame()
 		printf("Software Version Minor = %d\n", this->softwareVersionMinor);
 		printf("Flags = %d\n", this->flags);
 		printf("Octaves = %d\n", this->octaves);
+		printf("Lowest Hardware Note = %d\n", this->lowestHardwareNote);
 		printf("Keys Connected (HEX) = %X\n", this->keysConnected);
 	} else {
 		printf("Parse unsuccessful\n");

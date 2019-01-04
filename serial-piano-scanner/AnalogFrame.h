@@ -5,15 +5,17 @@
  *      Author: Juniper
  */
 
-#ifndef ANALOGFRAME_HPP_
-#define ANALOGFRAME_HPP_
+#ifndef ANALOGFRAME_H_
+#define ANALOGFRAME_H_
 
 #include <vector>
+#include <cstdint>
 #include "TouchkeyDevice.h"
 
 class AnalogFrame {
 public:
-	AnalogFrame(char* frameBuffer);
+	AnalogFrame(char* frameBuffer, int len);
+	AnalogFrame();
 	~AnalogFrame();
 
 	void printFrame();
@@ -21,13 +23,13 @@ public:
 private:
 	int parseFrame();
 
-	unsigned int frameDataLength = 25;
-	bool parseSuccessful;
-	char* frameBuffer;
+	int buffer_length;
+	bool parse_successful;
+	char* frame_buffer;
 	unsigned int octave;
 	uint32_t timestamp;
 	int offset;
-	float* data;
+	std::vector<float> data;
 };
 
-#endif /* ANALOGFRAME_HPP_ */
+#endif /* ANALOGFRAME_H_ */

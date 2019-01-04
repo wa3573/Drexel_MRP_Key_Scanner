@@ -5,16 +5,18 @@
  *      Author: Juniper
  */
 
-#ifndef SERIALINTERFACE_HPP_
-#define SERIALINTERFACE_HPP_
+#ifndef SERIALINTERFACE_H_
+#define SERIALINTERFACE_H_
 
 #include <unistd.h>
+#include <array>
 #include "TouchkeyDevice.h"
+#include "CircularBuffer.cpp"
 
 class SerialInterface {
 public:
 	SerialInterface();
-
+	SerialInterface(size_t BUFFER_SIZE);
 	~SerialInterface();
 
 	void setPostCallback(
@@ -23,10 +25,15 @@ public:
 	int set_interface_attribs(int fd, int speed);
 	void set_mincount(int fd, int mcount);
 	int initSerial(const char *portname, int speed);
+
+	int serialRead(CircularBuffer<char>& buf, int timeoutMs);
 	int serialRead(char* buf, size_t len, int timeoutMs);
 	int serialWrite(const char* buf, size_t len);
 	void serialCleanup();
 	bool serialSetup(const char* device);
+
+private:
+	const size_t BUFFER_SIZE = 1000;
 };
 
-#endif /* SERIALINTERFACE_HPP_ */
+#endif /* SERIALINTERFACE_H_ */

@@ -5,89 +5,101 @@
  *      Author: Juniper
  */
 
+#include "AnalogFrame.h"
+
 #include <iostream>
 #include <string.h>
-#include "AnalogFrame.hpp"
 
-
-
-AnalogFrame::AnalogFrame(char* frameBuffer)
+AnalogFrame::AnalogFrame(char* frameBuffer, int len)
 {
-	this->frameBuffer = frameBuffer;
-	this->parseSuccessful = false;
-	this->data = new float[frameDataLength]();
+	this->frame_buffer = frameBuffer;
+	this->parse_successful = false;
+	this->data = std::vector<float>();
+	this->buffer_length = len;
 	this->parseFrame();
 }
 
-AnalogFrame::~AnalogFrame() {
-	delete this->data;
+AnalogFrame::AnalogFrame()
+{
+	this->frame_buffer = frame_buffer;
+	this->parse_successful = false;
+	this->data = std::vector<float>();
+	this->timestamp = 0;
+	this->octave = 0;
+	this->offset = 0;
+	this->buffer_length = 0;
+}
+
+AnalogFrame::~AnalogFrame()
+{
 }
 
 int AnalogFrame::parseFrame()
 {
-	int len = 0;
+	int count = 0;
+	char c = 0x00;
 
-	if (this->frameBuffer[len++] != ESCAPE_CHARACTER) {
-		printf("Frame missing escape character, breaking\n");
+	if (frame_buffer[count++] != kFrameTypeAnalog) {
+		printf("Frame has wrong type, got '%d', breaking\n",
+				this->frame_buffer[count]);
+
 		return -1;
 	}
 
-	if (this->frameBuffer[len++] != kControlCharacterFrameBegin) {
-		printf("Frame missing frame begin character, breaking\n");
+	octave = frame_buffer[count++];
+	memcpy(&timestamp, &frame_buffer[count], sizeof(timestamp));
+	count += sizeof(timestamp);
+
+	int16_t value;
+	while (true) {
+		c = frame_buffer[count];
+		if (c == kControlCharacterFrameEnd) {
+			printf("Reached end of frame, size of data: %d \n", data.size());
+			parse_successful = true;
+		}
+
+		if (count > TOUCHKEY_MAX_FRAME_LENGTH) {
+			printf("Maximum frame length exceeded \n");
+			parse_successful = false;
+		}
+
+		memcpy(&value, &frame_buffer[count], sizeof(value));
+		data.push_back(-1 * ((value / 4096.f) - 1));
+
+		count++;
+	}
+
+	if (parse_successful) {
+		return 0;
+	} else {
 		return -1;
 	}
-
-	if (this->frameBuffer[len++] != kFrameTypeAnalog) {
-		printf("Frame has wrong type, breaking\n");
-		return -1;
-	}
-
-	this->octave = this->frameBuffer[len++];
-
-
-	memcpy(&(this->timestamp), &(this->frameBuffer)[len], sizeof(this->timestamp));
-
-	len += sizeof(this->timestamp);
-
-	for (unsigned int n = 0; n < this->frameDataLength; ++n) {
-		int16_t value;
-		memcpy(&value, &(this->frameBuffer)[len], sizeof(value));
-		this->data[n] = -1 * ((value / 4096.f) - 1);
-	}
-
-	if (this->frameBuffer[len++] != ESCAPE_CHARACTER) {
-		printf("Frame missing escape character, breaking\n");
-		return -1;
-	}
-
-	if (this->frameBuffer[len++] != kControlCharacterFrameEnd) {
-		printf("Frame missing frame end character, breaking\n");
-		return -1;
-	}
-
-	this->parseSuccessful = true;
-	return 0;
 }
 
 void AnalogFrame::printFrame()
 {
 	printf("== Analog Frame ==\n");
-	if (this->parseSuccessful) {
+	if (this->parse_successful) {
+		printf("Parse successful\n");
 		printf("Octave = %d\n", this->octave);
 		printf("Timestamp = %d\n", this->timestamp);
 		printf("Values: \n");
 
-		for (unsigned int n = 0; n < this->frameDataLength; ++n) {
-			printf("[%.3f] ", this->data[n]);
-			if (n == 11) {
-				printf("\n");
-			}
+		for (auto i : this->data) {
+			printf("[%.3f] ", i);
 		}
 
 		printf("\n");
 
 	} else {
 		printf("Parse unsuccessful\n");
+		printf("Octave = %d\n", this->octave);
+		printf("Timestamp = %d\n", this->timestamp);
+		printf("Values: \n");
+
+		for (auto i : this->data) {
+			printf("[%.3f] ", i);
+		}
 	}
 
 }

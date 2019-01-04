@@ -5,6 +5,8 @@
  *      Author: Juniper
  */
 
+#include "SerialInterface.h"
+
 #include <termios.h>
 #include <errno.h>
 #include <stdio.h>
@@ -13,15 +15,21 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <poll.h>
-#include "SerialInterface.hpp"
 
 static int _handle;
 
-SerialInterface::SerialInterface() {
+SerialInterface::SerialInterface()
+{
 
 }
 
-SerialInterface::~SerialInterface() {
+SerialInterface::SerialInterface(size_t BUFFER_SIZE)
+{
+	this->BUFFER_SIZE = BUFFER_SIZE;
+}
+
+SerialInterface::~SerialInterface()
+{
 
 }
 
@@ -106,6 +114,45 @@ int SerialInterface::initSerial(const char *portname, int speed)
 	return 0;
 }
 
+int SerialInterface::serialRead(CircularBuffer<char>& buf, int timeoutMs)
+{
+	char intermediate_buf[1000];
+	struct pollfd pfd[1];
+	pfd[0].fd = _handle;
+	pfd[0].events = POLLIN;
+	//printf("before poll\n");
+	int result = poll(pfd, 1, timeoutMs);
+	if (result < 0) {
+		fprintf(stderr, "Error polling for serial: %d %s\n", errno,
+				strerror(errno));
+		return errno;
+	} else if (result == 0) {
+		printf("Timeout\n");
+		return 0;
+	} else if (pfd[0].revents & POLLIN) {
+		int rdlen = read(_handle, intermediate_buf, this->BUFFER_SIZE);
+		if (rdlen > 0) {
+			printf("Serial read %d bytes \n", rdlen);
+			int count = 0;
+
+			/* Insert contents of intermediate buffer into circular buffer as space becomes available */
+			while (count < rdlen) {
+				if (!buf.is_full()) {
+					buf.put(intermediate_buf[count]);
+				}
+			}
+
+		} else if (rdlen < 0) {
+			fprintf(stderr, "Error from read: %d: %s\n", rdlen,
+					strerror(errno));
+		}
+		return rdlen;
+	} else {
+		fprintf(stderr, "unknown error while reading serial\n");
+		return -1;
+	}
+}
+
 int SerialInterface::serialRead(char* buf, size_t len, int timeoutMs)
 {
 	struct pollfd pfd[1];
@@ -128,9 +175,9 @@ int SerialInterface::serialRead(char* buf, size_t len, int timeoutMs)
 		if (rdlen > 0) {
 			if (1 || rdlen != 5) {
 				printf("Serial read %d bytes: ", rdlen);
-				for (int n = 0; n < rdlen; ++n) {
-					printf("%03d ", buf[n]);
-				}
+//				for (int n = 0; n < rdlen; ++n) {
+//					printf("%03d ", buf[n]);
+//				}
 				printf("\n");
 			}
 		} else if (rdlen < 0) {

@@ -5,8 +5,8 @@
  *      Author: Juniper
  */
 
-#ifndef STATUSFRAME_HPP_
-#define STATUSFRAME_HPP_
+#ifndef STATUSFRAME_H_
+#define STATUSFRAME_H_
 
 #include <vector>
 #include "TouchkeyDevice.h"
@@ -14,6 +14,7 @@
 class StatusFrame {
 public:
 	StatusFrame(char* frameBuffer);
+	StatusFrame();
 	~StatusFrame();
 
 	unsigned int numKeysConnected();
@@ -29,7 +30,7 @@ private:
 	unsigned int flags;
 	unsigned int octaves;
 	unsigned int lowestHardwareNote;
-	unsigned char* keysConnected;
+	char* keysConnected;
 };
 
-#endif /* STATUSFRAME_HPP_ */
+#endif /* STATUSFRAME_H_ */
