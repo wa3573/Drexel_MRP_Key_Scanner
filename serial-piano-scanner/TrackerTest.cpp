@@ -33,7 +33,7 @@ int gXenomaiInited = 0; // required by libbelaextra
 unsigned int gAuxiliaryTaskStackSize = 1 << 17; // required by libbelaextra
 int gShouldStop;
 int gShouldSendScans;
-bool gShouldConsumeSerial = false;
+bool gShouldConsumeSerial = true;
 pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t gIsDataAvailable;
 
@@ -303,10 +303,6 @@ void* controlThread(void* args)
 
 		usleep(WAIT_STATUS_LOOP_US);
 	}
-
-	/* Signal the producer and consumer to begin */
-
-	gShouldConsumeSerial = true;
 
 	if (gShouldStop) {
 		gShouldConsumeSerial = false;
