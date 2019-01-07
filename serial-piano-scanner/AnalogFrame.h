@@ -23,13 +23,12 @@ public:
 private:
 	int parseFrame();
 
-	int buffer_length;
-	bool parse_successful;
-	char* frame_buffer;
-	unsigned int octave;
+	int bufferLength;
+	bool parseSuccessful;
+	char* frameBuffer;
+	int octave;
 	uint32_t timestamp;
-	int offset;
-	std::vector<float> data;
+	std::vector<int16_t> data;
 };
 
 #endif /* ANALOGFRAME_H_ */

@@ -23,12 +23,12 @@ public:
 
 	void put(T item);
 	T get();
-	T peek();
 	void reset();
 	bool is_empty() const;
 	bool is_full() const;
 	size_t capacity() const;
 	size_t size() const;
+	void resize(size_t size);
 
 private:
 	std::unique_ptr<T[]> buf_;
@@ -38,6 +38,13 @@ private:
 	bool is_full_ = false;
 	pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;
 };
+
+template<class T>
+inline void CircularBuffer<T>::resize(size_t size)
+{
+	buf_ = std::make_unique<T[]>(size);
+	max_size_ = size;
+}
 
 template<class T>
 inline void CircularBuffer<T>::put(T item)

@@ -19,18 +19,22 @@ public:
 
 	unsigned int numKeysConnected();
 	void printFrame();
+	bool isRunning();
 
 private:
 	int parseFrame();
 	bool parseSuccessful;
 	char* frameBuffer;
-	unsigned int hardwareVersion;
-	unsigned int softwareVersionMajor;
-	unsigned int softwareVersionMinor;
-	unsigned int flags;
-	unsigned int octaves;
-	unsigned int lowestHardwareNote;
-	char* keysConnected;
+	int hardwareVersion;
+	int softwareVersionMajor;
+	int softwareVersionMinor;
+	int flags;
+	int octaves;
+	int lowestHardwareNote;
+	std::vector<unsigned int> keysConnected;
+	bool hasTouchSensors;
+	bool hasAnalogSensors;
+	bool hasRGBLEDs;
 };
 
 #endif /* STATUSFRAME_H_ */

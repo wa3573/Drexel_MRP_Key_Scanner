@@ -1,20 +1,22 @@
 /*
   TouchKeys: multi-touch musical keyboard control software
   Copyright (c) 2013 Andrew McPherson
+
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
-
+ 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
+
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+ 
   =====================================================================
-
+ 
   KeyPositionTracker.cpp: parses continuous key position and detects the
   state of the key.
 */
@@ -46,9 +48,7 @@ void KeyBuffers::postCallback(void* arg, float* buffer, unsigned int length)
 void KeyBuffers::postCallback(float* buffer, unsigned int length)
 {
 	static timestamp_type ts = 0;
-	const unsigned int buffer_size = positionBuffer.size();
-
-	for(unsigned int n = 0; n < std::min(buffer_size, length); ++n)
+	for(unsigned int n = 0; n < std::min((unsigned int)positionBuffer.size(), length); ++n)
 	{
 		positionBuffer[n][writeIdx] = 1.f - buffer[n];
 		//positionBuffer[n][writeIdx] = ((int)ts % 1000)/1000.f;
@@ -107,7 +107,7 @@ std::pair<timestamp_type, key_velocity> KeyPositionTracker::pressVelocity(key_po
         return std::pair<timestamp_type, key_velocity>(missing_value<timestamp_type>::missing(),
                                                        missing_value<key_velocity>::missing());
     }
-
+    
     // Find where the key position crosses the indicated level
     key_buffer_index index = startIndex_;
     if(index < keyBuffer_.beginIndex() + 2)
@@ -117,22 +117,22 @@ std::pair<timestamp_type, key_velocity> KeyPositionTracker::pressVelocity(key_po
         // If the key press has a defined end, make sure we don't go past it
         if(pressIndex_ != 0 && index >= pressIndex_)
             break;
-
+        
         if(keyBuffer_[index] > escapementPosition) {
             // Found the place the position crosses the indicated threshold
             // Now find the exact (interpolated) timestamp and velocity
             timestamp_type exactPressTimestamp = keyBuffer_.timestampAt(index); // TODO
-
+            
             // Velocity is calculated by an average of 2 samples before and 1 after
             key_position diffPosition = keyBuffer_[index + kPositionTrackerSamplesNeededForPressVelocityAfterEscapement] - keyBuffer_[index - 2];
             timestamp_diff_type diffTimestamp = keyBuffer_.timestampAt(index + kPositionTrackerSamplesNeededForPressVelocityAfterEscapement) - keyBuffer_.timestampAt(index - 2);
             key_velocity velocity = calculate_key_velocity(diffPosition, diffTimestamp);
-
+            
             return std::pair<timestamp_type, key_velocity>(exactPressTimestamp, velocity);
         }
         index++;
     }
-
+    
     // Didn't find anything matching that threshold
     return std::pair<timestamp_type, key_velocity>(missing_value<timestamp_type>::missing(),
                                                    missing_value<key_velocity>::missing());
@@ -149,7 +149,7 @@ std::pair<timestamp_type, key_velocity> KeyPositionTracker::releaseVelocity(key_
         return std::pair<timestamp_type, key_velocity>(missing_value<timestamp_type>::missing(),
                                                        missing_value<key_velocity>::missing());
     }
-
+    
     // Find where the key position crosses the indicated level
     key_buffer_index index = releaseBeginIndex_;
     if(index < keyBuffer_.beginIndex() + 2)
@@ -160,24 +160,24 @@ std::pair<timestamp_type, key_velocity> KeyPositionTracker::releaseVelocity(key_
         // the interval exists yet
         if(releaseEndIndex_ != 0 && index >= releaseEndIndex_)
             break;
-
+        
         if(keyBuffer_[index] < returnPosition) {
             // Found the place the position crosses the indicated threshold
             // Now find the exact (interpolated) timestamp and velocity
             timestamp_type exactPressTimestamp = keyBuffer_.timestampAt(index); // TODO
-
+            
             // Velocity is calculated by an average of 2 samples before and 1 after
             key_position diffPosition = keyBuffer_[index + kPositionTrackerSamplesNeededForReleaseVelocityAfterEscapement] - keyBuffer_[index - 2];
             timestamp_diff_type diffTimestamp = keyBuffer_.timestampAt(index + kPositionTrackerSamplesNeededForReleaseVelocityAfterEscapement) - keyBuffer_.timestampAt(index - 2);
             key_velocity velocity = calculate_key_velocity(diffPosition, diffTimestamp);
-
+            
             std::cout << "found release velocity " << velocity << "(diffp " << diffPosition << ", diffT " << diffTimestamp << ")" << std::endl;
-
+            
             return std::pair<timestamp_type, key_velocity>(exactPressTimestamp, velocity);
         }
         index++;
     }
-
+    
     // Didn't find anything matching that threshold
     return std::pair<timestamp_type, key_velocity>(missing_value<timestamp_type>::missing(),
                                                    missing_value<key_velocity>::missing());
@@ -189,39 +189,39 @@ KeyPositionTracker::PercussivenessFeatures KeyPositionTracker::pressPercussivene
     key_buffer_index index;
     key_velocity maximumVelocity, largestVelocityDifference;
     key_buffer_index maximumVelocityIndex, largestVelocityDifferenceIndex;
-
+    
     // Check that we have a valid start point from which to calculate
     if(missing_value<timestamp_type>::isMissing(startTimestamp_) || keyBuffer_.beginIndex() > startIndex_ - 1) {
         std::cout << "*** no start time\n";
         features.percussiveness = missing_value<float>::missing();
         return features;
     }
-
+    
     // From the start of the key press, look for an initial maximum in velocity
     index = startIndex_;
-
+    
     maximumVelocity = scale_key_velocity(0);
     maximumVelocityIndex = startIndex_;
     largestVelocityDifference = scale_key_velocity(0);
     largestVelocityDifferenceIndex = startIndex_;
-
+    
     std::cout << "*** start index " << index << std::endl;
-
+    
     while(index < keyBuffer_.endIndex()) {
         if(pressIndex_ != 0 && index >= pressIndex_)
             break;
-
+        
         key_position diffPosition = keyBuffer_[index] - keyBuffer_[index - 1];
         timestamp_diff_type diffTimestamp = keyBuffer_.timestampAt(index) - keyBuffer_.timestampAt(index - 1);
         key_velocity velocity = calculate_key_velocity(diffPosition, diffTimestamp);
-
+        
         // Look for maximum of velocity
         if(velocity > maximumVelocity) {
             maximumVelocity = velocity;
             maximumVelocityIndex = index;
             std::cout << "*** found new max velocity " << maximumVelocity << " at index " << index << std::endl;
         }
-
+        
         // And given the difference between the max and the current sample,
         // look for the largest rebound (velocity hitting a peak and falling)
         if(maximumVelocity - velocity > largestVelocityDifference) {
@@ -229,7 +229,7 @@ KeyPositionTracker::PercussivenessFeatures KeyPositionTracker::pressPercussivene
             largestVelocityDifferenceIndex = index;
             std::cout << "*** found new diff velocity " << largestVelocityDifference << " at index " << index << std::endl;
         }
-
+        
         // Only look at the early part of the key press: if the key position
         // makes it more than a certain amount down, assume the initial spike
         // has passed and finish up. But always allow at least 5 points for the
@@ -237,16 +237,16 @@ KeyPositionTracker::PercussivenessFeatures KeyPositionTracker::pressPercussivene
         if(index - startIndex_ >= 4 && keyBuffer_[index] > kPositionTrackerPositionThresholdForPercussivenessCalculation) {
             break;
         }
-
+        
         index++;
     }
-
+    
     // Now transfer what we've found to the data structure
     features.velocitySpikeMaximum = Event(maximumVelocityIndex, maximumVelocity, keyBuffer_.timestampAt(maximumVelocityIndex));
     features.velocitySpikeMinimum = Event(largestVelocityDifferenceIndex, maximumVelocity - largestVelocityDifference,
                                           keyBuffer_.timestampAt(largestVelocityDifferenceIndex));
     features.timeFromStartToSpike = keyBuffer_.timestampAt(maximumVelocityIndex) - keyBuffer_.timestampAt(startIndex_);
-
+    
     // Check if we found a meaningful difference. If not, percussiveness is set to 0
     if(largestVelocityDifference == scale_key_velocity(0)) {
         features.percussiveness = 0.0;
@@ -254,7 +254,7 @@ KeyPositionTracker::PercussivenessFeatures KeyPositionTracker::pressPercussivene
         features.areaFollowingSpike = scale_key_velocity(0);
         return features;
     }
-
+    
     // Calculate the area under the velocity curve before and after the maximum
     features.areaPrecedingSpike = scale_key_velocity(0);
     for(index = startIndex_; index < maximumVelocityIndex; index++) {
@@ -268,11 +268,11 @@ KeyPositionTracker::PercussivenessFeatures KeyPositionTracker::pressPercussivene
         timestamp_diff_type diffTimestamp = keyBuffer_.timestampAt(index) - keyBuffer_.timestampAt(index - 1);
         features.areaFollowingSpike += calculate_key_velocity(diffPosition, diffTimestamp);
     }
-
+    
     std::cout << "area before = " << features.areaPrecedingSpike << " after = " << features.areaFollowingSpike << std::endl;
-
+    
     features.percussiveness = features.velocitySpikeMaximum.position;
-
+    
     return features;
 }
 
@@ -289,7 +289,7 @@ void KeyPositionTracker::engage() {
 void KeyPositionTracker::disengage() {
     if(!engaged_)
         return;
-
+    
     unregisterForTrigger(&keyBuffer_);
     engaged_ = false;
 }
@@ -298,7 +298,7 @@ void KeyPositionTracker::disengage() {
 void KeyPositionTracker::reset() {
 	//Node<KeyPositionTrackerNotification>::clear();
 	empty_ = true; // kind of equivalent to clear() above if we are not a circular buffer. This should be unset by "insert"
-
+    
     currentState_ = kPositionTrackerStateUnknown;
     currentlyAvailableFeatures_ = KeyPositionTrackerNotification::kFeaturesNone;
     currentMinIndex_ = currentMaxIndex_ = startIndex_ = pressIndex_ = 0;
@@ -322,17 +322,17 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
 		reset(); // as if we just created this object
 	//if(who != &keyBuffer_)
 		//return;
-
+    
     // Always start in the partial press state after a reset, retroactively locating
     // the start position for this key press
     if(empty()) {
         findKeyPressStart(timestamp);
         changeState(kPositionTrackerStatePartialPressAwaitingMax, timestamp);
     }
-
+    
     key_position currentKeyPosition = keyBuffer_.latest();
     key_buffer_index currentBufferIndex = keyBuffer_.endIndex() - 1;
-
+    
     // First, check queued actions to see if we can calculate a new feature
     // ** Press Velocity **
     if(pressVelocityAvailableIndex_ != 0) {
@@ -365,7 +365,7 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
             percussivenessAvailableIndex_ = 0;
         }
     }
-
+    
     // Major state transitions next, centered on whether the key is pressed
     // fully or partially
     if(currentState_ == kPositionTrackerStatePartialPressAwaitingMax ||
@@ -377,7 +377,7 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
             pressIndex_ = 0;
             pressPosition_ = missing_value<key_position>::missing();
             pressTimestamp_ = missing_value<timestamp_type>::missing();
-
+            
             changeState(kPositionTrackerStatePressInProgress, timestamp);
         }
     }
@@ -392,7 +392,7 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
             pressIndex_ = 0;
             pressPosition_ = missing_value<key_position>::missing();
             pressTimestamp_ = missing_value<timestamp_type>::missing();
-
+            
             changeState(kPositionTrackerStatePressInProgress, timestamp);
         }
     }
@@ -409,7 +409,7 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
         if(currentKeyPosition < kPositionTrackerPressPosition - kPositionTrackerPressHysteresis) {
             // Key is on its way back up: find where release began
             findKeyReleaseStart(timestamp);
-
+            
             changeState(kPositionTrackerStateReleaseInProgress, timestamp);
         }
     }
@@ -421,7 +421,7 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
         currentMaxIndex_ = currentBufferIndex;
         currentMaxPosition_ = currentKeyPosition;
         currentMaxTimestamp_ = timestamp;
-
+        
         // If we previously found a maximum, go back to the original
         // state so we can process the new max that is in progress
         if(currentState_ == kPositionTrackerStatePartialPressFoundMax)
@@ -434,7 +434,7 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
         currentMinPosition_ = currentKeyPosition;
         currentMinTimestamp_ = timestamp;
     }
-
+    
     // Check if the deviation between min and max exceeds the threshold of significance,
     // and if so, figure out when a peak occurs
     if(!missing_value<key_position>::isMissing(currentMaxPosition_) &&
@@ -443,17 +443,17 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
             // We need to come down off the current maximum before we can be sure that we've found the right location.
             // Implement a sliding threshold that gets lower the farther away from the maximum we get
             key_position triggerThreshold = kPositionTrackerMinMaxSpacingThreshold / (key_position)(currentBufferIndex - currentMaxIndex_);
-
+            
             if(currentKeyPosition < currentMaxPosition_ - triggerThreshold) {
                 // Found the local maximum and the position has already retreated from it
                 lastMinMaxPosition_ = currentMaxPosition_;
-
+                
                 if(currentState_ == kPositionTrackerStatePressInProgress) {
                     // If we were waiting for a press to complete, this is it.
                     pressIndex_ = currentMaxIndex_;
                     pressPosition_ = currentMaxPosition_;
                     pressTimestamp_ = currentMaxTimestamp_;
-
+                    
                     // Insert the state change into the buffer timestamped according to
                     // when the maximum arrived, unless that would put it earlier than what's already there
                     timestamp_type stateChangeTimestamp = latestTimestamp() > currentMaxTimestamp_ ? latestTimestamp() : currentMaxTimestamp_;
@@ -467,7 +467,7 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
                         changeState(kPositionTrackerStatePartialPressFoundMax, stateChangeTimestamp);
                     }
                 }
-
+                
                 // Reinitialize the minimum value for the next search
                 currentMinIndex_ = currentBufferIndex;
                 currentMinPosition_ = currentKeyPosition;
@@ -485,19 +485,19 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
             if(currentKeyPosition > currentMinPosition_ + triggerThreshold) {
                 // Found the local minimum and the position has already retreated from it
                 lastMinMaxPosition_ = currentMinPosition_;
-
+                
                 // If in the middle of releasing, see whether this minimum appears to have completed the release
                 if(currentState_ == kPositionTrackerStateReleaseInProgress) {
                     if(currentMinPosition_ < kPositionTrackerReleaseFinishPosition) {
                         releaseEndIndex_ = currentMinIndex_;
                         releaseEndPosition_ = currentMinPosition_;
                         releaseEndTimestamp_ = currentMinTimestamp_;
-
+                        
                         timestamp_type stateChangeTimestamp = latestTimestamp() > currentMinTimestamp_ ? latestTimestamp() : currentMinTimestamp_;
                         changeState(kPositionTrackerStateReleaseFinished, stateChangeTimestamp);
                     }
                 }
-
+                
                 // Reinitialize the maximum value for the next search
                 currentMaxIndex_ = currentBufferIndex;
                 currentMaxPosition_ = currentKeyPosition;
@@ -511,10 +511,10 @@ void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type 
 void KeyPositionTracker::changeState(int newState, timestamp_type timestamp) {
     KeyPositionTracker::key_buffer_index index;
     KeyPositionTracker::key_buffer_index mostRecentIndex = 0;
-
+    
     if(keyBuffer_.empty())
         mostRecentIndex = keyBuffer_.endIndex() - 1;
-
+    
     // Manage features based on state
     switch(newState) {
         case kPositionTrackerStatePressInProgress:
@@ -522,7 +522,7 @@ void KeyPositionTracker::changeState(int newState, timestamp_type timestamp) {
             if(currentState_ == kPositionTrackerStateReleaseInProgress ||
                currentState_ == kPositionTrackerStateReleaseFinished)
                 currentlyAvailableFeatures_ = KeyPositionTrackerNotification::kFeaturesNone;
-
+            
             // Look for percussiveness first since it will always be available by the time of
             // key press. That means we can count on it arriving before velocity every time.
             if((currentlyAvailableFeatures_ & KeyPositionTrackerNotification::kFeaturePercussiveness) == 0
@@ -531,7 +531,7 @@ void KeyPositionTracker::changeState(int newState, timestamp_type timestamp) {
                 notifyFeature(KeyPositionTrackerNotification::kNotificationTypeFeatureAvailablePercussiveness, timestamp);
                 percussivenessAvailableIndex_ = 0;
             }
-
+            
             // Start looking for the data needed for MIDI onset velocity.
             // Where did the key cross the escapement position? How many more samples do
             // we need to calculate velocity?
@@ -572,14 +572,14 @@ void KeyPositionTracker::changeState(int newState, timestamp_type timestamp) {
             // Don't change features
             break;
     }
-
+    
     currentState_ = newState;
-
+    
     KeyPositionTrackerNotification notification;
     notification.type = KeyPositionTrackerNotification::kNotificationTypeStateChange;
     notification.state = newState;
     notification.features = currentlyAvailableFeatures_;
-
+    
     insert(notification, timestamp);
 }
 
@@ -587,11 +587,11 @@ void KeyPositionTracker::changeState(int newState, timestamp_type timestamp) {
 void KeyPositionTracker::notifyFeature(int notificationType, timestamp_type timestamp) {
     // Can now calculate press velocity
     KeyPositionTrackerNotification notification;
-
+    
     notification.state = currentState_;
     notification.type = notificationType;
     notification.features = currentlyAvailableFeatures_;
-
+    
     insert(notification, timestamp);
 }
 
@@ -601,24 +601,24 @@ void KeyPositionTracker::notifyFeature(int notificationType, timestamp_type time
 void KeyPositionTracker::findKeyPressStart(timestamp_type timestamp) {
     if(keyBuffer_.size() < kPositionTrackerSamplesToAverageForStartVelocity + 1)
         return;
-
+    
     key_buffer_index index = keyBuffer_.endIndex() - 1;
     int searchBackCounter = 0;
-
+    
     while(index >= keyBuffer_.beginIndex() + kPositionTrackerSamplesToAverageForStartVelocity && searchBackCounter <= kPositionTrackerSamplesToSearchForStartLocation) {
         // Take the N-sample velocity average and compare to a minimum threshold
         key_position diffPosition = keyBuffer_[index] - keyBuffer_[index - kPositionTrackerSamplesToAverageForStartVelocity];
         timestamp_diff_type diffTimestamp = keyBuffer_.timestampAt(index) - keyBuffer_.timestampAt(index - kPositionTrackerSamplesToAverageForStartVelocity);
         key_velocity velocity = calculate_key_velocity(diffPosition, diffTimestamp);
-
+        
         if(velocity < kPositionTrackerStartVelocityThreshold) {
             break;
         }
-
+        
         searchBackCounter++;
         index--;
     }
-
+    
     // Having either found the minimum velocity or reached the beginning of the search period,
     // store the key start information. Since the velocity is calculated over a window, choose
     // a start position in the middle of the window.
@@ -626,43 +626,43 @@ void KeyPositionTracker::findKeyPressStart(timestamp_type timestamp) {
     startPosition_ = keyBuffer_[index - kPositionTrackerSamplesToAverageForStartVelocity/2];
     startTimestamp_ = keyBuffer_.timestampAt(index - kPositionTrackerSamplesToAverageForStartVelocity/2);
     lastMinMaxPosition_ = startPosition_;
-
+    
     // After saving that information, look further back for a specified number of samples to see if there
     // is another mini-spike at the beginning of the key press. This can happen with highly percussive presses.
     // If so, the start is actually the earlier time.
-
+    
     // Leave index where it was...
     searchBackCounter = 0;
     bool haveFoundVelocitySpike = false, haveFoundNewMinimum = false;
-
+    
     while(index >= keyBuffer_.beginIndex() + kPositionTrackerSamplesToAverageForStartVelocity && searchBackCounter <= kPositionTrackerSamplesToSearchBeyondStartLocation) {
         // Take the N-sample velocity average and compare to a minimum threshold
         key_position diffPosition = keyBuffer_[index] - keyBuffer_[index - kPositionTrackerSamplesToAverageForStartVelocity];
         timestamp_diff_type diffTimestamp = keyBuffer_.timestampAt(index) - keyBuffer_.timestampAt(index - kPositionTrackerSamplesToAverageForStartVelocity);
         key_velocity velocity = calculate_key_velocity(diffPosition, diffTimestamp);
-
+        
         if(velocity > kPositionTrackerStartVelocitySpikeThreshold) {
             std::cout << "At index " << index << ", velocity is " << velocity << std::endl;
             haveFoundVelocitySpike = true;
         }
-
+        
         if(velocity < kPositionTrackerStartVelocityThreshold && haveFoundVelocitySpike) {
             std::cout << "At index " << index << ", velocity is " << velocity << std::endl;
             haveFoundNewMinimum = true;
             break;
         }
-
+        
         searchBackCounter++;
         index--;
     }
-
+    
     if(haveFoundNewMinimum) {
         // Here we looked back beyond a small spike and found an earlier start time
         startIndex_ = index - kPositionTrackerSamplesToAverageForStartVelocity/2;
         startPosition_ = keyBuffer_[index - kPositionTrackerSamplesToAverageForStartVelocity/2];
         startTimestamp_ = keyBuffer_.timestampAt(index - kPositionTrackerSamplesToAverageForStartVelocity/2);
         lastMinMaxPosition_ = startPosition_;
-
+        
         std::cout << "Found previous location\n";
     }
 }
@@ -671,32 +671,32 @@ void KeyPositionTracker::findKeyPressStart(timestamp_type timestamp) {
 void KeyPositionTracker::findKeyReleaseStart(timestamp_type timestamp) {
     if(keyBuffer_.size() < kPositionTrackerSamplesToAverageForStartVelocity + 1)
         return;
-
+    
     key_buffer_index index = keyBuffer_.endIndex() - 1;
     int searchBackCounter = 0;
-
+    
     while(index >= keyBuffer_.beginIndex() + kPositionTrackerSamplesToAverageForStartVelocity && searchBackCounter <= kPositionTrackerSamplesToSearchForReleaseLocation) {
         // Take the N-sample velocity average and compare to a minimum threshold
         key_position diffPosition = keyBuffer_[index] - keyBuffer_[index - kPositionTrackerSamplesToAverageForStartVelocity];
         timestamp_diff_type diffTimestamp = keyBuffer_.timestampAt(index) - keyBuffer_.timestampAt(index - kPositionTrackerSamplesToAverageForStartVelocity);
         key_velocity velocity = calculate_key_velocity(diffPosition, diffTimestamp);
-
+        
         if(velocity > kPositionTrackerReleaseVelocityThreshold) {
             std::cout << "Found release at index " << index << " (vel = " << velocity << ")\n";
             break;
         }
-
+        
         searchBackCounter++;
         index--;
     }
-
+    
     // Having either found the minimum velocity or reached the beginning of the search period,
     // store the key release information.
     releaseBeginIndex_ = index - kPositionTrackerSamplesToAverageForStartVelocity/2;
     releaseBeginPosition_ = keyBuffer_[index - kPositionTrackerSamplesToAverageForStartVelocity/2];
     releaseBeginTimestamp_ = keyBuffer_.timestampAt(index - kPositionTrackerSamplesToAverageForStartVelocity/2);
     lastMinMaxPosition_ = releaseBeginPosition_;
-
+    
     // Clear the release end position so there's no possibility of an inconsistent state
     releaseEndIndex_ = 0;
     releaseEndPosition_ = missing_value<key_position>::missing();
@@ -707,27 +707,27 @@ void KeyPositionTracker::findKeyReleaseStart(timestamp_type timestamp) {
 KeyPositionTracker::key_buffer_index KeyPositionTracker::findMostRecentKeyPositionCrossing(key_position threshold, bool greaterThan, int maxDistance) {
     if(keyBuffer_.empty())
         return 0;
-
+    
     key_buffer_index index = keyBuffer_.endIndex() - 1;
     int searchBackCounter = 0;
-
+    
     // Check if the most recent sample already meets the criterion. If so,
     // there's no crossing yet.
     if(keyBuffer_[index] >= threshold && greaterThan)
         return 0;
     if(keyBuffer_[index] <= threshold && !greaterThan)
         return 0;
-
+    
     while(index >= keyBuffer_.beginIndex() && searchBackCounter <= maxDistance) {
         if(keyBuffer_[index] >= threshold && greaterThan)
             return index;
         else if(keyBuffer_[index] <= threshold && !greaterThan)
             return index;
-
+        
         searchBackCounter++;
         index--;
     }
-
+    
     return 0;
 }
 

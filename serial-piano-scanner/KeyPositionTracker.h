@@ -1,31 +1,22 @@
 /*
- * KeyPositionTracker.hpp
- *
- *  Created on: Jan 3, 2019
- *      Author: Juniper
- */
-
-#ifndef KEYPOSITIONTRACKER_H_
-#define KEYPOSITIONTRACKER_H_
-
-
-/*
   TouchKeys: multi-touch musical keyboard control software
   Copyright (c) 2013 Andrew McPherson
+
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
-
+ 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
+
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+ 
   =====================================================================
-
+ 
   KeyPositionTracker.h: parses continuous key position and detects the
   state of the key.
 */
@@ -42,6 +33,7 @@
 #include <array>
 #include <vector>
 #include <iostream>
+#include "AnalogFrame.h"
 
 typedef size_t capacity_type;
 
@@ -132,6 +124,9 @@ public:
 // Two more convenience methods to avoid confusion about what front and back mean!
 	auto& earliest() { return (*this)[firstSampleIndex_];}
 	auto& latest() { return (*this)[endIndex() - 1];}
+
+	void addFromFrame(AnalogFrame frame);
+
 };
 // KeyPositionTrackerNotification
 //
@@ -156,7 +151,7 @@ public:
         kFeatureReleaseVelocity = 0x0002,
         kFeaturePercussiveness = 0x0004
     };
-
+    
     int type;
     int state;
     int features;
@@ -172,7 +167,7 @@ public:
 // This class is triggered by new data points in the key position buffer. Its output is
 // a series of state changes which indicate what the key is doing.
 
-class KeyPositionTracker
+class KeyPositionTracker 
 //: public Node<KeyPositionTrackerNotification>
 {
 public:
@@ -180,31 +175,31 @@ public:
     typedef size_t key_buffer_index;
 
     //typedef void (*KeyActionFunction)(KeyPositionTracker *object, void *userData);
-
+    
     // Simple class to hold index/position/timestamp triads
     class Event {
     public:
         Event() : index(0), position(missing_value<key_position>::missing()),
         timestamp(missing_value<timestamp_type>::missing()) {}
-
+        
         Event(key_buffer_index i, key_position p, timestamp_type t)
         : index(i), position(p), timestamp(t) {}
-
+        
         Event(const Event& obj)
         : index(obj.index), position(obj.position), timestamp(obj.timestamp) {}
-
+        
         Event& operator=(const Event& obj) {
             index = obj.index;
             position = obj.position;
             timestamp = obj.timestamp;
             return *this;
         }
-
+        
         key_buffer_index index;
         key_position position;
         timestamp_type timestamp;
     };
-
+    
     // Collection of features related to whether a key is percussively played or not
     struct PercussivenessFeatures {
         float percussiveness;                   // Calculated single feature based on everything below
@@ -214,31 +209,31 @@ public:
         key_velocity areaPrecedingSpike;        // Total sum of velocity values from start to max
         key_velocity areaFollowingSpike;        // Total sum of velocity values from max to min
     };
-
+    
 public:
 	// ***** Constructors *****
-
+	
 	// Default constructor, passing the buffer on which to trigger
-	KeyPositionTracker(capacity_type capacity,
-			//Node<key_position>&
+	KeyPositionTracker(capacity_type capacity, 
+			//Node<key_position>& 
 			KeyBuffer& keyBuffer
 			);
-
+	
 	// Copy constructor
 	//KeyPositionTracker(KeyPositionTracker const& obj);
-
+	
 	// ***** State Access *****
-
+	
     // Whether this object is currently tracking states
     bool engaged() {
         return engaged_;
     }
-
+    
 	// Return the current state (unknown if nothing is in the buffer)
 	int currentState() {
         return currentState_;
     }
-
+    
     // Information about important recent points
     Event currentMax() {
         return Event(currentMaxIndex_, currentMaxPosition_, currentMaxTimestamp_);
@@ -258,17 +253,17 @@ public:
     Event releaseFinish() {
         return Event(releaseEndIndex_, releaseEndPosition_, releaseEndTimestamp_);
     }
-
+    
     // ***** Key Press Features *****
-
+    
     // Velocity for onset and release. The values without an argument use the stored
     // current escapement point (which is also used for notification of availability).
     std::pair<timestamp_type, key_velocity> pressVelocity();
     std::pair<timestamp_type, key_velocity> releaseVelocity();
-
+    
     std::pair<timestamp_type, key_velocity> pressVelocity(key_position escapementPosition);
     std::pair<timestamp_type, key_velocity> releaseVelocity(key_position returnPosition);
-
+    
     // Set the threshold where we look for press velocity calculations. It
     // can be anything up to the press position threshold on the upward side
     // and anything down to the final release position on the downward side.
@@ -284,55 +279,55 @@ public:
         else
             releaseVelocityEscapementPosition_ = pos;
     }
-
-
+    
+    
     // Percussiveness (struck vs. pressed keys)
     PercussivenessFeatures pressPercussiveness();
-
+    
 	// ***** Modifiers *****
-
+    
     // Register for updates from the key positon buffer
     void engage();
-
+    
     // Unregister for updates from the key position buffer
     void disengage();
-
+	
     // Reset the state back initial values
 	void reset();
-
+	
 	// ***** Evaluator *****
-
+	
     // This method receives triggers whenever a new sample enters the buffer. It updates
     // the state depending on the profile of the key position.
 	void triggerReceived(/*TriggerSource* who,*/ timestamp_type timestamp);
-
+	
 private:
     // ***** Internal Helper Methods *****
-
+    
     // Change the current state
     void changeState(int newState, timestamp_type timestamp);
-
+    
     // Insert a new feature notification
     void notifyFeature(int notificationType, timestamp_type timestamp);
-
+    
     // Work backwards in the key position buffer to find the start/release of a press
     void findKeyPressStart(timestamp_type timestamp);
     void findKeyReleaseStart(timestamp_type timestamp);
-
+    
     // Generic method to find the most recent crossing of a given point
     key_buffer_index findMostRecentKeyPositionCrossing(key_position threshold, bool greaterThan, int maxDistance);
-
+    
     // Look for the crossing of the release velocity threshold to prepare to send the feature
     void prepareReleaseVelocityFeature(KeyPositionTracker::key_buffer_index mostRecentIndex, timestamp_type timestamp);
-
+    
 	// ***** Member Variables *****
-
+	
     //Node<key_position>& keyBuffer_;		// Raw key position data
     KeyBuffer& keyBuffer_; // Raw key position data
     bool engaged_;                      // Whether we're actively listening to incoming updates
     int currentState_;                  // Our current state
     int currentlyAvailableFeatures_;    // Which features can be calculated for the current press
-
+    
     // Position tracking information for significant points (minima and maxima)
     key_position startPosition_;                                // Position of where the key press started
     timestamp_type startTimestamp_;                             // Timestamp of where the key press started
@@ -350,7 +345,7 @@ private:
     timestamp_type currentMinTimestamp_, currentMaxTimestamp_;  // Times for the above positions
     key_buffer_index currentMinIndex_, currentMaxIndex_;        // Indices in the buffer for the recent min/max
     key_position lastMinMaxPosition_;                           // Position of the last significant point
-
+    
     // Persistent parameters relating to feature calculation
     key_position pressVelocityEscapementPosition_;              // Position at which onset velocity is calculated
     key_position releaseVelocityEscapementPosition_;            // Position at which release velocity is calculate
@@ -358,7 +353,7 @@ private:
     key_buffer_index releaseVelocityAvailableIndex_;            // When we can calculate release velocity
     bool releaseVelocityWaitingForThresholdCross_;              // Set to true if we need to look for release escapement cross
     key_buffer_index percussivenessAvailableIndex_;             // When we can calculate percussiveness features
-
+    
     /*
     typedef struct {
 		int runningSum;						// sum of last N points (i.e. mean * N)
@@ -367,7 +362,7 @@ private:
 		int startValuesSum;					// sum of the last N start values (to calculate returning quiescent position)
 		int startValuesSumMaxLength;
 		int startValuesSumCurrentLength;
-
+		
 		int maxVariation;					// The maximum deviation from mean of the last group of samples
 		int flatCounter;					// how many successive samples have been "flat" (minimal change)
 		int currentStartValue;				// values and positions of several key points for active keys
@@ -377,10 +372,10 @@ private:
 		int currentMaxValue;
 		int currentMaxPosition;
 		int lastKeyPointValue;				// the value of the last important point {start, max, min}
-
+		
 		deque<keyPointHistory> recentKeyPoints; // the minima and maxima since the key started
 		bool sentPercussiveMidiOn;			// HACK: whether we've sent the percussive MIDI event
-
+		
 		int pressValue;						// the value at the maximum corresponding to the end of the key press motion
 		int pressPosition;					// the location in the buffer of this event (note: not the timestamp)
 		int releaseValue;					// the value the key held right before release
@@ -398,6 +393,3 @@ private:
 
 
 #endif /* defined(__touchkeys__KeyPositionTracker__) */
-
-
-#endif /* KEYPOSITIONTRACKER_H_ */

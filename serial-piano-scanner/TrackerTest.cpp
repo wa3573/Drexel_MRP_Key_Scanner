@@ -13,13 +13,17 @@
 #include <pthread.h>
 
 #include "AnalogFrame.h"
+#include "CircularBuffer.h"
 #include "KeyPositionTracker.h"
 #include "SerialInterface.h"
 #include "StatusFrame.h"
-#include "CircularBuffer.cpp";
 
 struct thread_args_t {
 	CircularBuffer<char>* buf;
+};
+
+struct analog_callback_args_t {
+	AnalogFrame* analogFrame;
 };
 
 const bool VERBOSE = true;
@@ -97,15 +101,14 @@ int requestStatusFrame()
 {
 	char frame_buffer[TOUCHKEY_COMMAND_LENGTH];
 //	int len = 0;
-
-	frame_buffer = kCommandStatus;
 //	frame_buffer[len++] = ESCAPE_CHARACTER;
 //	frame_buffer[len++] = kControlCharacterFrameBegin;
 //	frame_buffer[len++] = kFrameTypeStatus;
 //	frame_buffer[len++] = ESCAPE_CHARACTER;
 //	frame_buffer[len++] = kControlCharacterFrameEnd;
-
-	int ret = serialInterface.serialWrite(frame_buffer, TOUCHKEY_COMMAND_LENGTH);
+	frame_buffer = kCommandStatus;
+	int ret = serialInterface.serialWrite(frame_buffer,
+			TOUCHKEY_COMMAND_LENGTH);
 
 	if (ret < 0) {
 		printf("Failed writing, breaking\n");
@@ -125,9 +128,9 @@ int requestStartScanning()
 //	frame_buffer[len++] = kFrameTypeStartScanning;
 //	frame_buffer[len++] = ESCAPE_CHARACTER;
 //	frameBuffer[len++] = kControlCharacterFrameEnd;
-
 	frame_buffer = kCommandStartScanning;
-	int ret = serialInterface.serialWrite(frame_buffer, TOUCHKEY_COMMAND_LENGTH);
+	int ret = serialInterface.serialWrite(frame_buffer,
+			TOUCHKEY_COMMAND_LENGTH);
 
 	if (ret < 0) {
 		printf("Failed writing, breaking\n");
@@ -148,8 +151,8 @@ int requestStopScanning()
 //	frame_buffer[len++] = ESCAPE_CHARACTER;
 //	frame_buffer[len++] = kControlCharacterFrameEnd;
 	frame_buffer = kCommandStopScanning;
-
-	int ret = serialInterface.serialWrite(frame_buffer, TOUCHKEY_COMMAND_LENGTH);
+	int ret = serialInterface.serialWrite(frame_buffer,
+			TOUCHKEY_COMMAND_LENGTH);
 
 	if (ret < 0) {
 		printf("Failed writing, breaking\n");
@@ -160,10 +163,9 @@ int requestStopScanning()
 	return TOUCHKEY_COMMAND_LENGTH;
 }
 
-
-
-
-void insertBufferChunk(CircularBuffer<char>* buffer, char* intermediate_buffer, int len) {
+void insertBufferChunk(CircularBuffer<char>* buffer, char* intermediate_buffer,
+		int len)
+{
 	int count = 0;
 
 	while (count > len) {
@@ -182,7 +184,7 @@ void insertBufferChunk(CircularBuffer<char>* buffer, char* intermediate_buffer, 
 
 void* serialProducerThread(void* args)
 {
-	char intermediate_buf[SERIAL_BUFFER_SIZE];
+	char intermediate_bufffer[SERIAL_BUFFER_SIZE];
 	thread_args_t* thread_args = (thread_args_t*) args;
 	int ret;
 	int count;
@@ -193,11 +195,11 @@ void* serialProducerThread(void* args)
 	ret = requestStartScanning();
 
 	while (gShouldConsumeSerial) {
-		ret = serialInterface.serialRead(intermediate_buf, SERIAL_BUFFER_SIZE,
-				-1);
+		ret = serialInterface.serialRead(intermediate_bufffer,
+				SERIAL_BUFFER_SIZE, -1);
 
 		if (ret > 0) {
-			insertBufferChunk(thread_args->buf, intermediate_buf, ret);
+			insertBufferChunk(thread_args->buf, intermediate_bufffer, ret);
 		}
 	}
 
@@ -216,6 +218,31 @@ char getChar(CircularBuffer<char>* buffer)
 	pthread_mutex_unlock(&gMutex);
 
 	return buffer->get();
+}
+
+void analogCallback(void* args)
+{
+	analog_callback_args_t* callback_args = (analog_callback_args_t*) args;
+
+	/* first index is (octave * 12) */
+	unsigned int index = callback_args->analogFrame->octave * 12;
+
+	/* update each key in the buffer */
+	for (unsigned int n = index; n < index + 12; ++n)
+	{
+
+	}
+}
+
+void addToBufferFromFrame(AnalogFrame frame) {
+	/* first index is (octave * 12) */
+	unsigned int index = frame.octave * 12;
+
+	/* update each key in the buffer */
+	for (unsigned int n = index; n < index + 12; ++n)
+	{
+		keyBuffer[n].
+	}
 }
 
 void* serialConsumerThread(void* args)
@@ -242,14 +269,16 @@ void* serialConsumerThread(void* args)
 				count = 0;
 				while (true) {
 					if (c == kControlCharacterFrameEnd) {
-						printf("serialConsumerThread: got frame end character \n");
+						printf(
+								"serialConsumerThread: got frame end character \n");
 						frame_buffer[count] = c;
 						frame_captured = true;
 						break;
 					}
 
 					if (count < TOUCHKEY_MAX_FRAME_LENGTH) {
-						printf("serialConsumerThread: frame exceeded max length \n");
+						printf(
+								"serialConsumerThread: frame exceeded max length \n");
 						frame_captured = false;
 						break;
 					}
@@ -264,11 +293,13 @@ void* serialConsumerThread(void* args)
 					printf("serialConsumerThread: frame capture successful \n");
 
 					if (frame_buffer[0] == kFrameTypeAnalog) {
-						printf("serialConsumerThread: detected analog frame \n");
+						printf(
+								"serialConsumerThread: detected analog frame \n");
 						current_analog_frame = AnalogFrame(frame_buffer);
 
 					} else if (frame_buffer[0] == kFrameTypeStatus) {
-						printf("serialConsumerThread: detected status frame \n");
+						printf(
+								"serialConsumerThread: detected status frame \n");
 						current_status_frame = StatusFrame(frame_buffer);
 					} else {
 
@@ -277,8 +308,6 @@ void* serialConsumerThread(void* args)
 				} else {
 					printf("serialConsumerThread: frame capture failed \n");
 				}
-			} else {
-				continue;
 			}
 		}
 	}

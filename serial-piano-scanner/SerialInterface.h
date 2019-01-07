@@ -10,8 +10,9 @@
 
 #include <unistd.h>
 #include <array>
+
+#include "CircularBuffer.h"
 #include "TouchkeyDevice.h"
-#include "CircularBuffer.cpp"
 
 class SerialInterface {
 public:
