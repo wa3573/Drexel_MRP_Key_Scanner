@@ -30,6 +30,9 @@ StatusFrame::StatusFrame()
 	this->softwareVersionMinor = 0;
 	this->hardwareVersion = 0;
 	this->flags = 0;
+	this->hasAnalogSensors = false;
+	this->hasRGBLEDs = false;
+	this->hasTouchSensors = false;
 }
 
 StatusFrame::~StatusFrame()

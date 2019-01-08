@@ -13,9 +13,64 @@
 #include <memory>
 #include <pthread.h>
 
+template<class T, typename E>
+class CircularBufferIterator {
+public:
+	typedef T CircularBuffer;
+	typedef CircularBufferIterator SelfType;
+
+	CircularBufferIterator(CircularBuffer* buf, size_t start_pos) :
+			buf_(buf), pos_(start_pos)
+	{
+	}
+
+	E& operator*()
+	{
+		return (*buf_)[pos_];
+	}
+
+	E& operator->()
+	{
+		return &(operator*());
+	}
+
+	SelfType& operator++()
+	{
+		++pos_;
+		return *this;
+	}
+
+	SelfType& operator++(int)
+	{
+		SelfType tmp(*this);
+
+		++(*this);
+		return tmp;
+	}
+
+//	SelfType operator+(difference_type n)
+//	{
+//		SelfType tmp(*this);
+//		tmp.pos_ += n;
+//		return tmp;
+//	}
+//
+//	SelfType &operator+=(difference_type n)
+//	{
+//		pos_ += n;
+//		return *this;
+//	}
+
+private:
+	CircularBuffer* buf_;
+	size_t pos_;
+};
+
 template<class T>
 class CircularBuffer {
 public:
+	typedef std::reverse_iterator<CircularBufferIterator<CircularBuffer, T>> ReverseIterator;
+
 	explicit CircularBuffer(std::size_t size) :
 			buf_(std::unique_ptr<T[]>(new T[size])), max_size_(size)
 	{
@@ -29,6 +84,33 @@ public:
 	size_t capacity() const;
 	size_t size() const;
 	void resize(size_t size);
+//	TODO: implement operator[] ?
+	T& operator[](size_t pos)
+	{
+		return this->buf_[pos];
+	}
+//	const T &operator[](size_t);
+	CircularBufferIterator<CircularBuffer, T> begin()
+	{
+		return CircularBufferIterator<CircularBuffer, T>(this, 0);
+	}
+
+	CircularBufferIterator<CircularBuffer, T> end()
+	{
+		return CircularBufferIterator<CircularBuffer, T>(this, this->size());
+	}
+
+	CircularBufferIterator<CircularBuffer, T> rbegin()
+	{
+		return CircularBufferIterator<CircularBuffer, T>(this, this->size());
+	}
+
+	/* FIXME: rend() should be one-past-the-first */
+	CircularBufferIterator<CircularBuffer, T> rend()
+	{
+		return CircularBufferIterator<CircularBuffer, T>(this, 0);
+	}
+
 
 private:
 	std::unique_ptr<T[]> buf_;

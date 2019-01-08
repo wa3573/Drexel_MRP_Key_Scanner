@@ -241,7 +241,7 @@ void addToBufferFromFrame(AnalogFrame frame) {
 	/* update each key in the buffer */
 	for (unsigned int n = index; n < index + 12; ++n)
 	{
-		keyBuffer[n].
+		keyBuffer[n]
 	}
 }
 

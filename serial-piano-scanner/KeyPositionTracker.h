@@ -97,11 +97,6 @@ public:
 
 class KeyBuffer
 {
-private:
-	const std::vector<float>& buffer_;
-	const std::vector<timestamp_type>& timestamps_;
-	const ssize_t& firstSampleIndex_;
-	const ssize_t& writeIdx_;
 public:
 	KeyBuffer(const std::vector<float>& buffer, const std::vector<timestamp_type>& timestamps, const ssize_t& firstSampleIndex, const ssize_t& writeIdx) :
 		buffer_(buffer),
@@ -127,6 +122,11 @@ public:
 
 	void addFromFrame(AnalogFrame frame);
 
+private:
+	const std::vector<float>& buffer_;
+	const std::vector<timestamp_type>& timestamps_;
+	const ssize_t& firstSampleIndex_;
+	const ssize_t& writeIdx_;
 };
 // KeyPositionTrackerNotification
 //
