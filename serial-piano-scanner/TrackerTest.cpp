@@ -238,10 +238,10 @@ void addToBufferFromFrame(AnalogFrame frame) {
 	/* first index is (octave * 12) */
 	unsigned int index = frame.octave * 12;
 
-	/* update each key in the buffer */
+	/* TODO: update each key in the buffer */
 	for (unsigned int n = index; n < index + 12; ++n)
 	{
-		keyBuffer[n]
+//		keyBuffer[n]
 	}
 }
 
