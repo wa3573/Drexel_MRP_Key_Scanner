@@ -63,7 +63,7 @@ TODO: fix this instead of using static ts
 	}
 	++ts;
 	++writeIdx;
-	if(writeIdx >= positionBuffer[0].size())
+	if(writeIdx >= (signed)positionBuffer[0].size())
 	{
 		writeIdx = 0;
 		full = true;

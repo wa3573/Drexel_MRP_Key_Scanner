@@ -15,7 +15,7 @@ StatusFrame::StatusFrame(char* frameBuffer)
 {
 	this->frameBuffer = frameBuffer;
 	this->parseSuccessful = false;
-	this->keysConnected = std::vector();
+	this->keysConnected = std::vector<unsigned int>();
 	this->parseFrame();
 }
 
@@ -23,7 +23,7 @@ StatusFrame::StatusFrame()
 {
 	this->frameBuffer = frameBuffer;
 	this->parseSuccessful = false;
-	this->keysConnected = std::vector();
+	this->keysConnected = std::vector<unsigned int>();
 	this->lowestHardwareNote = 0;
 	this->octaves = 0;
 	this->softwareVersionMajor = 0;
@@ -37,7 +37,6 @@ StatusFrame::StatusFrame()
 
 StatusFrame::~StatusFrame()
 {
-	delete this->keysConnected;
 }
 
 unsigned int StatusFrame::numKeysConnected()
@@ -53,13 +52,12 @@ unsigned int StatusFrame::numKeysConnected()
 
 bool StatusFrame::isRunning()
 {
-	return this->flags & kStatusFlagRunning != 0;
+	return this->flags & (kStatusFlagRunning != 0);
 }
 
 int StatusFrame::parseFrame()
 {
 	int count = 0;
-	char c = 0x00;
 
 	if (frameBuffer[count++] != kFrameTypeStatus) {
 		printf("Frame has wrong type, got '%d', breaking\n",
@@ -68,15 +66,15 @@ int StatusFrame::parseFrame()
 		return -1;
 	}
 
-	this->hardwareVersion = this->frameBuffer[count++]; // [1]
-	this->softwareVersionMajor = this->frameBuffer[count++]; // [2]
-	this->softwareVersionMinor = this->frameBuffer[count++]; // [3]
-	this->flags = this->frameBuffer[count++]; // [4]
-	this->octaves = this->frameBuffer[count++]; // [5]
+	this->hardwareVersion = this->frameBuffer[1]; // [1]
+	this->softwareVersionMajor = this->frameBuffer[2]; // [2]
+	this->softwareVersionMinor = this->frameBuffer[3]; // [3]
+	this->flags = this->frameBuffer[4]; // [4]
+	this->octaves = this->frameBuffer[5]; // [5]
 
 	if (this->softwareVersionMajor >= 2) {
 		// One extra byte holds lowest physical sensor
-		this->lowestHardwareNote = this->frameBuffer[count++]; //[6]
+		this->lowestHardwareNote = this->frameBuffer[6]; //[6]
 		this->hasTouchSensors = ((frameBuffer[4] & kStatusFlagHasI2C) != 0);
 		this->hasAnalogSensors = ((frameBuffer[4] & kStatusFlagHasAnalog) != 0);
 		this->hasRGBLEDs = ((frameBuffer[4] & kStatusFlagHasRGBLED) != 0);
@@ -85,8 +83,9 @@ int StatusFrame::parseFrame()
 		this->hasTouchSensors = true;
 		this->hasAnalogSensors = true;
 		this->hasRGBLEDs = true;
-		count++; // [6]
 	}
+
+	count = 6;
 
 	this->keysConnected.resize(this->octaves * 2);
 	int oct = 0;

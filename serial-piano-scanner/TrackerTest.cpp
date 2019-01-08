@@ -11,15 +11,15 @@
 #include <memory>
 #include <assert.h>
 #include <pthread.h>
+#include <cstring>
 
 #include "AnalogFrame.h"
-#include "CircularBuffer.h"
 #include "KeyPositionTracker.h"
 #include "SerialInterface.h"
 #include "StatusFrame.h"
 
 struct thread_args_t {
-	CircularBuffer<char>* buf;
+	juniper::circular_buffer<char>* buf;
 };
 
 struct analog_callback_args_t {
@@ -55,7 +55,7 @@ void* controlThread(void* args);
 
 int main()
 {
-	CircularBuffer<char> serial_buffer(SERIAL_BUFFER_SIZE);
+	juniper::circular_buffer<char> serial_buffer(SERIAL_BUFFER_SIZE);
 	pthread_t serial_producer;
 	pthread_t serial_consumer;
 	pthread_t control_thread;
@@ -106,7 +106,7 @@ int requestStatusFrame()
 //	frame_buffer[len++] = kFrameTypeStatus;
 //	frame_buffer[len++] = ESCAPE_CHARACTER;
 //	frame_buffer[len++] = kControlCharacterFrameEnd;
-	frame_buffer = kCommandStatus;
+	memcpy(&frame_buffer, &kCommandStatus, TOUCHKEY_COMMAND_LENGTH);
 	int ret = serialInterface.serialWrite(frame_buffer,
 			TOUCHKEY_COMMAND_LENGTH);
 
@@ -128,7 +128,7 @@ int requestStartScanning()
 //	frame_buffer[len++] = kFrameTypeStartScanning;
 //	frame_buffer[len++] = ESCAPE_CHARACTER;
 //	frameBuffer[len++] = kControlCharacterFrameEnd;
-	frame_buffer = kCommandStartScanning;
+	memcpy(&frame_buffer, &kCommandStartScanning, TOUCHKEY_COMMAND_LENGTH);
 	int ret = serialInterface.serialWrite(frame_buffer,
 			TOUCHKEY_COMMAND_LENGTH);
 
@@ -150,7 +150,7 @@ int requestStopScanning()
 //	frame_buffer[len++] = kFrameTypeStopScanning;
 //	frame_buffer[len++] = ESCAPE_CHARACTER;
 //	frame_buffer[len++] = kControlCharacterFrameEnd;
-	frame_buffer = kCommandStopScanning;
+	memcpy(&frame_buffer, &kCommandStopScanning, TOUCHKEY_COMMAND_LENGTH);
 	int ret = serialInterface.serialWrite(frame_buffer,
 			TOUCHKEY_COMMAND_LENGTH);
 
@@ -163,17 +163,17 @@ int requestStopScanning()
 	return TOUCHKEY_COMMAND_LENGTH;
 }
 
-void insertBufferChunk(CircularBuffer<char>* buffer, char* intermediate_buffer,
+void insertBufferChunk(juniper::circular_buffer<char>* buffer, char* intermediate_buffer,
 		int len)
 {
 	int count = 0;
 
 	while (count > len) {
-		if (!buffer->is_full()) {
-			buffer->put(intermediate_buffer[count]);
+		if (!buffer->full()) {
+			buffer->push_back(intermediate_buffer[count]);
 
-			/* TODO: is this call to is_empty() necessary? */
-			if (!buffer->is_empty()) {
+			/* TODO: is this call to empty() necessary? */
+			if (!buffer->empty()) {
 				pthread_cond_signal(&gIsDataAvailable);
 			}
 		}
@@ -187,8 +187,8 @@ void* serialProducerThread(void* args)
 	char intermediate_bufffer[SERIAL_BUFFER_SIZE];
 	thread_args_t* thread_args = (thread_args_t*) args;
 	int ret;
-	int count;
 
+	/* TODO: change path to 'by-id' directory so port doesn't matter */
 	serialInterface.serialSetup(
 			"/dev/serial/by-path/platform-musb-hdrc.1.auto-usb-0:1:1.0");
 
@@ -209,41 +209,41 @@ void* serialProducerThread(void* args)
 	return NULL;
 }
 
-char getChar(CircularBuffer<char>* buffer)
+char getChar(juniper::circular_buffer<char>* buffer)
 {
 	pthread_mutex_lock(&gMutex);
-	while (buffer->is_empty()) {
+	while (buffer->empty()) {
 		pthread_cond_wait(&gIsDataAvailable, &gMutex);
 	}
 	pthread_mutex_unlock(&gMutex);
 
-	return buffer->get();
+	return buffer->pop_front();
 }
 
-void analogCallback(void* args)
-{
-	analog_callback_args_t* callback_args = (analog_callback_args_t*) args;
-
-	/* first index is (octave * 12) */
-	unsigned int index = callback_args->analogFrame->octave * 12;
-
-	/* update each key in the buffer */
-	for (unsigned int n = index; n < index + 12; ++n)
-	{
-
-	}
-}
-
-void addToBufferFromFrame(AnalogFrame frame) {
-	/* first index is (octave * 12) */
-	unsigned int index = frame.octave * 12;
-
-	/* TODO: update each key in the buffer */
-	for (unsigned int n = index; n < index + 12; ++n)
-	{
-//		keyBuffer[n]
-	}
-}
+//void analogCallback(void* args)
+//{
+//	analog_callback_args_t* callback_args = (analog_callback_args_t*) args;
+//
+//	/* first index is (octave * 12) */
+//	unsigned int index = callback_args->analogFrame->octave * 12;
+//
+//	/* update each key in the buffer */
+//	for (unsigned int n = index; n < index + 12; ++n)
+//	{
+//
+//	}
+//}
+//
+//void addToBufferFromFrame(AnalogFrame frame) {
+//	/* first index is (octave * 12) */
+//	unsigned int index = frame.octave * 12;
+//
+//	/* TODO: update each key in the buffer */
+//	for (unsigned int n = index; n < index + 12; ++n)
+//	{
+////		keyBuffer[n]
+//	}
+//}
 
 void* serialConsumerThread(void* args)
 {
@@ -320,15 +320,13 @@ void* controlThread(void* args)
 	signal(SIGINT, interrupt_handler);
 	signal(SIGTERM, interrupt_handler);
 
-	int ret;
-
 	/* Request status frames at first */
 	for (unsigned int n = 0; n < ITERATIONS_STATUS_LOOP; ++n) {
 		if (gShouldStop) {
 			break;
 		}
 
-		ret = requestStatusFrame();
+		requestStatusFrame();
 
 		usleep(WAIT_STATUS_LOOP_US);
 	}

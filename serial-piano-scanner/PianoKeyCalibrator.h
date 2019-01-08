@@ -27,7 +27,7 @@
 #include <iostream>
 #include <pthread.h>
 //#include <boost/circular_buffer.hpp>
-#include "CircularBuffer.h"
+#include "circular_buffer.h"
 //#include "../JuceLibraryCode/JuceHeader.h"
 #include "Types.h"
 #include "PianoTypes.h"
@@ -125,7 +125,7 @@ private:
 	int newPress_;                  // Value-in-training for press
 	
 //	boost::circular_buffer<int>* history_;  // Buffer holds history of raw values for calibrating
-	CircularBuffer<int>* history_;
+	juniper::circular_buffer<int>* history_;
 	
 	// Table of warping values to correct for sensor non-linearity
 	key_position* warpTable_;

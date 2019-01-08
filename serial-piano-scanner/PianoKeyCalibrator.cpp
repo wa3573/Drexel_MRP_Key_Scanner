@@ -77,7 +77,7 @@ key_position PianoKeyCalibrator::evaluate(int rawValue) {
 			pthread_mutex_lock(&historyMutex_);
 
 			// Add the sample to the calibration buffer, and wait until we have enough samples to do anything
-			history_->put(rawValue);
+			history_->push_back(rawValue);
 			if(history_->size() < kPianoKeyCalibrationPressLength) {
 //				historyMutex_.exit();
 				pthread_mutex_unlock(&historyMutex_);
@@ -122,7 +122,7 @@ void PianoKeyCalibrator::calibrationStart() {
     pthread_mutex_lock(&historyMutex_);
     if(history_ != 0)
         delete history_;
-    history_ = new CircularBuffer<int>(kPianoKeyCalibrationBufferSize);
+    history_ = new juniper::circular_buffer<int>(kPianoKeyCalibrationBufferSize);
 //    historyMutex_.exit();
     pthread_mutex_unlock(&historyMutex_);
     
@@ -242,7 +242,7 @@ void PianoKeyCalibrator::calibrationUpdateQuiescent() {
 //    newElement->setAttribute("press", press_);
 //
 //	return true;
-}
+//}
 
 // ***** Internal Methods *****
 
@@ -278,7 +278,7 @@ bool PianoKeyCalibrator::internalUpdateQuiescent() {
 // Get the average position of several samples in the buffer. 
 int PianoKeyCalibrator::averagePosition(int length) {
 //	boost::circular_buffer<int>::reverse_iterator rit = history_->rbegin();
-	CircularBuffer<int>::ReverseIterator rit = history_->rbegin();
+	juniper::circular_buffer<int>::reverse_iterator rit = history_->rbegin();
 	int count = 0, sum = 0;
 	
 	while(rit != history_->rend() && count < length) {

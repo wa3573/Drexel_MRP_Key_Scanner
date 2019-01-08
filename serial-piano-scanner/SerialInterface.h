@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <array>
 
-#include "CircularBuffer.h"
+#include "circular_buffer.h"
 #include "TouchkeyDevice.h"
 
 class SerialInterface {
@@ -27,14 +27,14 @@ public:
 	void set_mincount(int fd, int mcount);
 	int initSerial(const char *portname, int speed);
 
-	int serialRead(CircularBuffer<char>& buf, int timeoutMs);
+	int serialRead(juniper::circular_buffer<char>& buf, int timeoutMs);
 	int serialRead(char* buf, size_t len, int timeoutMs);
 	int serialWrite(const char* buf, size_t len);
 	void serialCleanup();
 	bool serialSetup(const char* device);
 
 private:
-	const size_t BUFFER_SIZE = 1000;
+	size_t BUFFER_SIZE = 1000;
 };
 
 #endif /* SERIALINTERFACE_H_ */

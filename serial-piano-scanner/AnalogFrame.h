@@ -14,7 +14,7 @@
 
 class AnalogFrame {
 public:
-	AnalogFrame(char* frameBuffer, int len);
+	AnalogFrame(char* frameBuffer);
 	AnalogFrame();
 	~AnalogFrame();
 

@@ -114,7 +114,7 @@ int SerialInterface::initSerial(const char *portname, int speed)
 	return 0;
 }
 
-int SerialInterface::serialRead(CircularBuffer<char>& buf, int timeoutMs)
+int SerialInterface::serialRead(juniper::circular_buffer<char>& buf, int timeoutMs)
 {
 	char intermediate_buf[1000];
 	struct pollfd pfd[1];
@@ -137,8 +137,8 @@ int SerialInterface::serialRead(CircularBuffer<char>& buf, int timeoutMs)
 
 			/* Insert contents of intermediate buffer into circular buffer as space becomes available */
 			while (count < rdlen) {
-				if (!buf.is_full()) {
-					buf.put(intermediate_buf[count]);
+				if (!buf.full()) {
+					buf.push_back(intermediate_buf[count]);
 				}
 			}
 

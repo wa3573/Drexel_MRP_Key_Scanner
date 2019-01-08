@@ -10,12 +10,11 @@
 #include <iostream>
 #include <string.h>
 
-AnalogFrame::AnalogFrame(char* frameBuffer, int len)
+AnalogFrame::AnalogFrame(char* frameBuffer)
 {
 	this->frameBuffer = frameBuffer;
 	this->parseSuccessful = false;
-	this->data = std::vector<float>();
-	this->bufferLength = len;
+	this->data = std::vector<int16_t>();
 	this->parseFrame();
 }
 
@@ -23,7 +22,7 @@ AnalogFrame::AnalogFrame()
 {
 	this->frameBuffer = frameBuffer;
 	this->parseSuccessful = false;
-	this->data = std::vector<float>();
+	this->data = std::vector<int16_t>();
 	this->timestamp = 0;
 	this->octave = 0;
 	this->bufferLength = 0;
