@@ -254,14 +254,14 @@ void* serialProducerThread(void* args)
 
 char getChar(juniper::circular_buffer<char>* buffer)
 {
-	printf("getChar(): waiting for data in the buffer\n");
+//	printf("getChar(): waiting for data in the buffer\n");
 	pthread_mutex_lock(&gThreadShared.mutexGeneral);
 	while (buffer->empty()) {
 		pthread_cond_wait(&gThreadShared.isDataAvailable,
 				&gThreadShared.mutexGeneral);
 	}
 	pthread_mutex_unlock(&gThreadShared.mutexGeneral);
-	printf("getChar(): found data in the buffer\n");
+//	printf("getChar(): found data in the buffer\n");
 
 	return buffer->pop_front();
 }
@@ -273,8 +273,8 @@ void* serialConsumerThread(void* args)
 	pthread_mutex_unlock(&gThreadShared.mutexGeneral);
 
 	thread_args_t* thread_args = (thread_args_t*) args;
-	char frame_buffer[TOUCHKEY_MAX_FRAME_LENGTH];
-	char c;
+	unsigned char frame_buffer[TOUCHKEY_MAX_FRAME_LENGTH];
+	unsigned char c;
 	int count;
 	bool frame_captured = false;
 	StatusFrame current_status_frame;
@@ -284,9 +284,9 @@ void* serialConsumerThread(void* args)
 
 	/* Main loop */
 	while (true) {
-		printf("serialConsumerThread: consuming serial data\n");
+//		printf("serialConsumerThread: consuming serial data\n");
 		c = getChar(thread_args->buf);
-		printf("serialConsumerThread: consumed '%X'\n", c);
+//		printf("serialConsumerThread: consumed '%X'\n", c);
 
 		if (c == ESCAPE_CHARACTER) {
 			printf("serialConsumerThread: got escape character \n");

@@ -11,7 +11,7 @@
 #include <memory>
 #include <bitset>
 
-StatusFrame::StatusFrame(char* frameBuffer)
+StatusFrame::StatusFrame(unsigned char* frameBuffer)
 {
 	this->frameBuffer = frameBuffer;
 	this->parseSuccessful = false;

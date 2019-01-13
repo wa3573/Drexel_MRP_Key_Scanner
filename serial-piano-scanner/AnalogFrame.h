@@ -15,7 +15,7 @@
 
 class AnalogFrame {
 public:
-	AnalogFrame(char* frameBuffer);
+	AnalogFrame(unsigned char* frameBuffer);
 	AnalogFrame();
 	~AnalogFrame();
 
@@ -26,7 +26,7 @@ private:
 
 	int bufferLength;
 	bool parseSuccessful;
-	char* frameBuffer;
+	unsigned char* frameBuffer;
 	int octave;
 	uint32_t timestamp;
 	std::vector<int16_t> data;

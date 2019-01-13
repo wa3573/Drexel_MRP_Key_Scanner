@@ -11,7 +11,7 @@
 #include <string.h>
 
 
-AnalogFrame::AnalogFrame(char* frameBuffer)
+AnalogFrame::AnalogFrame(unsigned char* frameBuffer)
 {
 	this->frameBuffer = frameBuffer;
 	this->parseSuccessful = false;
@@ -54,21 +54,19 @@ int AnalogFrame::parseFrame()
 
 	for (int key = 0; key < 25; ++key) {
 		c = frameBuffer[count];
-		if (c == kControlCharacterFrameEnd) {
-			printf("Reached end of frame, size of data: %d \n", data.size());
-			parseSuccessful = true;
-		}
 
 		if (count > TOUCHKEY_MAX_FRAME_LENGTH) {
 			printf("Maximum frame length exceeded \n");
 			parseSuccessful = false;
+			return -1;
 		}
 
         // Every analog frame contains 25 values, however only the top board actually uses all 25
         // sensors. There are several "high C" values in the lower boards (i.e. key == 24) which
         // do not correspond to real sensors. These should be ignored.
-        if(key == 24 && octave != 6)
-            continue;
+        if(key == 24 && octave != 6) {
+        	continue;
+        }
 
         // Pull the value out from the packed buffer (little endian 16 bit)
         value = (((signed char) frameBuffer[key * 2 + 6]) * 256 + frameBuffer[key * 2 + 5]);
@@ -76,31 +74,10 @@ int AnalogFrame::parseFrame()
         data.push_back(value);
         count += 2;
 	}
-//
-//
-//	while (true) {
-//		c = frame_buffer[count];
-//		if (c == kControlCharacterFrameEnd) {
-//			printf("Reached end of frame, size of data: %d \n", data.size());
-//			parse_successful = true;
-//		}
-//
-//		if (count > TOUCHKEY_MAX_FRAME_LENGTH) {
-//			printf("Maximum frame length exceeded \n");
-//			parse_successful = false;
-//		}
-//
-//		memcpy(&value, &frame_buffer[count], sizeof(value));
-//		data.push_back(-1 * ((value / 4096.f) - 1));
-//
-//		count++;
-//	}
 
-	if (parseSuccessful) {
-		return 0;
-	} else {
-		return -1;
-	}
+	this->parseSuccessful = true;
+
+	return 0;
 }
 
 
@@ -128,6 +105,8 @@ void AnalogFrame::printFrame()
 		for (auto i : this->data) {
 			printf("[%d] ", i);
 		}
+
+		printf("\n");
 	}
 
 }

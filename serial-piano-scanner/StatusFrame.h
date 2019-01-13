@@ -13,7 +13,7 @@
 
 class StatusFrame {
 public:
-	StatusFrame(char* frameBuffer);
+	StatusFrame(unsigned char* frameBuffer);
 	StatusFrame();
 	~StatusFrame();
 
@@ -24,7 +24,7 @@ public:
 private:
 	int parseFrame();
 	bool parseSuccessful;
-	char* frameBuffer;
+	unsigned char* frameBuffer;
 	int hardwareVersion;
 	int softwareVersionMajor;
 	int softwareVersionMinor;
