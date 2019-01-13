@@ -113,45 +113,45 @@ int SerialInterface::initSerial(const char *portname, int speed)
 	set_mincount(_handle, 0); /* set to pure timed read */
 	return 0;
 }
-
-int SerialInterface::serialRead(juniper::circular_buffer<char>& buf, int timeoutMs)
-{
-	char intermediate_buf[1000];
-	struct pollfd pfd[1];
-	pfd[0].fd = _handle;
-	pfd[0].events = POLLIN;
-	//printf("before poll\n");
-	int result = poll(pfd, 1, timeoutMs);
-	if (result < 0) {
-		fprintf(stderr, "Error polling for serial: %d %s\n", errno,
-				strerror(errno));
-		return errno;
-	} else if (result == 0) {
-		printf("Timeout\n");
-		return 0;
-	} else if (pfd[0].revents & POLLIN) {
-		int rdlen = read(_handle, intermediate_buf, this->BUFFER_SIZE);
-		if (rdlen > 0) {
-			printf("Serial read %d bytes \n", rdlen);
-			int count = 0;
-
-			/* Insert contents of intermediate buffer into circular buffer as space becomes available */
-			while (count < rdlen) {
-				if (!buf.full()) {
-					buf.push_back(intermediate_buf[count]);
-				}
-			}
-
-		} else if (rdlen < 0) {
-			fprintf(stderr, "Error from read: %d: %s\n", rdlen,
-					strerror(errno));
-		}
-		return rdlen;
-	} else {
-		fprintf(stderr, "unknown error while reading serial\n");
-		return -1;
-	}
-}
+//
+//int SerialInterface::serialRead(juniper::circular_buffer<char>& buf, int timeoutMs)
+//{
+//	char intermediate_buf[1000];
+//	struct pollfd pfd[1];
+//	pfd[0].fd = _handle;
+//	pfd[0].events = POLLIN;
+//	//printf("before poll\n");
+//	int result = poll(pfd, 1, timeoutMs);
+//	if (result < 0) {
+//		fprintf(stderr, "Error polling for serial: %d %s\n", errno,
+//				strerror(errno));
+//		return errno;
+//	} else if (result == 0) {
+//		printf("Timeout\n");
+//		return 0;
+//	} else if (pfd[0].revents & POLLIN) {
+//		int rdlen = read(_handle, intermediate_buf, this->BUFFER_SIZE);
+//		if (rdlen > 0) {
+//			printf("Serial read %d bytes \n", rdlen);
+//			int count = 0;
+//
+//			/* Insert contents of intermediate buffer into circular buffer as space becomes available */
+//			while (count < rdlen) {
+//				if (!buf.full()) {
+//					buf.push_back(intermediate_buf[count]);
+//				}
+//			}
+//
+//		} else if (rdlen < 0) {
+//			fprintf(stderr, "Error from read: %d: %s\n", rdlen,
+//					strerror(errno));
+//		}
+//		return rdlen;
+//	} else {
+//		fprintf(stderr, "unknown error while reading serial\n");
+//		return -1;
+//	}
+//}
 
 int SerialInterface::serialRead(char* buf, size_t len, int timeoutMs)
 {
@@ -194,7 +194,7 @@ int SerialInterface::serialRead(char* buf, size_t len, int timeoutMs)
 int SerialInterface::serialWrite(const char* buf, size_t len)
 {
 	if (0) {
-		printf("Writing %lu bytes: ", len);
+		printf("Writing %u bytes: ", len);
 		for (unsigned int n = 0; n < len; ++n)
 			printf("%d ", buf[n]);
 		printf("\n");

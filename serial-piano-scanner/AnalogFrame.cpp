@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string.h>
 
+
 AnalogFrame::AnalogFrame(char* frameBuffer)
 {
 	this->frameBuffer = frameBuffer;
@@ -102,6 +103,7 @@ int AnalogFrame::parseFrame()
 	}
 }
 
+
 void AnalogFrame::printFrame()
 {
 	printf("== Analog Frame ==\n");
@@ -112,7 +114,7 @@ void AnalogFrame::printFrame()
 		printf("Values: \n");
 
 		for (auto i : this->data) {
-			printf("[%.3f] ", i);
+			printf("[%d] ", i);
 		}
 
 		printf("\n");
@@ -124,7 +126,7 @@ void AnalogFrame::printFrame()
 		printf("Values: \n");
 
 		for (auto i : this->data) {
-			printf("[%.3f] ", i);
+			printf("[%d] ", i);
 		}
 	}
 

@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <iostream>
 
+
 namespace juniper {
 
 template<class T>
@@ -25,7 +26,6 @@ public:
 		typedef circular_buffer<T> container_type;
 		typedef T contained_type;
 		typedef iterator self_type;
-		typedef size_t size_type;
 
 		iterator(container_type* buf, size_t start_pos) :
 				buf_(buf), pos_(start_pos)
@@ -181,7 +181,6 @@ public:
 		typedef T contained_type;
 		typedef reverse_iterator self_type;
 		typedef ptrdiff_t difference_type;
-		typedef size_t size_type;
 
 		reverse_iterator(container_type* buf, size_t start_pos) :
 				buf_(buf), pos_(start_pos)
@@ -256,8 +255,6 @@ public:
 
 //	typedef std::reverse_iterator<iterator> reverse_iterator;
 //	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-
-	typedef size_t size_type;
 
 	explicit circular_buffer(std::size_t size) :
 			array_(std::unique_ptr<T[]>(new T[size])), array_size_(size), head_(
@@ -411,7 +408,7 @@ inline void circular_buffer<T>::clear()
 template<class T>
 inline bool circular_buffer<T>::empty() const
 {
-	return (!is_full_ && (head_ == tail_));
+	return (contents_size_ == 0);
 }
 
 template<class T>

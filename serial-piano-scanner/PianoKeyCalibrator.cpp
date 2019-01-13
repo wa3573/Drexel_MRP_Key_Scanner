@@ -43,7 +43,6 @@ key_position PianoKeyCalibrator::evaluate(int rawValue) {
 //    ScopedLock sl(calibrationMutex_);
     pthread_mutex_lock(&calibrationMutex_);
 	
-
 	switch(status_) {
 		case kPianoKeyCalibrated:
 			if(missing_value<int>::isMissing(quiescent_) ||

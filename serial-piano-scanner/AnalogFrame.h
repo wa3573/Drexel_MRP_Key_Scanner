@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <cstdint>
+
 #include "TouchkeyDevice.h"
 
 class AnalogFrame {

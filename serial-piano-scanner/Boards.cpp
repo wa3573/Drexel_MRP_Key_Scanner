@@ -59,7 +59,6 @@ void BoardsTopology::setBoard(unsigned int boardPosition, unsigned int firstActi
 	if(size < requiredSize){
 		indexes.resize(requiredSize);
 	}
-	unsigned int first = boardPosition * numIndexesPerBoard;
 	indexes[boardPosition * numIndexesPerBoard] = firstActiveKey;
 	indexes[boardPosition * numIndexesPerBoard + 1] = lastActiveKey;
 	updateBoards();

@@ -22,76 +22,17 @@
 */
 
 #include "KeyPositionTracker.h"
-#include <iostream>
-extern "C" int rt_printf(const char *format, ...);
-int gPrint = 1;
 
-bool KeyBuffers::setup(unsigned int numKeys, unsigned int bufferLength)
-{
-	if(numKeys == 0 || bufferLength == 0)
-		return false;
-	positionBuffer.resize(numKeys);
-	timestamps.resize(numKeys);
-	for(auto &p : positionBuffer)
-		p.resize(bufferLength);
-	for(auto &p : timestamps)
-		p.resize(bufferLength);
-	return true;
-}
 
-void KeyBuffers::postCallback(void* arg, float* buffer, unsigned int length)
-{
-	KeyBuffers* that = (KeyBuffers*)arg;
-	that->postCallback(buffer, length);
-}
-
-void KeyBuffers::postCallback(float* buffer, unsigned int length)
-{
-	static timestamp_type ts = 0;
-	for(unsigned int n = 0; n < std::min((unsigned int)positionBuffer.size(), length); ++n)
-	{
-		positionBuffer[n][writeIdx] = 1.f - buffer[n];
-		//positionBuffer[n][writeIdx] = ((int)ts % 1000)/1000.f;
-		/*
-TODO: fix this instead of using static ts
-		if(full)
-			ts = firstSampleIndex + positionBuffer[0].size();
-		else
-			ts = writeIdx;
-			*/
-		timestamps[n][writeIdx] = ts;
-	}
-	++ts;
-	++writeIdx;
-	if(writeIdx >= (signed)positionBuffer[0].size())
-	{
-		writeIdx = 0;
-		full = true;
-	}
-	if(full)
-	{
-		++firstSampleIndex;
-	}
-}
-
-const std::array<std::string, KeyPositionTrackerNotification::kNotificationTypeNewMaximum + 1> KeyPositionTrackerNotification::desc = {{
-	"none",
-        "kNotificationTypeStateChange",
-        "kNotificationTypeFeatureAvailableVelocity",
-        "kNotificationTypeFeatureAvailableReleaseVelocity",
-        "kNotificationTypeFeatureAvailablePercussiveness",
-        "kNotificationTypeNewMinimum",
-        "kNotificationTypeNewMaximum",
-}};
 // Default constructor
-KeyPositionTracker::KeyPositionTracker(capacity_type capacity, /*Node<key_position>&*/ KeyBuffer& keyBuffer)
-: /*Node<KeyPositionTrackerNotification>(capacity),*/ keyBuffer_(keyBuffer), engaged_(false) {
+KeyPositionTracker::KeyPositionTracker(capacity_type capacity, juniper::Node<key_position>& keyBuffer)
+: juniper::Node<KeyPositionTrackerNotification>(capacity), keyBuffer_(keyBuffer), engaged_(false) {
     reset();
 }
 
 // Copy constructor
 /*KeyPositionTracker::KeyPositionTracker(KeyPositionTracker const& obj)
-: Node<int>(obj), keyBuffer_(obj.keyBuffer_), engaged_(obj.engaged_) {
+: juniper::circular_buffer<int>(obj), keyBuffer_(obj.keyBuffer_), engaged_(obj.engaged_) {
     if(engaged_)
         registerForTrigger(&keyBuffer_);
 }*/
@@ -276,28 +217,28 @@ KeyPositionTracker::PercussivenessFeatures KeyPositionTracker::pressPercussivene
     return features;
 }
 
-// Register to receive messages from the key buffer on each new sample
-void KeyPositionTracker::engage() {
-    if(engaged_)
-        return;
-
-    registerForTrigger(&keyBuffer_);
-    engaged_ = true;
-}
-
-// Unregister from receiving message on new samples
-void KeyPositionTracker::disengage() {
-    if(!engaged_)
-        return;
-    
-    unregisterForTrigger(&keyBuffer_);
-    engaged_ = false;
-}
+/* TODO: engage() and disengage() */
+//// Register to receive messages from the key buffer on each new sample
+//void KeyPositionTracker::engage() {
+//    if(engaged_)
+//        return;
+//
+//    registerForTrigger(&keyBuffer_);
+//    engaged_ = true;
+//}
+//
+//// Unregister from receiving message on new samples
+//void KeyPositionTracker::disengage() {
+//    if(!engaged_)
+//        return;
+//
+//    unregisterForTrigger(&keyBuffer_);
+//    engaged_ = false;
+//}
 
 // Clear current state and reset to unknown state
 void KeyPositionTracker::reset() {
-	//Node<KeyPositionTrackerNotification>::clear();
-	empty_ = true; // kind of equivalent to clear() above if we are not a circular buffer. This should be unset by "insert"
+	juniper::Node<KeyPositionTrackerNotification>::clear();
     
     currentState_ = kPositionTrackerStateUnknown;
     currentlyAvailableFeatures_ = KeyPositionTrackerNotification::kFeaturesNone;
@@ -316,12 +257,10 @@ void KeyPositionTracker::reset() {
 }
 
 // Evaluator function. Update the current state
-void KeyPositionTracker::triggerReceived(/*TriggerSource* who,*/ timestamp_type timestamp) {
+void KeyPositionTracker::triggerReceived(/*TriggerSource* who, */ timestamp_type timestamp) {
 
-	if(kPositionTrackerStateReleaseFinished == currentState_)
-		reset(); // as if we just created this object
-	//if(who != &keyBuffer_)
-		//return;
+//	if(who != &keyBuffer_)
+//		return;
     
     // Always start in the partial press state after a reset, retroactively locating
     // the start position for this key press
@@ -757,14 +696,4 @@ void KeyPositionTracker::prepareReleaseVelocityFeature(KeyPositionTracker::key_b
         releaseVelocityAvailableIndex_ = index + kPositionTrackerSamplesNeededForReleaseVelocityAfterEscapement + 1;
         releaseVelocityWaitingForThresholdCross_ = false;
     }
-}
-void KeyPositionTracker::insert(KeyPositionTrackerNotification notification, timestamp_type timestamp)
-{
-	empty_ = false;
-    //std::cout << "---Notification: " << KeyPositionTrackerNotification::desc[notification.type] << ", state: " << statesDesc[notification.state] << " at " << timestamp;
-    if(notification.type == KeyPositionTrackerNotification::kNotificationTypeFeatureAvailableVelocity)
-	    printf("%.5f\n", pressVelocity().second);
-    //else
-	    //std::cout << "\n";
-    latestTimestamp_ = timestamp;
 }
