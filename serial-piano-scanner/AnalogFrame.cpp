@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string.h>
 
+#define TOUCHKEY_MAX_FRAME_LENGTH 256
 
 AnalogFrame::AnalogFrame(unsigned char* frameBuffer)
 {

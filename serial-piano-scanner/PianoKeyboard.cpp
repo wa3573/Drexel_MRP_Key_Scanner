@@ -190,19 +190,19 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 // formats.
 void PianoKeyboard::setKeyLEDColorRGB(const int note, const float red, const float green, const float blue) {
     if(touchkeyDevice_ != 0) {
-        rgbledSetColor(note, red, green, blue);
+    	touchkeyDevice_->rgbledSetColor(note, red, green, blue);
     }
 }
 
 void PianoKeyboard::setKeyLEDColorHSV(const int note, const float hue, const float saturation, const float value) {
     if(touchkeyDevice_ != 0) {
-        rgbledSetColorHSV(note, hue, saturation, value);
+    	touchkeyDevice_->rgbledSetColorHSV(note, hue, saturation, value);
     }
 }
 
 void PianoKeyboard::setAllKeyLEDsOff() {
     if(touchkeyDevice_ != 0) {
-        rgbledAllOff();
+    	touchkeyDevice_->rgbledAllOff();
     }
 }
 

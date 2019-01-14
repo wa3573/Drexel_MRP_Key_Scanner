@@ -23,6 +23,8 @@
 #include <iomanip>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <chrono>
 #include "TouchkeyDevice.h"
 
 const char* kKeyNames[13] = {"C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ", "G#", "A ", "A#", "B ", "c "};
@@ -31,22 +33,15 @@ const char* kKeyNames[13] = {"C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ", "G#
 
 TouchkeyDevice::TouchkeyDevice(PianoKeyboard& keyboard)
 : keyboard_(keyboard),
-#ifdef _MSC_VER
-serialHandle_(INVALID_HANDLE_VALUE),
-#else
 device_(-1),
-#endif
-ioThread_(boost::bind(&TouchkeyDevice::runLoop, this, _1), "TouchKeyDevice::ioThread"),
-rawDataThread_(boost::bind(&TouchkeyDevice::rawDataRunLoop, this, _1), "TouchKeyDevice::rawDataThread"),
 autoGathering_(false), shouldStop_(false), sendRawOscMessages_(false),
 verbose_(0), numOctaves_(0), lowestMidiNote_(48), lowestKeyPresentMidiNote_(48),
 updatedLowestMidiNote_(48), lowestNotePerOctave_(0),
 deviceSoftwareVersion_(-1), deviceHardwareVersion_(-1),
 expectedLengthWhite_(kTransmissionLengthWhiteNewHardware),
 expectedLengthBlack_(kTransmissionLengthBlackNewHardware), deviceHasRGBLEDs_(false),
-ledThread_(boost::bind(&TouchkeyDevice::ledUpdateLoop, this, _1), "TouchKeyDevice::ledThread"),
 isCalibrated_(false), calibrationInProgress_(false),
-keyCalibrators_(0), keyCalibratorsLength_(0), sensorDisplay_(0)
+keyCalibrators_(0), keyCalibratorsLength_(0)
 {
     // Tell the piano keyboard class how to call us back
     keyboard_.setTouchkeyDevice(this);
@@ -54,9 +49,9 @@ keyCalibrators_(0), keyCalibratorsLength_(0), sensorDisplay_(0)
 	// Initialize the frame -> timestamp synchronization.  Frame interval is nominally 1ms,
 	// but this class helps us find the actual rate which might drift slightly, and it keeps
 	// the time stamps of each data point in sync with other streams.
-	timestampSynchronizer_.initialize(Time::getMillisecondCounterHiRes(), keyboard_.schedulerCurrentTimestamp());
-	timestampSynchronizer_.setNominalSampleInterval(.001);
-	timestampSynchronizer_.setFrameModulus(65536);
+//	timestampSynchronizer_.initialize(Time::getMillisecondCounterHiRes(), keyboard_.schedulerCurrentTimestamp());
+//	timestampSynchronizer_.setNominalSampleInterval(.001);
+//	timestampSynchronizer_.setFrameModulus(65536);
 
     for(int i = 0; i < 4; i++)
         analogLastFrame_[i] = 0;
@@ -68,7 +63,7 @@ keyCalibrators_(0), keyCalibratorsLength_(0), sensorDisplay_(0)
 // Set the LED color for the given MIDI note (if RGB LEDs are present). This method
 // does not directly communicate with the device, but it schedules an update to take
 // place in the relevant thread.
-void rgbledSetColor(const int midiNote, const float red, const float green, const float blue) {
+void TouchkeyDevice::rgbledSetColor(const int midiNote, const float red, const float green, const float blue) {
     RGBLEDUpdate updateStructure;
     
     updateStructure.allLedsOff = false;
@@ -312,10 +307,10 @@ void TouchkeyDevice::calibrationFinish() {
         // Check if calibration was successful
 		if(keyCalibrators_[i]->calibrationFinish()) {
             calibratedAtLeastOneKey = true;
-            // Update the display if available
-            if(keyboard_.gui() != 0) {
-                keyboard_.gui()->setAnalogCalibrationStatusForKey(i + lowestMidiNote_, true);
-            }
+//            // Update the display if available
+//            if(keyboard_.gui() != 0) {
+//                keyboard_.gui()->setAnalogCalibrationStatusForKey(i + lowestMidiNote_, true);
+//            }
         }
     }
 
@@ -335,127 +330,129 @@ void TouchkeyDevice::calibrationAbort() {
 void TouchkeyDevice::calibrationClear() {
 	for(int i = 0; i < keyCalibratorsLength_; i++) {
 		keyCalibrators_[i]->calibrationClear();
-        if(keyboard_.gui() != 0) {
-            keyboard_.gui()->setAnalogCalibrationStatusForKey(i + lowestMidiNote_, false);
-        }
+//        if(keyboard_.gui() != 0) {
+//            keyboard_.gui()->setAnalogCalibrationStatusForKey(i + lowestMidiNote_, false);
+//        }
     }
 
 	calibrationInProgress_ = false;
 	isCalibrated_ = false;
 }
 
+// TODO: calibrationSaveToFile()
 // Save calibration data to a file
-bool TouchkeyDevice::calibrationSaveToFile(std::string const& filename) {
-	int i;
+//bool TouchkeyDevice::calibrationSaveToFile(std::string const& filename) {
+//	int i;
+//
+//	if(!isCalibrated()) {
+//		std::cerr << "TouchKeys not calibrated, so can't save calibration data.\n";
+//		return false;
+//	}
+//
+//	// Create an XML structure and save it to file.
+//	try {
+//		XmlElement baseElement("TouchkeyDeviceCalibration");
+//		bool savedValidData = false;
+//
+//		for(i = 0; i < keyCalibratorsLength_; i++) {
+//            XmlElement *calibrationElement = baseElement.createNewChildElement("Key");
+//            if(calibrationElement == 0)
+//                continue;
+//
+//			calibrationElement->setAttribute("id", i);
+//
+//			// Tell each individual calibrator to add its data to the XML tree
+//			if(keyCalibrators_[i]->saveToXml(*calibrationElement)) {
+//				savedValidData = true;
+//			}
+//		}
+//
+//		if(!savedValidData) {
+//			std::cerr << "TouchkeyDevice: unable to find valid calibration data to save.\n";
+//			throw 1;
+//		}
+//
+//		// Now save the generated tree to a file
+//
+//		if(!baseElement.writeToFile(File(filename.c_str()), "")) {
+//			std::cerr << "TouchkeyDevice: could not write calibration file " << filename << "\n";
+//			throw 1;
+//		}
+//
+//		//lastCalibrationFile_ = filename;
+//	}
+//	catch(...) {
+//		return false;
+//	}
+//
+//	return true;
+//}
 
-	if(!isCalibrated()) {
-		std::cerr << "TouchKeys not calibrated, so can't save calibration data.\n";
-		return false;
-	}
-
-	// Create an XML structure and save it to file.
-	try {
-		XmlElement baseElement("TouchkeyDeviceCalibration");
-		bool savedValidData = false;
-
-		for(i = 0; i < keyCalibratorsLength_; i++) {
-            XmlElement *calibrationElement = baseElement.createNewChildElement("Key");
-            if(calibrationElement == 0)
-                continue;
-
-			calibrationElement->setAttribute("id", i);
-
-			// Tell each individual calibrator to add its data to the XML tree
-			if(keyCalibrators_[i]->saveToXml(*calibrationElement)) {
-				savedValidData = true;
-			}
-		}
-
-		if(!savedValidData) {
-			std::cerr << "TouchkeyDevice: unable to find valid calibration data to save.\n";
-			throw 1;
-		}
-
-		// Now save the generated tree to a file
-
-		if(!baseElement.writeToFile(File(filename.c_str()), "")) {
-			std::cerr << "TouchkeyDevice: could not write calibration file " << filename << "\n";
-			throw 1;
-		}
-
-		//lastCalibrationFile_ = filename;
-	}
-	catch(...) {
-		return false;
-	}
-
-	return true;
-}
-
+// TODO: calibrationLoadFromFile()
 // Load calibration from a file
-bool TouchkeyDevice::calibrationLoadFromFile(std::string const& filename) {
-	//int i, j;
-
-	calibrationClear();
-
-	// Open the file and read the new values
-	try {
-        XmlDocument doc(File(filename.c_str()));
-		XmlElement *baseElement = doc.getDocumentElement();
-        XmlElement *deviceCalibrationElement, *calibratorElement;
-
-		if(baseElement == 0) {
-			std::cerr << "TouchkeyDevice: unable to load patch table file: \"" << filename << "\". Error was:\n";
-			std::cerr << doc.getLastParseError() << std::endl;
-			throw 1;
-		}
-
-		// All calibration data is encapsulated within the root element <PianoBarCalibration>
-		deviceCalibrationElement = baseElement->getChildByName("TouchkeyDeviceCalibration");
-		if(deviceCalibrationElement == 0) {
-			std::cerr << "TouchkeyDevice: malformed calibration file, aborting.\n";
-            delete baseElement;
-			throw 1;
-		}
-
-		// Go through and find each key's calibration information
-		calibratorElement = deviceCalibrationElement->getChildByName("Key");
-		if(calibratorElement == 0) {
-			std::cerr << "TouchkeyDevice: warning: no keys found\n";
-		}
-		else {
-			while(calibratorElement != 0) {
-				int keyId;
-
-                if(calibratorElement->hasAttribute("id")) {
-                    keyId = calibratorElement->getIntAttribute("id");
-					if(keyId >= 0 && keyId < keyCalibratorsLength_)
-						keyCalibrators_[keyId]->loadFromXml(*calibratorElement);
-                }
-
-				calibratorElement = calibratorElement->getNextElementWithTagName("Key");
-			}
-		}
-
-        calibrationInProgress_ = false;
-        isCalibrated_ = true;
-        if(keyboard_.gui() != 0) {
-            for(int i = lowestMidiNote_; i <  lowestMidiNote_ + 12*numOctaves_; i++) {
-                keyboard_.gui()->setAnalogCalibrationStatusForKey(i, true);
-            }
-        }
-		//lastCalibrationFile_ = filename;
-
-        delete baseElement;
-	}
-	catch(...) {
-		return false;
-	}
-
-	// TODO: reset key states?
-
-	return true;
-}
+//bool TouchkeyDevice::calibrationLoadFromFile(std::string const& filename) {
+//	//int i, j;
+//
+//	calibrationClear();
+//
+//	// Open the file and read the new values
+//	try {
+//        XmlDocument doc(File(filename.c_str()));
+//		XmlElement *baseElement = doc.getDocumentElement();
+//        XmlElement *deviceCalibrationElement, *calibratorElement;
+//
+//		if(baseElement == 0) {
+//			std::cerr << "TouchkeyDevice: unable to load patch table file: \"" << filename << "\". Error was:\n";
+//			std::cerr << doc.getLastParseError() << std::endl;
+//			throw 1;
+//		}
+//
+//		// All calibration data is encapsulated within the root element <PianoBarCalibration>
+//		deviceCalibrationElement = baseElement->getChildByName("TouchkeyDeviceCalibration");
+//		if(deviceCalibrationElement == 0) {
+//			std::cerr << "TouchkeyDevice: malformed calibration file, aborting.\n";
+//            delete baseElement;
+//			throw 1;
+//		}
+//
+//		// Go through and find each key's calibration information
+//		calibratorElement = deviceCalibrationElement->getChildByName("Key");
+//		if(calibratorElement == 0) {
+//			std::cerr << "TouchkeyDevice: warning: no keys found\n";
+//		}
+//		else {
+//			while(calibratorElement != 0) {
+//				int keyId;
+//
+//                if(calibratorElement->hasAttribute("id")) {
+//                    keyId = calibratorElement->getIntAttribute("id");
+//					if(keyId >= 0 && keyId < keyCalibratorsLength_)
+//						keyCalibrators_[keyId]->loadFromXml(*calibratorElement);
+//                }
+//
+//				calibratorElement = calibratorElement->getNextElementWithTagName("Key");
+//			}
+//		}
+//
+//        calibrationInProgress_ = false;
+//        isCalibrated_ = true;
+//        if(keyboard_.gui() != 0) {
+//            for(int i = lowestMidiNote_; i <  lowestMidiNote_ + 12*numOctaves_; i++) {
+//                keyboard_.gui()->setAnalogCalibrationStatusForKey(i, true);
+//            }
+//        }
+//		//lastCalibrationFile_ = filename;
+//
+//        delete baseElement;
+//	}
+//	catch(...) {
+//		return false;
+//	}
+//
+//	// TODO: reset key states?
+//
+//	return true;
+//}
 
 // Initialize the calibrators
 void TouchkeyDevice::calibrationInit(int numberOfCalibrators) {
@@ -527,13 +524,28 @@ int TouchkeyDevice::octaveKeyToMidi(int octave, int key) {
     return midi;
 }
 
+struct ledThreadArgs_t {
+	bool threadShouldExit = false;
+};
+
+struct runLoopThreadArgs_t {
+	bool threadShouldExit = false;
+};
+
+struct rawDataThreadArgs_t {
+	bool threadShouldExit = false;
+};
+
 // Loop for sending LED updates to the device, which must happen
 // in a separate thread from data collection so the device's capacity
 // to process incoming data doesn't gate its transmission of sensor data
-void TouchkeyDevice::ledUpdateLoop(DeviceThread *thread) {
+//void TouchkeyDevice::ledUpdateLoop(DeviceThread *thread) {
+void TouchkeyDevice::ledUpdateLoop(void* thread_args) {
+
+	ledThreadArgs_t* thread = (ledThreadArgs_t*) thread_args;
 
     // Run until told to stop, looking for updates to send to the board
-    while(!shouldStop_ && !ledShouldStop_ && !thread->threadShouldExit()) {
+    while(!shouldStop_ && !ledShouldStop_ && !thread->threadShouldExit) {
         while(!ledUpdateQueue_.empty()) {
             // Get the update
             RGBLEDUpdate& updateStructure = ledUpdateQueue_.back();
@@ -554,12 +566,14 @@ void TouchkeyDevice::ledUpdateLoop(DeviceThread *thread) {
             ledUpdateQueue_.pop_back();
         }
 
-        Thread::sleep(20);
+        usleep(20);
     }
 }
 
 // Main run loop, which runs in its own thread
-void TouchkeyDevice::runLoop(DeviceThread *thread) {
+void TouchkeyDevice::runLoop(void* thread_args) {
+	runLoopThreadArgs_t* thread = (runLoopThreadArgs_t*) thread_args;
+
 	unsigned char buffer[1024];							// Raw data from device
 	unsigned char frame[TOUCHKEY_MAX_FRAME_LENGTH];		// Accumulated frame of data
 	int frameLength;
@@ -594,11 +608,7 @@ void TouchkeyDevice::runLoop(DeviceThread *thread) {
  		long count = deviceRead((char *)buffer, 1024);
 
 		if(count == 0) {
-#ifdef _MSC_VER
-            Thread::sleep(1);
-#else
 			usleep(500);
-#endif
 			continue;
 		}
 		if(count < 0) {
@@ -609,11 +619,7 @@ void TouchkeyDevice::runLoop(DeviceThread *thread) {
 				//shouldStop_ = true;
 			}
 
-#ifdef _MSC_VER
-			Thread::sleep(1);
-#else
 			usleep(500);
-#endif
 			continue;
 		}
 
@@ -688,7 +694,9 @@ void TouchkeyDevice::runLoop(DeviceThread *thread) {
 
 // Main run loop for gathering raw data from a particular key, used for debugging
 // and testing purposes
-void TouchkeyDevice::rawDataRunLoop(DeviceThread *thread) {
+void TouchkeyDevice::rawDataRunLoop(void* thread_args) {
+	ledThreadArgs_t* thread = (ledThreadArgs_t*) thread_args;
+
 	unsigned char buffer[1024];							// Raw data from device
 	unsigned char frame[TOUCHKEY_MAX_FRAME_LENGTH];		// Accumulated frame of data
 	int frameLength;
@@ -700,7 +708,9 @@ void TouchkeyDevice::rawDataRunLoop(DeviceThread *thread) {
         ESCAPE_CHARACTER, kControlCharacterFrameEnd};
 
     //struct timeval currentTime;
-    double currentTime = 0, lastTime = 0;
+//    double currentTime = 0, lastTime = 0;
+    std::chrono::milliseconds currentTime = 0;
+    std::chrono::milliseconds lastTime = 0;
     //unsigned long long currentTicks = 0, lastTicks = 0;
 
 	// Continuously read from the input device.  Read as much data as is available, up to
@@ -709,7 +719,8 @@ void TouchkeyDevice::rawDataRunLoop(DeviceThread *thread) {
 
 	while(!shouldStop_ && !thread->threadShouldExit()) {
         // Every 100ms, request raw data from the active key
-        currentTime = Time::getMillisecondCounterHiRes();
+//        currentTime = Time::getMillisecondCounterHiRes();
+		currentTime = std::chrono::high_resolution_clock::now();
 
         if(currentTime - lastTime > 50.0) {
             lastTime = currentTime;
@@ -732,11 +743,7 @@ void TouchkeyDevice::rawDataRunLoop(DeviceThread *thread) {
  		long count = deviceRead((char *)buffer, 1024);
 
 		if(count == 0) {
-#ifdef _MSC_VER
-			Thread::sleep(1);
-#else
 			usleep(500);
-#endif
 			continue;
 		}
 		if(count < 0) {
@@ -747,11 +754,7 @@ void TouchkeyDevice::rawDataRunLoop(DeviceThread *thread) {
 				//shouldStop_ = true;
 			}
 
-#ifdef _MSC_VER
-			Thread::sleep(1);
-#else
 			usleep(500);
-#endif
 			continue;
 		}
 
@@ -904,7 +907,7 @@ void TouchkeyDevice::processCentroidFrame(unsigned char * const buffer, const in
 
 	// Convert from device frame number (expressed in USB 1ms SOF intervals) to a system
 	// timestamp that can be synchronized with other data streams
-	lastTimestamp_ = timestampSynchronizer_.synchronizedTimestamp(frame);
+//	lastTimestamp_ = timestampSynchronizer_.synchronizedTimestamp(frame);
 
 	//ioMutex_.enter();
 
@@ -1120,7 +1123,8 @@ int TouchkeyDevice::processKeyCentroid(int frame, int octave, int key, timestamp
 	}
 
     // From here on out, grab the performance data mutex so no MIDI events can show up in the middle
-    ScopedLock ksl(keyboard_.performanceDataMutex_);
+	pthread_mutex_lock(&keyboard_.performanceDataMutex_);
+//    ScopedLock ksl(keyboard_.performanceDataMutex_);
 
 	// Turn off touch activity on this key if there's no active touches
 	if(touchCount == 0) {
@@ -1154,6 +1158,7 @@ int TouchkeyDevice::processKeyCentroid(int frame, int octave, int key, timestamp
 
         }
 
+		pthread_mutex_unlock(&keyboard_.performanceDataMutex_);
         return bytesParsed;
 	}
 
@@ -1284,18 +1289,18 @@ void TouchkeyDevice::processAnalogFrame(unsigned char * const buffer, const int 
                 timestamp_type timestamp = timestampSynchronizer_.synchronizedTimestamp(frame);
                 keyboard_.key(midiNote)->insertSample(calibratedPosition, timestamp);
             }
-            else if(keyboard_.gui() != 0){
-
-                //keyboard_.key(midiNote)->insertSample((float)value / 4096.0, timestampSynchronizer_.synchronizedTimestamp(frame));
-
-                // Update the GUI but don't actually save the value since it's uncalibrated
-                keyboard_.gui()->setAnalogValueForKey(midiNote, (float)value / kTouchkeyAnalogValueMax);
-
-                if(keyCalibrators_[octave*12 + key]->calibrationStatus() == kPianoKeyCalibrated) {
-                    if(verbose_ >= 1)
-                        cout << "key " << midiNote << " calibrated but missing (raw value " << value << ")\n";
-                }
-            }
+//            else if(keyboard_.gui() != 0){
+//
+//                //keyboard_.key(midiNote)->insertSample((float)value / 4096.0, timestampSynchronizer_.synchronizedTimestamp(frame));
+//
+//                // Update the GUI but don't actually save the value since it's uncalibrated
+//                keyboard_.gui()->setAnalogValueForKey(midiNote, (float)value / kTouchkeyAnalogValueMax);
+//
+//                if(keyCalibrators_[octave*12 + key]->calibrationStatus() == kPianoKeyCalibrated) {
+//                    if(verbose_ >= 1)
+//                        cout << "key " << midiNote << " calibrated but missing (raw value " << value << ")\n";
+//                }
+//            }
         }
 
         if(loggingActive_) {
@@ -1308,36 +1313,37 @@ void TouchkeyDevice::processAnalogFrame(unsigned char * const buffer, const int 
     }
 }
 
+// TODO: processErrorMessageFrame()
 // Process a frame containing a human-readable (and machine-coded) error message generated
 // internally by the device
-void TouchkeyDevice::processErrorMessageFrame(unsigned char * const buffer, const int bufferLength) {
-    char msg[256];
-    int len = bufferLength - 5;
-
-    // Error on error message frame!
-    if(bufferLength < 5) {
-        if(verbose_ >= 1)
-            cout << "Warning: received error message frame of " << bufferLength << " bytes, less than minimum 5\n";
-        return;
-    }
-
-    // Limit length of string for safety reasons
-    if(len > 256)
-        len = 256;
-    memcpy(msg, &buffer[5], len * sizeof(char));
-    msg[len - 1] = '\0';
-
-    // Print the error
-    if(verbose_ >= 1)
-        cout << "Error frame received: " << msg << endl;
-
-    // Dump the buffer containing error coding information
-    if(verbose_ >= 2) {
-        cout << "Contents: ";
-        hexDump(cout, buffer, 5);
-        cout << endl;
-    }
-}
+//void TouchkeyDevice::processErrorMessageFrame(unsigned char * const buffer, const int bufferLength) {
+//    char msg[256];
+//    int len = bufferLength - 5;
+//
+//    // Error on error message frame!
+//    if(bufferLength < 5) {
+//        if(verbose_ >= 1)
+//            cout << "Warning: received error message frame of " << bufferLength << " bytes, less than minimum 5\n";
+//        return;
+//    }
+//
+//    // Limit length of string for safety reasons
+//    if(len > 256)
+//        len = 256;
+//    memcpy(msg, &buffer[5], len * sizeof(char));
+//    msg[len - 1] = '\0';
+//
+//    // Print the error
+//    if(verbose_ >= 1)
+//        cout << "Error frame received: " << msg << endl;
+//
+//    // Dump the buffer containing error coding information
+//    if(verbose_ >= 2) {
+//        cout << "Contents: ";
+//        hexDump(cout, buffer, 5);
+//        cout << endl;
+//    }
+//}
 
 // Process a frame containing a response to an I2C command. We can use this to gather
 // raw information from the key.
@@ -1378,15 +1384,15 @@ void TouchkeyDevice::processI2CResponseFrame(unsigned char * const buffer, const
         }
     }
 
-    if(sensorDisplay_ != 0) {
-        // Copy response data to display
-        vector<int> data;
-
-        for(int i = 3; i < responseLength + 3; i++) {
-            data.push_back(buffer[i]);
-        }
-        sensorDisplay_->setDisplayData(data);
-    }
+//    if(sensorDisplay_ != 0) {
+//        // Copy response data to display
+//        vector<int> data;
+//
+//        for(int i = 3; i < responseLength + 3; i++) {
+//            data.push_back(buffer[i]);
+//        }
+//        sensorDisplay_->setDisplayData(data);
+//    }
 
     // Change the first byte to contain the note number this data is expected to have come
     // from (based on which key we are presently querying)
@@ -1453,7 +1459,7 @@ bool TouchkeyDevice::processStatusFrame(unsigned char * buffer, int maxLength, T
 
 // Prepare the indicated key for raw data collection
 void TouchkeyDevice::rawDataPrepareCollection(int octave, int key, int mode, int scaler) {
-    Thread::sleep(10);
+    usleep(10);
 
     // Command to set the mode of the key
     unsigned char commandSetMode[] = {ESCAPE_CHARACTER, kControlCharacterFrameBegin,
@@ -1466,7 +1472,7 @@ void TouchkeyDevice::rawDataPrepareCollection(int octave, int key, int mode, int
             cout << "ERROR: unable to write setMode command.  errno = " << errno << endl;
 	}
 
-    Thread::sleep(10);
+    usleep(10);
 
     // Command to set the scaler of the key
     unsigned char commandSetScaler[] = {ESCAPE_CHARACTER, kControlCharacterFrameBegin,
@@ -1479,7 +1485,7 @@ void TouchkeyDevice::rawDataPrepareCollection(int octave, int key, int mode, int
             cout << "ERROR: unable to write setMode command.  errno = " << errno << endl;
 	}
 
-    Thread::sleep(10);
+    usleep(10);
 
     unsigned char commandPrepareRead[] = {ESCAPE_CHARACTER, kControlCharacterFrameBegin,
         kFrameTypeSendI2CCommand, (unsigned char)octave, (unsigned char)key,
@@ -1491,7 +1497,7 @@ void TouchkeyDevice::rawDataPrepareCollection(int octave, int key, int mode, int
             cout << "ERROR: unable to write prepareRead command.  errno = " << errno << endl;
 	}
 
-   Thread::sleep(10);
+   usleep(10);
 
     rawDataShouldChangeMode_ = false;
 }
@@ -1505,13 +1511,14 @@ bool TouchkeyDevice::checkForAck(int timeoutMilliseconds) {
 	bool controlSeq = false;
 	unsigned char ch;
 
-    double startTime = Time::getMillisecondCounterHiRes();
-    double currentTime = startTime;
+	std::chrono::milliseconds startTime = std::chrono::high_resolution_clock::now();
+//    double startTime = Time::getMillisecondCounterHiRes();
+	std::chrono::milliseconds currentTime = startTime;
 
 	//gettimeofday(&startTime, 0);
 	//gettimeofday(&currentTime, 0);
 
-	while(currentTime - startTime < (double)timeoutMilliseconds) {
+	while(currentTime - startTime < (std::chrono::milliseconds)timeoutMilliseconds) {
 		long count = deviceRead((char *)&ch, 1);
 
 		if(count < 0) {				// Check if an error occurred on read
@@ -1540,7 +1547,7 @@ bool TouchkeyDevice::checkForAck(int timeoutMilliseconds) {
 				controlSeq = true;
 		}
 
-		currentTime = Time::getMillisecondCounterHiRes();
+		currentTime = std::chrono::high_resolution_clock::now();
 	}
 
     if(verbose_ >= 1)
@@ -1561,51 +1568,36 @@ void TouchkeyDevice::hexDump(ostream& str, unsigned char * buffer, int length) {
 
 // Read from the TouchKeys device
 long TouchkeyDevice::deviceRead(char *buffer, unsigned int count) {
-#ifdef _MSC_VER
-	int n;
-
-	if(!ReadFile(serialHandle_, buffer, count, (LPDWORD)((void *)&n), NULL))
-		return -1;
-	return n;
-#else
     return read(device_, buffer, count);
-#endif
 }
 
 // Write to the TouchKeys device
 int TouchkeyDevice::deviceWrite(char *buffer, unsigned int count) {
     int result;
 
-#ifdef _MSC_VER
-    if(!WriteFile(serialHandle_, buffer, count, (LPDWORD)((void *)&result), NULL))
-		return -1;
-#else
     result = write(device_, buffer, count);
-#endif
     deviceDrainOutput();
     return result;
 }
 
-// Flush (discard) the TouchKeys device input
-void TouchkeyDevice::deviceFlush(bool bothDirections) {
-#ifdef _MSC_VER
-	// WINDOWS_TODO (?)
-#else
-    if(bothDirections)
-        tcflush(device_, TCIOFLUSH);
-    else
-        tcflush(device_, TCIFLUSH);							// Flush device input
-#endif
-}
+// TODO: deviceFlush()
+//// Flush (discard) the TouchKeys device input
+//void TouchkeyDevice::deviceFlush(bool bothDirections) {
+//    if(bothDirections)
+//        tcflush(device_, TCIOFLUSH);
+//    else
+//        tcflush(device_, TCIFLUSH);							// Flush device input
+//}
 
-// Flush the TouchKeys device output
-void TouchkeyDevice::deviceDrainOutput() {
-#ifdef _MSC_VER
-    FlushFileBuffers(serialHandle_);
-#else
-    tcdrain(device_);
-#endif
-}
+// TODO: deviceDrainOutput()
+//// Flush the TouchKeys device output
+//void TouchkeyDevice::deviceDrainOutput() {
+//#ifdef _MSC_VER
+//    FlushFileBuffers(serialHandle_);
+//#else
+//    tcdrain(device_);
+//#endif
+//}
 
 
 TouchkeyDevice::~TouchkeyDevice() {

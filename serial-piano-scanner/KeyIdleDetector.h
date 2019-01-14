@@ -26,10 +26,10 @@
 #ifndef KEYCONTROL_KEYIDLEDETECTOR_H
 #define KEYCONTROL_KEYIDLEDETECTOR_H
 
-#include "../Utility/Node.h"
-#include "../Utility/Accumulator.h"
-//#include "Trigger.h"
-//#include "PianoKeyboard.h"
+#include "Node.h"
+#include "Accumulator.h"
+#include "Trigger.h"
+#include "PianoKeyboard.h"
 #include "PianoTypes.h"
 
 #define kKeyIdleNumSamples 10
@@ -54,7 +54,7 @@ enum {
  *
  */
 
-class KeyIdleDetector : public Node<int> {
+class KeyIdleDetector : public juniper::Node<int> {
 public:
 	// ***** Constructors *****
 	
@@ -99,8 +99,6 @@ public:
 	int numberOfFramesWithoutActivity_;                         // For how many samples have we been below the idle threshold?
     int noActivityCounterThreshold_;
 	int idleState_;												// Currently idle?
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(KeyIdleDetector)
 };
  
 

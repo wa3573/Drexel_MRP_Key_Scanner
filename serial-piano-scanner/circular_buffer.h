@@ -26,6 +26,11 @@ public:
 		typedef T contained_type;
 		typedef iterator self_type;
 		typedef size_t size_type;
+		typedef T value_type;
+		typedef std::ptrdiff_t difference_type;
+		typedef value_type& reference;
+		typedef value_type& pointer;
+		typedef std::forward_iterator_tag iterator_category;
 
 		iterator(container_type* buf, size_t start_pos) :
 				buf_(buf), pos_(start_pos)
@@ -75,6 +80,32 @@ public:
 			return *this;
 		}
 
+//		self_type& operator+(difference_type n)
+//		{
+//			self_type tmp(*this);
+//			tmp.pos_ += n;
+//			return tmp;
+//		}
+//
+//		self_type& operator-(difference_type n)
+//		{
+//			self_type tmp(*this);
+//			tmp.pos_ -= n;
+//			return tmp;
+//		}
+
+		self_type& operator += (difference_type n) {		// it += n
+			pos_ += n;
+	        return *this;
+	    }
+		self_type& operator -= (difference_type n) {		// it -= n
+			pos_ -= n;
+	        return *this;
+	    }
+
+		self_type operator + (difference_type n) const { return self_type(*this) += n; }
+		self_type operator - (difference_type n) const { return self_type(*this) -= n; }
+
 		bool operator==(const self_type& other)
 		{
 			if (this->pos_ == other.pos_) {
@@ -103,6 +134,11 @@ public:
 		typedef const circular_buffer<T> container_type;
 		typedef const T contained_type;
 		typedef const_iterator self_type;
+		typedef size_t size_type;
+		typedef T value_type;
+		typedef std::ptrdiff_t difference_type;
+		typedef value_type& reference;
+		typedef value_type& pointer;
 
 		const_iterator(container_type* buf, size_t start_pos) :
 				buf_(buf), pos_(start_pos)
@@ -133,18 +169,25 @@ public:
 			return tmp;
 		}
 
-		//	SelfType operator+(difference_type n)
-		//	{
-		//		SelfType tmp(*this);
-		//		tmp.pos_ += n;
-		//		return tmp;
-		//	}
-		//
-		//	SelfType &operator+=(difference_type n)
-		//	{
-		//		pos_ += n;
-		//		return *this;
-		//	}
+		self_type operator+(difference_type n)
+		{
+			self_type tmp(*this);
+			tmp.pos_ += n;
+			return tmp;
+		}
+
+		self_type operator-(difference_type n)
+		{
+			self_type tmp(*this);
+			tmp.pos_ -= n;
+			return tmp;
+		}
+
+		self_type &operator+=(difference_type n)
+		{
+			pos_ += n;
+			return *this;
+		}
 
 		self_type& operator--()
 		{
@@ -182,6 +225,7 @@ public:
 		typedef reverse_iterator self_type;
 		typedef ptrdiff_t difference_type;
 		typedef size_t size_type;
+//		typedef std:: iterator_category;
 
 		reverse_iterator(container_type* buf, size_t start_pos) :
 				buf_(buf), pos_(start_pos)
@@ -216,6 +260,13 @@ public:
 		{
 			self_type tmp(*this);
 			tmp.pos_ += n;
+			return tmp;
+		}
+
+		self_type operator-(difference_type n)
+		{
+			self_type tmp(*this);
+			tmp.pos_ -= n;
 			return tmp;
 		}
 
@@ -277,6 +328,7 @@ public:
 	bool full() const;
 	size_t capacity() const;
 	size_t size() const;
+	size_type reserve() { return capacity() - size(); }
 	void resize(size_t size);
 	void printHeadTail();
 	T& operator[](size_t pos)

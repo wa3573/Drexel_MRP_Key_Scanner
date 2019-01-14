@@ -28,7 +28,7 @@
 
 #include <iostream>
 #include <set>
-#include "../JuceLibraryCode/JuceHeader.h"
+//#include "../JuceLibraryCode/JuceHeader.h"
 #include "Types.h"
 
 class TriggerDestination;
@@ -81,7 +81,7 @@ private:
     std::set<TriggerDestination*> triggersToAdd_;
     std::set<TriggerDestination*> triggersToRemove_;
     bool triggerDestinationsModified_;
-	CriticalSection triggerSourceMutex_;
+	pthread_mutex_t triggerSourceMutex_;
 };
 
 /*
@@ -109,25 +109,31 @@ public:
 		
 		if(src == 0 || (void*)src == (void*)this)
 			return;
-		ScopedLock sl(triggerDestMutex_);
+//		ScopedLock sl(triggerDestMutex_);
+		pthread_mutex_lock(&triggerDestMutex_);
 		src->addTriggerDestination(this);
 		registeredTriggerSources_.insert(src);
+		pthread_mutex_unlock(&triggerDestMutex_);
 	}
 	
 	void unregisterForTrigger(TriggerSource* src) {
 		if(src == 0 || (void*)src == (void*)this)
 			return;
-        ScopedLock sl(triggerDestMutex_);
+//        ScopedLock sl(triggerDestMutex_);
+		pthread_mutex_lock(&triggerDestMutex_);
 		src->removeTriggerDestination(this);
 		registeredTriggerSources_.erase(src);
+		pthread_mutex_unlock(&triggerDestMutex_);
 	}
 	
 	void clearTriggers() {
-		ScopedLock sl(triggerDestMutex_);
+//		ScopedLock sl(triggerDestMutex_);
+		pthread_mutex_lock(&triggerDestMutex_);
 		std::set<TriggerSource*>::iterator it;
 		for(it = registeredTriggerSources_.begin(); it != registeredTriggerSources_.end(); it++)
 			(*it)->removeTriggerDestination(this);
 		registeredTriggerSources_.clear();
+		pthread_mutex_unlock(&triggerDestMutex_);
 	}
 	
 protected:
@@ -149,7 +155,7 @@ private:
 	// Keep an internal registry of who we've asked to send us triggers.  It's important to keep
 	// a list of these so that when this object is destroyed, all triggers are automatically unregistered.
 	std::set<TriggerSource*> registeredTriggerSources_;
-    CriticalSection triggerDestMutex_;
+    pthread_mutex_t triggerDestMutex_;
 };
 
 

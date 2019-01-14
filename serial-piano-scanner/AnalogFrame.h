@@ -11,8 +11,6 @@
 #include <vector>
 #include <cstdint>
 
-#include "TouchkeyDevice.h"
-
 class AnalogFrame {
 public:
 	AnalogFrame(unsigned char* frameBuffer);

@@ -31,7 +31,7 @@
 //#include "../JuceLibraryCode/JuceHeader.h"
 #include "Types.h"
 #include "PianoTypes.h"
-//#include "PianoKeyboard.h"
+#include "PianoKeyboard.h"
 
 // Calibration status of the Piano Bar.  This compensates for variations in mechanical position, light level, etc.
 enum {

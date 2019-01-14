@@ -22,6 +22,10 @@
 #define TOUCHKEY_DEVICE_H
 
 #include "PianoKeyCalibrator.h"
+#include "PianoKeyboard.h"
+#include "Osc.h"
+#include "TimestampSynchronizer.h"
+#include "PianoKeyCalibrator.h"
 
 #define TOUCHKEY_MAX_FRAME_LENGTH 256	// Maximum data length in a single frame
 #define ESCAPE_CHARACTER 0xFE			// Indicates control sequence
@@ -280,9 +284,9 @@ public:
 //    void setSensorDisplay(RawSensorDisplay *display) { sensorDisplay_ = display; }
 //
 //	// ***** Run Loop Functions *****
-//    void ledUpdateLoop(DeviceThread *thread);
-//	void runLoop(DeviceThread *thread);
-//    void rawDataRunLoop(DeviceThread *thread);
+    void ledUpdateLoop(void* thread_args);
+	void runLoop(void* thread_args);
+    void rawDataRunLoop(void* thread_args);
 
     // for debugging
     void testStopLeds() { ledShouldStop_ = true; }
@@ -337,14 +341,11 @@ private:
 private:
 	PianoKeyboard& keyboard_;	// Main keyboard controller
 
-#ifdef _MSC_VER
-	HANDLE serialHandle_;		// Serial port handle
-#else
 	int device_;				// File descriptor
-#endif
-//	DeviceThread ioThread_;		// Thread that handles the communication from the device
-//    DeviceThread rawDataThread_;// Thread that handles raw data collection
-	//CriticalSection ioMutex_;	// Mutex synchronizing access between internal and external threads
+
+	pthread_t ioThread_;		// Thread that handles the communication from the device
+    pthread_t rawDataThread_;// Thread that handles raw data collection
+	pthread_mutex_t ioMutex_;	// Mutex synchronizing access between internal and external threads
 	bool autoGathering_;		// Whether auto-scanning is enabled
 	volatile bool shouldStop_;	// Communication variable between threads
 	bool sendRawOscMessages_;	// Whether we should transmit the raw frame data by OSC
@@ -368,7 +369,7 @@ private:
 	// Synchronization between frame time and system timestamp, allowing interaction
 	// with other simultaneous streams using different clocks.  Also save the last timestamp
 	// we've processed to other functions can access it.
-//	TimestampSynchronizer timestampSynchronizer_;
+	TimestampSynchronizer timestampSynchronizer_;
 	timestamp_type lastTimestamp_;
 
     // For raw data collection, this information keeps track of which key we're reading
@@ -378,7 +379,7 @@ private:
 
     // ***** RGB LED management *****
     bool deviceHasRGBLEDs_;                 // Whether the device has RGB LEDs
-//    DeviceThread ledThread_;                   // Thread that handles LED updates (communication to the device)
+    pthread_t ledThread_;                   // Thread that handles LED updates (communication to the device)
     volatile bool ledShouldStop_;           // testing
     juniper::circular_buffer<RGBLEDUpdate> ledUpdateQueue_;    // Queue that holds new LED messages to be sent to device
 

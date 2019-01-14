@@ -36,7 +36,7 @@
 #include "KeyPositionTracker.h"
 #include "KeyTouchFrame.h"
 #include "Trigger.h"
-//#include "../Utility/Scheduler.h"
+#include "Scheduler.h"
 //#include "../Utility/IIRFilter.h"
 
 const unsigned int kPianoKeyStateBufferLength = 20;	// How many previous states to save
