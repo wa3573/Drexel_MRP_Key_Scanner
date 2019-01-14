@@ -21,6 +21,8 @@
 #ifndef TOUCHKEY_DEVICE_H
 #define TOUCHKEY_DEVICE_H
 
+#include "PianoKeyCalibrator.h"
+
 #define TOUCHKEY_MAX_FRAME_LENGTH 256	// Maximum data length in a single frame
 #define ESCAPE_CHARACTER 0xFE			// Indicates control sequence
 
@@ -126,4 +128,274 @@ const unsigned char kCommandStopScanning[] = { ESCAPE_CHARACTER, kControlCharact
 
 const float kTouchkeyAnalogValueMax = 4095.0; // Maximum value any analog sample can take
 
+
+class TouchkeyDevice /*: public OscHandler*/
+{
+    // ***** Class to implement the Juce thread *****
+private:
+//    class DeviceThread : public Thread {
+//    public:
+//        DeviceThread(boost::function<void (DeviceThread*)> action, String name = "DeviceThread")
+//        : Thread(name), actionFunction_(action) {}
+//
+//        ~DeviceThread() {}
+//
+//        void run() {
+//            actionFunction_(this);
+//        }
+//
+//    private:
+//        boost::function<void (DeviceThread*)> actionFunction_;
+//    };
+
+public:
+	class ControllerStatus {
+	public:
+		ControllerStatus() : connectedKeys(0) {}
+		~ControllerStatus() {
+			if(connectedKeys != 0)
+				free(connectedKeys);
+		}
+
+		int hardwareVersion;		// Hardware version
+		int softwareVersionMajor;	// Controller firmware major version
+		int softwareVersionMinor;	// Controller firmware minor version
+		bool running;				// Is the system currently gathering centroid data?
+        bool hasTouchSensors;       // Whether the device has I2C touch sensors
+        bool hasAnalogSensors;      // Whether the device has analog optical position sensors
+        bool hasRGBLEDs;            // Whether the device has RGB LEDs for display
+		int octaves;				// Number of octaves connected [two octaves per board]
+        int lowestHardwareNote;     // Note number (0-12) of lowest connector or sensor on lowest board
+		unsigned int *connectedKeys;// Which keys are connected to each octave
+	};
+
+	class MultiKeySweep {
+	public:
+
+		int sweepId;
+		int sweepOctave;
+		float sweepNote;
+		int keyCount;
+		int keyOctave[2];
+		int keyNote[2];
+		int keyTouchId[2];
+		float keyPosition[2];
+	};
+
+    // Structure to hold changes to RGB LEDs on relevant hardware
+    class RGBLEDUpdate {
+    public:
+        bool allLedsOff;        // Set to true if all LEDs should turn off on indicated board
+        int midiNote;           // MIDI note number to change
+        int red;                // RGB color
+        int green;
+        int blue;
+    };
+
+public:
+	// ***** Constructor *****
+	TouchkeyDevice(PianoKeyboard& keyboard);
+
+    // ***** Destructor *****
+	~TouchkeyDevice();
+
+    // ***** Device Management *****
+	// Open a new device.  Returns true on success
+	bool openDevice(const char * inputDevicePath);
+	void closeDevice();
+
+	// Start or stop the processing.  startAutoGathering() returns
+	// true on success.
+	bool startAutoGathering();
+	void stopAutoGathering(bool writeStopCommandToDevice = true);
+
+	// Status query methods
+	bool isOpen();
+	bool isAutoGathering() { return autoGathering_; }
+	int numberOfOctaves() { return numOctaves_; }
+
+	// Ping the device, to see if it is ready to respond
+	bool checkIfDevicePresent(int millisecondsToWait);
+
+	// Start collecting raw data from a given key
+	bool startRawDataCollection(int octave, int key, int mode, int scaler);
+    void rawDataChangeKeyAndMode(int octave, int key, int mode, int scaler);
+
+    // ***** RGB LED updates *****
+    void rgbledSetColor(const int midiNote, const float red, const float green, const float blue);
+    void rgbledSetColorHSV(const int midiNote, const float hue, const float saturation, const float value);
+    void rgbledAllOff();
+
+    // ***** Device Parameters *****
+
+	// Set the scan interval in milliseconds
+	bool setScanInterval(int intervalMilliseconds);
+
+	// Key parameters.  Setting octave or key to -1 means all octaves or all keys, respectively.
+	bool setKeySensitivity(int octave, int key, int value);
+	bool setKeyCentroidScaler(int octave, int key, int value);
+	bool setKeyMinimumCentroidSize(int octave, int key, int value);
+	bool setKeyNoiseThreshold(int octave, int key, int value);
+    bool setKeyUpdateBaseline(int octave, int key);
+
+    // Jump to device internal bootloader
+    void jumpToBootloader();
+
+    // ***** Calibration Methods *****
+
+	// Return whether or not the controller has been calibrated, and whether it's currently calibrating
+	bool isCalibrated() { return isCalibrated_; }
+	bool calibrationInProgress() { return calibrationInProgress_; }
+
+	// Start: begin calibrating; finish: end and save results; abort: end and discard results
+	void calibrationStart(std::vector<int>* keysToCalibrate);
+	void calibrationFinish();
+	void calibrationAbort();
+	void calibrationClear();
+
+	bool calibrationSaveToFile(std::string const& filename);
+	bool calibrationLoadFromFile(std::string const& filename);
+
+    // ***** Data Logging *****
+    void createLogFiles(string keyTouchLogFilename, string analogLogFilename, string path);
+    void closeLogFile();
+    void startLogging();
+    void stopLogging();
+
+    // ***** Debugging and Utility *****
+
+	// Set logging level
+	void setVerboseLevel(int v) { verbose_ = v; }
+	void setTransmitRawData(bool raw) { sendRawOscMessages_	= raw; }
+    bool transmitRawDataEnabled() { return sendRawOscMessages_; }
+
+	// Conversion between touchkey # and MIDI note
+	int lowestMidiNote() { return lowestMidiNote_; }
+    int highestMidiNote() { return lowestMidiNote_ + 12*numOctaves_ + lowestNotePerOctave_; }
+    int lowestKeyPresentMidiNote() { return lowestKeyPresentMidiNote_; } // What is the lowest key actually connected?
+	void setLowestMidiNote(int note);
+    int octaveKeyToMidi(int octave, int key);
+
+//    // Sensor data display
+//    void setSensorDisplay(RawSensorDisplay *display) { sensorDisplay_ = display; }
+//
+//	// ***** Run Loop Functions *****
+//    void ledUpdateLoop(DeviceThread *thread);
+//	void runLoop(DeviceThread *thread);
+//    void rawDataRunLoop(DeviceThread *thread);
+
+    // for debugging
+    void testStopLeds() { ledShouldStop_ = true; }
+
+private:
+	// Read and parse new data from the device, splitting out by frame type
+	void processFrame(unsigned char * const frame, int length);
+
+	// Specific data type parsing
+	void processCentroidFrame(unsigned char * const buffer, const int bufferLength);
+	int processKeyCentroid(int frame,int octave, int key, timestamp_type timestamp, unsigned char * buffer, int maxLength);
+    void processAnalogFrame(unsigned char * const buffer, const int bufferLength);
+	void processRawDataFrame(unsigned char * const buffer, const int bufferLength);
+	bool processStatusFrame(unsigned char * buffer, int maxLength, ControllerStatus *status);
+    void processI2CResponseFrame(unsigned char * const buffer, const int bufferLength);
+    void processErrorMessageFrame(unsigned char * const buffer, const int bufferLength);
+
+	// Helper methods for centroid processing
+	//pair<float, list<int> > matchClosestPoints(float* oldPoints, float *newPoints, float count,
+	//										   int oldIndex, set<int>& availableNewPoints, float currentTotalDistance);
+	void processTwoFingerGestures(int octave, int key, KeyTouchFrame& previousPosition, KeyTouchFrame& newPosition);
+	void processThreeFingerGestures(int octave, int key, KeyTouchFrame& previousPosition, KeyTouchFrame& newPosition);
+
+	// Utility method for parsing multi-key gestures
+	pair<int, int> whiteKeyAbove(int octave, int note);
+
+    // Write the commands to prepare a given key for raw data collection
+    void rawDataPrepareCollection(int octave, int key, int mode, int scaler);
+
+	// After writing a command, check whether it was acknolwedged by the controller
+	bool checkForAck(int timeoutMilliseconds);
+
+	// Utility method for debugging
+	void hexDump(ostream& str, unsigned char * buffer, int length);
+
+    // Internal calibration methods
+    void calibrationInit(int numberOfCalibrators);
+    void calibrationDeinit();
+
+    // Set RGB LED color (for piano scanner boards)
+    bool internalRGBLEDSetColor(const int device, const int led, const int red, const int green, const int blue);
+    bool internalRGBLEDAllOff();                        // RGB LEDs off
+    int  internalRGBLEDMIDIToBoardNumber(const int midiNote);   // Get board number for MIDI note
+    int  internalRGBLEDMIDIToLEDNumber(const int midiNote);     // Get LED number for MIDI note
+
+    // Device low-level access methods
+    long deviceRead(char *buffer, unsigned int count);
+    int deviceWrite(char *buffer, unsigned int count);
+    void deviceFlush(bool bothDirections);
+    void deviceDrainOutput();
+
+private:
+	PianoKeyboard& keyboard_;	// Main keyboard controller
+
+#ifdef _MSC_VER
+	HANDLE serialHandle_;		// Serial port handle
+#else
+	int device_;				// File descriptor
+#endif
+//	DeviceThread ioThread_;		// Thread that handles the communication from the device
+//    DeviceThread rawDataThread_;// Thread that handles raw data collection
+	//CriticalSection ioMutex_;	// Mutex synchronizing access between internal and external threads
+	bool autoGathering_;		// Whether auto-scanning is enabled
+	volatile bool shouldStop_;	// Communication variable between threads
+	bool sendRawOscMessages_;	// Whether we should transmit the raw frame data by OSC
+	int verbose_;				// Logging level
+	int numOctaves_;			// Number of connected octaves (determined from device)
+	int lowestMidiNote_;		// MIDI note number for the lowest C on the lowest octave
+    int lowestKeyPresentMidiNote_; // MIDI note number for the lowest key actually attached
+    int updatedLowestMidiNote_; // Lowest MIDI note if changed; held separately for thread sync
+    int lowestNotePerOctave_;   // Note which starts each octave, for non C-to-C keyboards
+	set<int> keysPresent_;		// Which keys (octave and note) are present on this device?
+    int deviceSoftwareVersion_; // Which version of the device we're talking to
+    int deviceHardwareVersion_; // Which version of the device hardware is running
+    int expectedLengthWhite_;   // How long the white key data blocks are
+    int expectedLengthBlack_;   // How long the black key data blocks are
+    float whiteMaxX_, whiteMaxY_;   // Maximum sensor values for white keys
+    float blackMaxX_, blackMaxY_;   // Maximum sensor values for black keys
+
+    // Frame counter for analog data, to detect dropped frames
+    unsigned int analogLastFrame_[4];    // Max 4 boards
+
+	// Synchronization between frame time and system timestamp, allowing interaction
+	// with other simultaneous streams using different clocks.  Also save the last timestamp
+	// we've processed to other functions can access it.
+//	TimestampSynchronizer timestampSynchronizer_;
+	timestamp_type lastTimestamp_;
+
+    // For raw data collection, this information keeps track of which key we're reading
+    bool rawDataShouldChangeMode_;
+    int rawDataCurrentOctave_, rawDataCurrentKey_;
+    int rawDataCurrentMode_, rawDataCurrentScaler_;
+
+    // ***** RGB LED management *****
+    bool deviceHasRGBLEDs_;                 // Whether the device has RGB LEDs
+//    DeviceThread ledThread_;                   // Thread that handles LED updates (communication to the device)
+    volatile bool ledShouldStop_;           // testing
+    juniper::circular_buffer<RGBLEDUpdate> ledUpdateQueue_;    // Queue that holds new LED messages to be sent to device
+
+    // ***** Calibration *****
+    bool isCalibrated_;
+	bool calibrationInProgress_;
+
+    PianoKeyCalibrator** keyCalibrators_;	// Calibration information for each key
+    int keyCalibratorsLength_;              // How many calibrators
+
+    // ***** Logging *****
+    ofstream keyTouchLog_;
+    ofstream analogLog_;
+    bool logFileCreated_;
+    bool loggingActive_;
+
+//    // ***** Sensor Data Display (for debugging) *****
+//    RawSensorDisplay *sensorDisplay_;
+};
 #endif /* TOUCHKEY_DEVICE_H */

@@ -347,6 +347,8 @@ void* serialConsumerThread(void* args)
 	return NULL;
 }
 
+
+
 void* controlThread(void* args)
 {
 	sigset_t signals_to_catch;
