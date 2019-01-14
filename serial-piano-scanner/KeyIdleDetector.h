@@ -28,8 +28,8 @@
 
 #include "Node.h"
 #include "Accumulator.h"
-#include "Trigger.h"
-#include "PianoKeyboard.h"
+//#include "Trigger.h"
+//#include "PianoKeyboard.h"
 #include "PianoTypes.h"
 
 #define kKeyIdleNumSamples 10

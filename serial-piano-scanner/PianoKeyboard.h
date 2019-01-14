@@ -32,6 +32,7 @@
 #include "Types.h"
 #include "Node.h"
 #include "PianoKey.h"
+#include "PianoTypes.h"
 //#include "PianoPedal.h"
 //#include "../Display/KeyboardDisplay.h"
 //#include "../Display/KeyPositionGraphDisplay.h"

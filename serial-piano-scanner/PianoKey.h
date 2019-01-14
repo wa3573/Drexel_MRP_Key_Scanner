@@ -175,7 +175,9 @@ private:
 	// key position data.
 	
 	void changeState(key_state newState);
-	void changeState(key_state newState, timestamp_type timestamp);	
+//	void changeState(key_state ne//		if(after < before)
+			//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
+			//		return (size_type)(--it - timestamps_->begin()) + this->firstSampleIndex_;wState, timestamp_type timestamp);
 	
 	void terminateActivity();
 	
@@ -201,14 +203,19 @@ private:
 	// --- Data related to continuous key position ---
 
 	juniper::Node<key_position> positionBuffer_;     // Buffer that holds the key positions
-	KeyIdleDetector idleDetector_;          // Detector for whether the key is still or moving
+//	TODO: KeyIdleDetector: does not name a type
+//	KeyIdleDetector idleDetector_;          // Detector for whether the key is still or moving
     KeyPositionTracker positionTracker_;    // Object to track the various active states of the key
     timestamp_type timeOfLastGuiUpdate_;    // How long it's been since the last key position GUI call
     timestamp_type timeOfLastDebugPrint_;   // TESTING
     
 	juniper::Node<key_state> stateBuffer_;		// State history
 	key_state state_;					// Current state of the key (see enum above)
-	pthread_mutex_t stateMutex_;		// Use this to synchronize changes of state
+	pthread_mutex_t stateMutex_;///		if(after < before)
+	//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
+	//		return (size_type)(--it - timestamps_->begin()) + this->firstSampleIndex_;/		if(after < before)
+	//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
+	//		return (size_type)(--it - timestamps_->begin()) + this->firstSampleIndex_;		// Use this to synchronize changes of state
     
     //IIRFilterNode<key_position> testFilter_;    // Filter the raw key position data, for testing
 	

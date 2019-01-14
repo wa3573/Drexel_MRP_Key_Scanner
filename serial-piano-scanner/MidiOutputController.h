@@ -25,9 +25,8 @@
 #define MIDI_OUTPUT_CONTROLLER_H
 
 #include <map>
-#include "MidiInputController.h"
 
-const juce::String kMidiVirtualOutputName = "TouchKeys";
+const std::string kMidiVirtualOutputName = "TouchKeys";
 
 using namespace std;
 
@@ -35,7 +34,9 @@ class MidiOutputController {
 private:
     struct MidiOutputControllerRecord {
         int portNumber;
-        MidiOutput *output;
+        // TODO: MidiOutput
+//        MidiOutput *output;
+        const char* output;
     };
     
 public:
@@ -62,10 +63,10 @@ public:
     std::vector<std::pair<int, int> > enabledPorts();
 	
     // Get the name of a particular port index
-    String deviceName(int portNumber);
+    std::string deviceName(int portNumber);
     
     // Find the index of a device with a given name; return -1 if not found
-    int indexOfDeviceNamed(String const& name);
+    int indexOfDeviceNamed(std::string const& name);
     
 	// Send MIDI messages
 	void sendNoteOn(int port, unsigned char channel, unsigned char note, unsigned char velocity);
@@ -77,8 +78,8 @@ public:
 	void sendPitchWheel(int port, unsigned char channel, unsigned int value);
 	void sendReset(int port);
 	
-	// Generic pre-formed messages
-	void sendMessage(int port, const MidiMessage& message);
+	// TODO: Generic pre-formed messages
+//	void sendMessage(int port, const MidiMessage& message);
 	
 	// Destructor
 	~MidiOutputController() { disableAllPorts(); }

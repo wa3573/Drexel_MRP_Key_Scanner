@@ -80,19 +80,19 @@ public:
 			return *this;
 		}
 
-//		self_type& operator+(difference_type n)
-//		{
-//			self_type tmp(*this);
-//			tmp.pos_ += n;
-//			return tmp;
-//		}
-//
-//		self_type& operator-(difference_type n)
-//		{
-//			self_type tmp(*this);
-//			tmp.pos_ -= n;
-//			return tmp;
-//		}
+		self_type& operator+(difference_type n)
+		{
+			self_type tmp(*this);
+			tmp.pos_ += n;
+			return tmp;
+		}
+
+		self_type& operator-(difference_type n)
+		{
+			self_type tmp(*this);
+			tmp.pos_ -= n;
+			return tmp;
+		}
 
 		self_type& operator += (difference_type n) {		// it += n
 			pos_ += n;

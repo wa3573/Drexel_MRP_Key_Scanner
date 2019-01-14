@@ -633,15 +633,18 @@ public:
 
 		if(it == timestamps_->end())
 			return timestamps_->size()-1+this->firstSampleIndex_;
-		if(it - timestamps_->begin() == 0)
-			return this->firstSampleIndex_;
-		return (size_type)((--it) - timestamps_->begin()) + this->firstSampleIndex_;
+//		if(it - timestamps_->begin() == 0)
+//			return this->firstSampleIndex_;
+//		return (size_type)((--it) - timestamps_->begin()) + this->firstSampleIndex_;
+		return (size_type)this->firstSampleIndex_;
+
 	}
 	size_type indexNearestAfter(timestamp_type t) {
 //		juniper::circular_buffer<timestamp_type>::iterator it = std::find_if(timestamps_->begin(), timestamps_->end(), t < juniper::lambda::_1);
 		juniper::circular_buffer<timestamp_type>::iterator it = std::find_if(timestamps_->begin(), timestamps_->end(), [t](timestamp_type n) {return t < n; });
 
-		return std::min<size_type>((it - timestamps_->begin()), timestamps_->size()-1) + this->firstSampleIndex_;
+//		return std::min<size_type>((it - timestamps_->begin()), timestamps_->size()-1) + this->firstSampleIndex_;
+		return (size_type)this->firstSampleIndex_;
 	}
 	size_type indexNearestTo(timestamp_type t) {
 //		juniper::circular_buffer<timestamp_type>::iterator it = std::find_if(timestamps_->begin(), timestamps_->end(), t < juniper::lambda::_1);
@@ -649,13 +652,14 @@ public:
 
 		if(it == timestamps_->end())
 			return timestamps_->size()-1+this->firstSampleIndex_;
-		if(it - timestamps_->begin() == 0)
-			return this->firstSampleIndex_;
+//		if(it - timestamps_->begin() == 0)
+//			return this->firstSampleIndex_;
 		timestamp_diff_type after = *it - t;		// Calculate the distance between the desired timestamp and the before/after values,
 		timestamp_diff_type before = t - *(it-1);	// then return whichever index gets closer to the target.
-		if(after < before)
-			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
-		return (size_type)((--it) - timestamps_->begin()) + this->firstSampleIndex_;
+//		if(after < before)
+//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
+//		return (size_type)(--it - timestamps_->begin()) + this->firstSampleIndex_;
+		return (size_type)this->firstSampleIndex_;
 	}
 
 	void clear()

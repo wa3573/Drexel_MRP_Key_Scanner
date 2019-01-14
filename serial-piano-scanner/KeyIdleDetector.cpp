@@ -94,16 +94,6 @@ void KeyIdleDetector::triggerReceived(TriggerSource* who, timestamp_type timesta
             return;
         }
         
-#if 0
-        key_position maxDeviation = 0;
-        size_type endIndex = keyBuffer_.endIndex();
-        // Find and return the maximum deviation from the average
-        for(int i = endIndex - kKeyIdleNumSamples; i < endIndex; i++) {
-            key_position diff = key_abs(keyBuffer_[i] - averageValue);
-            if(diff > maxDeviation)
-                maxDeviation = diff;
-        }
-#endif
         key_position averageDeviation = 0;
         size_type endIndex = keyBuffer_.endIndex();
         // Find and return the average deviation from mean
