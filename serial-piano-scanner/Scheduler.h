@@ -84,7 +84,7 @@ public:
 
 private:    
 	// These variables keep track of the status of the separate thread running the events
-    pthread_mutex_t eventMutex_;
+    pthread_mutex_t eventMutex_ = PTHREAD_MUTEX_INITIALIZER;
 //    WaitableEvent waitableEvent_;
     timestamp_type startingTimestamp_;
 	bool isRunning_;

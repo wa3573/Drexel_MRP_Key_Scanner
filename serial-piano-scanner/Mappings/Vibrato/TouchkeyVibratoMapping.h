@@ -178,7 +178,7 @@ private:
     
     juniper::Node<float> rawDistance_;                   // Distance from onset location
     IIRFilterNode<float> filteredDistance_;     // Bandpass filtered finger motion
-    pthread_mutex_t distanceAccessMutex_;       // Mutex that protects the access buffer from changes
+    pthread_mutex_t distanceAccessMutex_ = PTHREAD_MUTEX_INITIALIZER;       // Mutex that protects the access buffer from changes
 };
 
 #endif /* defined(__touchkeys__TouchkeyVibratoMapping__) */

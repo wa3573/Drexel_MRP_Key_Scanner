@@ -132,8 +132,8 @@ private:
     
 //	pthread_mutex_t calibrationMutex_;	// This mutex protects access to the entire calibration structure
 //	pthread_mutex_t historyMutex_;		// This mutex is specifically tied to the history_ buffers
-	pthread_mutex_t calibrationMutex_;
-	pthread_mutex_t historyMutex_;
+	pthread_mutex_t calibrationMutex_ = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_t historyMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 };
 

@@ -84,8 +84,8 @@ protected:
     void updateListeners();                                         // Propagate changes to the listeners to the main object
     
 	//ReadWriteLock oscListenerMutex_;                // This mutex protects the OSC listener table from being modified mid-message
-	pthread_mutex_t oscListenerMutex_;                // This mutex protects the OSC listener table from being modified mid-message
-    pthread_mutex_t oscUpdaterMutex_;                 // This mutex controls the insertion of objects in add/removeListener
+	pthread_mutex_t oscListenerMutex_ = PTHREAD_MUTEX_INITIALIZER;                // This mutex protects the OSC listener table from being modified mid-message
+    pthread_mutex_t oscUpdaterMutex_ = PTHREAD_MUTEX_INITIALIZER;                 // This mutex controls the insertion of objects in add/removeListener
     
 	multimap<string, OscHandler*> noteListeners_;	// Map from OSC path name to handler (possibly multiple handlers per object)
     multimap<string, OscHandler*> noteListenersToAdd_;    // Collection of listeners to add on the next cycle

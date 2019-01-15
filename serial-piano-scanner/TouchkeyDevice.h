@@ -345,7 +345,7 @@ private:
 
 	pthread_t ioThread_;		// Thread that handles the communication from the device
     pthread_t rawDataThread_;// Thread that handles raw data collection
-	pthread_mutex_t ioMutex_;	// Mutex synchronizing access between internal and external threads
+	pthread_mutex_t ioMutex_ = PTHREAD_MUTEX_INITIALIZER;	// Mutex synchronizing access between internal and external threads
 	bool autoGathering_;		// Whether auto-scanning is enabled
 	volatile bool shouldStop_;	// Communication variable between threads
 	bool sendRawOscMessages_;	// Whether we should transmit the raw frame data by OSC

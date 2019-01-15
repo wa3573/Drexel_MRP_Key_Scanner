@@ -177,8 +177,8 @@ private:
     PianoKeyboard& keyboard_;
     
 	// These variables keep track of the status of the separate thread running the events
-    pthread_mutex_t actionsInsertionMutex_;
-    pthread_mutex_t actionsLaterMutex_;
+    pthread_mutex_t actionsInsertionMutex_ = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t actionsLaterMutex_ = PTHREAD_MUTEX_INITIALIZER;
     
 //    WaitableEvent waitableEvent_;
 	bool isRunning_;

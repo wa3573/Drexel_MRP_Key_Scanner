@@ -239,7 +239,7 @@ public:
     // data (MIDI or touch). By synchronizing access once centrally, we
     // can avoid many other lock scenarios in individual objects. The object
     // is declared public so it can be used in ScopedLocks.
-    pthread_mutex_t performanceDataMutex_;
+    pthread_mutex_t performanceDataMutex_ = PTHREAD_MUTEX_INITIALIZER;
     
 private:
 	// Individual key and pedal data structures
@@ -285,7 +285,7 @@ private:
     // Collection of mapping factories organised by segment of the keyboard. Different
     // segments may have different mappings
     std::map<MidiKeyboardSegment*, MappingFactory*> mappingFactories_;
-    pthread_mutex_t mappingFactoriesMutex_;
+    pthread_mutex_t mappingFactoriesMutex_ = PTHREAD_MUTEX_INITIALIZER;
     
     // Scheduler specifically used for coordinating mappings
     MappingScheduler *mappingScheduler_;

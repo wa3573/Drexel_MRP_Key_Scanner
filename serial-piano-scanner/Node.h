@@ -329,7 +329,7 @@ protected:
 
 	// This mutex protects access to the underlying buffer.  It is locked every time a sample is written to the buffer,
 	// and external systems reading values from the buffer should also acquire at least a shared lock.
-	pthread_mutex_t bufferAccessMutex_;
+	pthread_mutex_t bufferAccessMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 	// This mutex protects the list of listeners.  It prevents a listener from being added or removed while a notification
 	// is in progress.

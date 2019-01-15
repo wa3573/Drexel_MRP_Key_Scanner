@@ -81,7 +81,7 @@ private:
     std::set<TriggerDestination*> triggersToAdd_;
     std::set<TriggerDestination*> triggersToRemove_;
     bool triggerDestinationsModified_;
-	pthread_mutex_t triggerSourceMutex_;
+	pthread_mutex_t triggerSourceMutex_ = PTHREAD_MUTEX_INITIALIZER;
 };
 
 /*
@@ -155,7 +155,7 @@ private:
 	// Keep an internal registry of who we've asked to send us triggers.  It's important to keep
 	// a list of these so that when this object is destroyed, all triggers are automatically unregistered.
 	std::set<TriggerSource*> registeredTriggerSources_;
-    pthread_mutex_t triggerDestMutex_;
+    pthread_mutex_t triggerDestMutex_ = PTHREAD_MUTEX_INITIALIZER;
 };
 
 

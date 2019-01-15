@@ -233,7 +233,7 @@ std::string MainApplicationController::touchkeyDevicePrefix() {
 std::vector<std::string> MainApplicationController::availableTouchkeyDevices() {
     std::vector<std::string> devices;
 
-    devices.push_back("usb-APM_TouchKeys_8D73428C5751-if00");
+    devices.push_back("serial/by-id/usb-APM_TouchKeys_8D73428C5751-if00");
 //#ifdef _MSC_VER
 //    for(int i = 1; i <= 128; i++) {
 //		std::string comPortName("COM");

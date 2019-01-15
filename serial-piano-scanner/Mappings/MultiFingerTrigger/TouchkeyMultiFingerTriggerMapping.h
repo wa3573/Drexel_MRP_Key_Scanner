@@ -138,7 +138,7 @@ private:
     std::set<std::pair<int, int> > otherNotesOn_; // Which other notes are on as a result of triggers?
     
     juniper::Node<KeyTouchFrame> pastSamples_;           // Locations of touch
-    pthread_mutex_t sampleBufferMutex_;         // Mutex to protect threaded access to sample buffer
+    pthread_mutex_t sampleBufferMutex_ = PTHREAD_MUTEX_INITIALIZER;         // Mutex to protect threaded access to sample buffer
 };
 
 

@@ -83,16 +83,16 @@ void list_devices(MainApplicationController& controller)
 //        }
 //    }
     
-    cerr << "\nMIDI output devices: \n";
-    if(midiOutputDevices.empty())
-        cerr << "  [none found]\n";
-    else {
-        for(std::vector<std::pair<int, std::string> >::iterator it = midiOutputDevices.begin();
-            it != midiOutputDevices.end();
-            ++it) {
-            cerr << "  " << it->first << ": " << it->second << "\n";
-        }
-    }
+//    cerr << "\nMIDI output devices: \n";
+//    if(midiOutputDevices.empty())
+//        cerr << "  [none found]\n";
+//    else {
+//        for(std::vector<std::pair<int, std::string> >::iterator it = midiOutputDevices.begin();
+//            it != midiOutputDevices.end();
+//            ++it) {
+//            cerr << "  " << it->first << ": " << it->second << "\n";
+//        }
+//    }
 }
 
 int main (int argc, char* argv[])
@@ -108,6 +108,8 @@ int main (int argc, char* argv[])
     int oscInputPort = kDefaultOscReceivePort;
     string touchkeysDevicePath;
     
+    printf("Touchkeys Bela Port v0.01\n");
+
 	while((ch = getopt_long(argc, argv, "hli:o:t:VP:", long_options, &option_index)) != -1)
 	{
         if(ch == 'l') { // List devices

@@ -208,7 +208,7 @@ private:
     
 	juniper::Node<key_state> stateBuffer_;		// State history
 	key_state state_;					// Current state of the key (see enum above)
-	pthread_mutex_t stateMutex_;///		if(after < before)
+	pthread_mutex_t stateMutex_ = PTHREAD_MUTEX_INITIALIZER;///		if(after < before)
 	//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
 	//		return (size_type)(--it - timestamps_->begin()) + this->firstSampleIndex_;/		if(after < before)
 	//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;

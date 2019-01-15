@@ -149,7 +149,7 @@ private:
     float lastPitchBendSemitones_;              // The last pitch bend value we sent out
     
     juniper::Node<float> rawDistance_;                   // Distance from onset location
-    pthread_mutex_t distanceAccessMutex_;       // Mutex protecting access to the distance buffer
+    pthread_mutex_t distanceAccessMutex_ = PTHREAD_MUTEX_INITIALIZER;       // Mutex protecting access to the distance buffer
 };
 
 

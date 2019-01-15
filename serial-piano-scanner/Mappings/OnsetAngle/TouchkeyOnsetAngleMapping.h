@@ -81,7 +81,7 @@ private:
     
     juniper::Node<KeyTouchFrame> pastSamples_;           // Locations of touch
     timestamp_diff_type maxLookbackTime_;       // How long to look backwards to find release velocity
-    pthread_mutex_t sampleBufferMutex_;         // Mutex to protect threaded access to sample buffer
+    pthread_mutex_t sampleBufferMutex_ = PTHREAD_MUTEX_INITIALIZER;         // Mutex to protect threaded access to sample buffer
     
     float startingPitchBendSemitones_;          // The value of pitch bend to start with
     float lastPitchBendSemitones_;              // The last pitch value we sent out

@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <libexplain/open.h>
 #include "TouchkeyDevice.h"
 
 const char* kKeyNames[13] = { "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ",
@@ -42,7 +43,7 @@ const char* kKeyNames[13] = { "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ",
 
 TouchkeyDevice::TouchkeyDevice(PianoKeyboard& keyboard) :
 		keyboard_(keyboard), device_(-1), autoGathering_(false), shouldStop_(
-				false), sendRawOscMessages_(false), verbose_(0), numOctaves_(0), lowestMidiNote_(
+				false), sendRawOscMessages_(false), verbose_(10), numOctaves_(0), lowestMidiNote_(
 				48), lowestKeyPresentMidiNote_(48), updatedLowestMidiNote_(48), lowestNotePerOctave_(
 				0), deviceSoftwareVersion_(-1), deviceHardwareVersion_(-1), expectedLengthWhite_(
 				kTransmissionLengthWhiteNewHardware), expectedLengthBlack_(
@@ -951,8 +952,10 @@ bool TouchkeyDevice::openDevice(const char * inputDevicePath)
 //	}
 //#else
 	device_ = open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY);
+
 //
 	if (device_ < 0) {
+		fprintf(stderr, "%s", explain_open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY, 0));
 		return false;
 	}
 //#endif

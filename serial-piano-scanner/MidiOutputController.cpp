@@ -36,9 +36,9 @@ MidiOutputController::MidiOutputController()
 // indices and names for each device.  The index will later be passed back
 // to indicate which device to open.
 
-//vector<pair<int, string> > MidiOutputController::availableMidiDevices() {
-//	vector<pair<int, string> > deviceList;
-//
+vector<pair<int, string> > MidiOutputController::availableMidiDevices() {
+	vector<pair<int, string> > deviceList;
+
 //	try {
 //        StringArray deviceStrings = MidiOutput::getDevices();
 //
@@ -52,7 +52,7 @@ MidiOutputController::MidiOutputController()
 //	}
 //
 //	return deviceList;
-//}
+}
 
 // Open a new MIDI output port, given an index related to the list from
 // availableMidiDevices().  Returns true on success.

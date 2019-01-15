@@ -496,7 +496,7 @@ protected:
     MidiKeyboardSegment& keyboardSegment_;         // Segment of the keyboard that this mapping addresses
     OscMidiConverter *midiConverter_;              // Object to convert OSC messages to MIDI
     std::map<int, MappingType*> mappings_;         // Collection of active mappings
-    pthread_mutex_t mappingsMutex_;                // Mutex protecting mappings from changes
+    pthread_mutex_t mappingsMutex_ = PTHREAD_MUTEX_INITIALIZER;                // Mutex protecting mappings from changes
     
     std::string controlName_;                           // Name of the mapping in long..
     std::string shortControlName_;                      // ... and short forms

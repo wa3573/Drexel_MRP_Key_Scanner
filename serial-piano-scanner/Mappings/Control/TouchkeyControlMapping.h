@@ -168,7 +168,7 @@ private:
     float lastControlValue_;                    // The last value we sent out
     
     juniper::Node<float> rawValues_;                     // Most recent values
-    //pthread_mutex_t rawValueAccessMutex_;       // Mutex protecting access to raw values buffer
+//    pthread_mutex_t rawValueAccessMutex_;       // Mutex protecting access to raw values buffer
 };
 
 
