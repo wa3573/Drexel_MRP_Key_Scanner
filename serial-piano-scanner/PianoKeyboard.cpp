@@ -25,7 +25,7 @@
 
 #include "PianoKeyboard.h"
 #include "TouchkeyDevice.h"
-#include <chrono>
+#include "Utility/Time.h"
 //#include "../Mappings/Mapping.h"
 #include "MidiOutputController.h"
 //#include "../Mappings/MappingFactory.h"
@@ -142,13 +142,10 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 	while(it != ret.second) {
 		OscHandler *object = (*it++).second;
 
-		auto before_epoch = std::chrono::high_resolution_clock::now().time_since_epoch();
-		auto before = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-//        double before = Time::getMillisecondCounterHiRes();
+        double before = Time::getMillisecondCounterHiRes();
 //		object->oscHandlerMethod(path, type, argc, argv, 0);
-		auto difference = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() - before;
-		timeInHandlers += (long int)difference;
-//        timeInHandlers += Time::getMillisecondCounterHiRes() - before;
+
+        timeInHandlers += Time::getMillisecondCounterHiRes() - before;
         numHandlers++; // DEBUG
 	}
     //oscListenerMutex_.exitRead();

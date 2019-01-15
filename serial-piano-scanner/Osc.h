@@ -111,11 +111,12 @@ public:
             snprintf(portStr, 16, "%d", port);
 #endif
 
-            oscServerThread_ = lo_server_thread_new(portStr, staticErrorHandler);
-            if(oscServerThread_ != 0) {
-                lo_server_thread_add_method(oscServerThread_, NULL, NULL, OscReceiver::staticHandler, (void *)this);
-                lo_server_thread_start(oscServerThread_);
-            }
+            // TODO: liblo
+//            oscServerThread_ = lo_server_thread_new(portStr, staticErrorHandler);
+//            if(oscServerThread_ != 0) {
+//                lo_server_thread_add_method(oscServerThread_, NULL, NULL, OscReceiver::staticHandler, (void *)this);
+//                lo_server_thread_start(oscServerThread_);
+//            }
         }
         else
             oscServerThread_ = 0;
@@ -153,9 +154,10 @@ public:
 	
 	~OscReceiver() {
         if(oscServerThread_ != 0) {
-            lo_server_thread_del_method(oscServerThread_, NULL, NULL);
-            lo_server_thread_stop(oscServerThread_);
-            lo_server_thread_free(oscServerThread_);
+        	// TODO: liblo
+//            lo_server_thread_del_method(oscServerThread_, NULL, NULL);
+//            lo_server_thread_stop(oscServerThread_);
+//            lo_server_thread_free(oscServerThread_);
         }
 	}
 	

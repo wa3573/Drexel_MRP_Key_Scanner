@@ -23,7 +23,7 @@
 */
 
 #include "TimestampSynchronizer.h"
-#include <chrono>
+#include "Utility/Time.h"
 #include "Node.h"
 
 // Constructor
@@ -53,7 +53,7 @@ void TimestampSynchronizer::initialize(double clockTimeMilliseconds,
 // Given a frame number, calculate a current timestamp
 timestamp_type TimestampSynchronizer::synchronizedTimestamp(int rawFrameNumber) {
 	// Calculate the current system clock-related timestamp
-	timestamp_type clockTime = startingTimestamp_ + milliseconds_to_timestamp(std::chrono::high_resolution_clock::now().time_since_epoch().count() - startingClockTimeMilliseconds_);
+	timestamp_type clockTime = startingTimestamp_ + milliseconds_to_timestamp(Time::getMillisecondCounterHiRes() - startingClockTimeMilliseconds_);
 	timestamp_type frameTime;
 
 	// Retrieve the timestamp of the previous frame
