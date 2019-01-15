@@ -50,8 +50,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	TouchkeyReleaseAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                                Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+	TouchkeyReleaseAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                                juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 	
 	// Copy constructor
 	//TouchkeyReleaseAngleMapping(TouchkeyReleaseAngleMapping const& obj);
@@ -110,9 +110,9 @@ private:
     int downNotes_[RELEASE_ANGLE_MAX_SEQUENCE_LENGTH];
     int downVelocities_[RELEASE_ANGLE_MAX_SEQUENCE_LENGTH];
     
-    Node<KeyTouchFrame> pastSamples_;           // Locations of touch
+    juniper::Node<KeyTouchFrame> pastSamples_;           // Locations of touch
     timestamp_diff_type maxLookbackTime_;       // How long to look backwards to find release velocity
-    CriticalSection sampleBufferMutex_;         // Mutex to protect threaded access to sample buffer
+    pthread_mutex_t sampleBufferMutex_;         // Mutex to protect threaded access to sample buffer
 };
 
 #endif /* defined(__TouchKeys__TouchkeyReleaseAngleMapping__) */

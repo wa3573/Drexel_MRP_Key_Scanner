@@ -23,7 +23,6 @@
 */
 
 #include "TouchkeyReleaseAngleMappingFactory.h"
-#include "TouchkeyReleaseAngleMappingExtendedEditor.h"
 
 // Class constants
 const timestamp_diff_type TouchkeyReleaseAngleMappingFactory::kDefaultMaxLookbackTime = milliseconds_to_timestamp(100);
@@ -201,70 +200,70 @@ MappingEditorComponent* TouchkeyReleaseAngleMappingFactory::createExtendedEditor
 #endif
 
 
-// ****** Preset Save/Load ******
-XmlElement* TouchkeyReleaseAngleMappingFactory::getPreset() {
-    PropertySet properties;
-    
-    storeCommonProperties(properties);
-    
-    properties.setValue("currentConfiguration", currentConfiguration_);
-    properties.setValue("upEnabled", upEnabled_);
-    properties.setValue("downEnabled", downEnabled_);
-    properties.setValue("upMinimumAngle", upMinimumAngle_);
-    properties.setValue("downMinimumAngle", downMinimumAngle_);
-    properties.setValue("windowSizeMilliseconds", windowSizeMilliseconds_);
-
-    // TODO: set arrays of notes and velocities
-    
-    XmlElement* preset = properties.createXml("MappingFactory");
-    preset->setAttribute("type", "ReleaseAngle");
-    
-    return preset;
-}
-
-bool TouchkeyReleaseAngleMappingFactory::loadPreset(XmlElement const* preset) {
-    if(preset == 0)
-        return false;
-    
-    PropertySet properties;
-    properties.restoreFromXml(*preset);
-    
-    if(!loadCommonProperties(properties))
-        return false;
-    
-    // First check if there's a default configuration in use
-    // We can get all other parameters from that regardless of the
-    // remaining contents
-    if(properties.containsKey("currentConfiguration")) {
-        int config = properties.getIntValue("currentConfiguration");
-        if(config >= 0 && config < kNumConfigurations)
-            setCurrentConfiguration(config);
-    }
-    else {
-        if(!properties.containsKey("upEnabled") ||
-           !properties.containsKey("downEnabled") ||
-           !properties.containsKey("upMinimumAngle") ||
-           !properties.containsKey("downMinimumAngle") ||
-           !properties.containsKey("windowSizeMilliseconds"))
-            return false;
-        
-        currentConfiguration_ = -1;
-        upEnabled_ = properties.getBoolValue("upEnabled");
-        downEnabled_ = properties.getBoolValue("downEnabled");
-        upMinimumAngle_ = properties.getDoubleValue("upMinimumAngle");
-        downMinimumAngle_ = properties.getDoubleValue("downMinimumAngle");
-        windowSizeMilliseconds_ = properties.getDoubleValue("windowSizeMilliseconds");
-
-        // TODO: load arrays of notes and velocities
-    }
-    
-    return true;
-}
+//// TODO: ****** Preset Save/Load ******
+//XmlElement* TouchkeyReleaseAngleMappingFactory::getPreset() {
+//    PropertySet properties;
+//
+//    storeCommonProperties(properties);
+//
+//    properties.setValue("currentConfiguration", currentConfiguration_);
+//    properties.setValue("upEnabled", upEnabled_);
+//    properties.setValue("downEnabled", downEnabled_);
+//    properties.setValue("upMinimumAngle", upMinimumAngle_);
+//    properties.setValue("downMinimumAngle", downMinimumAngle_);
+//    properties.setValue("windowSizeMilliseconds", windowSizeMilliseconds_);
+//
+//    // TODO: set arrays of notes and velocities
+//
+//    XmlElement* preset = properties.createXml("MappingFactory");
+//    preset->setAttribute("type", "ReleaseAngle");
+//
+//    return preset;
+//}
+//
+//bool TouchkeyReleaseAngleMappingFactory::loadPreset(XmlElement const* preset) {
+//    if(preset == 0)
+//        return false;
+//
+//    PropertySet properties;
+//    properties.restoreFromXml(*preset);
+//
+//    if(!loadCommonProperties(properties))
+//        return false;
+//
+//    // First check if there's a default configuration in use
+//    // We can get all other parameters from that regardless of the
+//    // remaining contents
+//    if(properties.containsKey("currentConfiguration")) {
+//        int config = properties.getIntValue("currentConfiguration");
+//        if(config >= 0 && config < kNumConfigurations)
+//            setCurrentConfiguration(config);
+//    }
+//    else {
+//        if(!properties.containsKey("upEnabled") ||
+//           !properties.containsKey("downEnabled") ||
+//           !properties.containsKey("upMinimumAngle") ||
+//           !properties.containsKey("downMinimumAngle") ||
+//           !properties.containsKey("windowSizeMilliseconds"))
+//            return false;
+//
+//        currentConfiguration_ = -1;
+//        upEnabled_ = properties.getBoolValue("upEnabled");
+//        downEnabled_ = properties.getBoolValue("downEnabled");
+//        upMinimumAngle_ = properties.getDoubleValue("upMinimumAngle");
+//        downMinimumAngle_ = properties.getDoubleValue("downMinimumAngle");
+//        windowSizeMilliseconds_ = properties.getDoubleValue("windowSizeMilliseconds");
+//
+//        // TODO: load arrays of notes and velocities
+//    }
+//
+//    return true;
+//}
 
 // MIDI note ended: see whether the mapping was suspended and if not, execute the angle calculation
 /*void TouchkeyReleaseAngleMappingFactory::midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                                                     Node<KeyTouchFrame>* touchBuffer,
-                                                     Node<key_position>* positionBuffer,
+                                                     juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                     juniper::Node<key_position>* positionBuffer,
                                                      KeyPositionTracker* positionTracker) {
     if(mappings_.count(noteNumber) != 0) {
         mappings_[noteNumber]->processRelease(keyboard_.schedulerCurrentTimestamp());

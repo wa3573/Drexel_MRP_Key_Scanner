@@ -120,7 +120,7 @@ public:
             shouldClear = true;
         }
         else if(bCoeffs.size() != inputHistory_->capacity()) {
-            inputHistory_->set_capacity(bCoeffs.size());
+            inputHistory_->resize(bCoeffs.size());
             shouldClear = true;
         }
         
@@ -129,7 +129,7 @@ public:
             shouldClear = true;
         }
         else if(aCoeffs.size() != outputHistory_->capacity()) {
-            outputHistory_->set_capacity(aCoeffs.size());
+            outputHistory_->resize(aCoeffs.size());
             shouldClear = true;
         }
         

@@ -27,7 +27,7 @@
 #include <iostream>
 #include <pthread.h>
 //#include <boost/circular_buffer.hpp>
-#include "circular_buffer.h"
+//#include "circular_buffer.h"
 //#include "../JuceLibraryCode/JuceHeader.h"
 #include "Types.h"
 #include "PianoTypes.h"
@@ -130,8 +130,8 @@ private:
 	// Table of warping values to correct for sensor non-linearity
 	key_position* warpTable_;
     
-//	CriticalSection calibrationMutex_;	// This mutex protects access to the entire calibration structure
-//	CriticalSection historyMutex_;		// This mutex is specifically tied to the history_ buffers
+//	pthread_mutex_t calibrationMutex_;	// This mutex protects access to the entire calibration structure
+//	pthread_mutex_t historyMutex_;		// This mutex is specifically tied to the history_ buffers
 	pthread_mutex_t calibrationMutex_;
 	pthread_mutex_t historyMutex_;
 

@@ -43,8 +43,8 @@ const int TouchkeyControlMapping::kDefaultDirection = TouchkeyControlMapping::kD
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-TouchkeyControlMapping::TouchkeyControlMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                                                   Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+TouchkeyControlMapping::TouchkeyControlMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                   juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : TouchkeyBaseMapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker),
 controlIsEngaged_(false),
 inputMin_(0.0), inputMax_(1.0), outputMin_(0.0), outputMax_(1.0), outputDefault_(0.0),

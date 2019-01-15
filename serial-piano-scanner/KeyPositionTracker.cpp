@@ -219,22 +219,22 @@ KeyPositionTracker::PercussivenessFeatures KeyPositionTracker::pressPercussivene
 
 /* TODO: engage() and disengage() */
 //// Register to receive messages from the key buffer on each new sample
-//void KeyPositionTracker::engage() {
-//    if(engaged_)
-//        return;
-//
-//    registerForTrigger(&keyBuffer_);
-//    engaged_ = true;
-//}
+void KeyPositionTracker::engage() {
+    if(engaged_)
+        return;
+
+    registerForTrigger(&keyBuffer_);
+    engaged_ = true;
+}
 //
 //// Unregister from receiving message on new samples
-//void KeyPositionTracker::disengage() {
-//    if(!engaged_)
-//        return;
-//
-//    unregisterForTrigger(&keyBuffer_);
-//    engaged_ = false;
-//}
+void KeyPositionTracker::disengage() {
+    if(!engaged_)
+        return;
+
+    unregisterForTrigger(&keyBuffer_);
+    engaged_ = false;
+}
 
 // Clear current state and reset to unknown state
 void KeyPositionTracker::reset() {

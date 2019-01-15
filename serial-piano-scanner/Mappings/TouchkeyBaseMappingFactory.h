@@ -32,9 +32,9 @@
 #include <map>
 #include <sstream>
 #include "MappingFactory.h"
-#include "../TouchKeys/OscMidiConverter.h"
-#include "../TouchKeys/MidiOutputController.h"
-#include "../TouchKeys/MidiKeyboardSegment.h"
+#include "../OscMidiConverter.h"
+#include "../MidiOutputController.h"
+#include "../MidiKeyboardSegment.h"
 #include "MappingScheduler.h"
 
 #undef DEBUG_TOUCHKEY_BASE_MAPPING_FACTORY
@@ -77,27 +77,32 @@ public:
     
     // Look up a mapping with the given note number
     virtual MappingType* mapping(int noteNumber) {
-        ScopedLock sl(mappingsMutex_);
-        if(mappings_.count(noteNumber) == 0)
-            return 0;
+        pthread_mutex_lock(&mappingsMutex_);
+        if(mappings_.count(noteNumber) == 0) {
+        	pthread_mutex_unlock(&mappingsMutex_);
+        	return 0;
+        }
+        pthread_mutex_unlock(&mappingsMutex_);
         return mappings_[noteNumber];
     }
     
     // Return a list of all active notes
     virtual std::vector<int> activeMappings()  {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         std::vector<int> keys;
         typename std::map<int, MappingType*>::iterator it = mappings_.begin();
         while(it != mappings_.end()) {
             int nextKey = (it++)->first;
             keys.push_back(nextKey);
         }
+
+        pthread_mutex_unlock(&mappingsMutex_);
         return keys;
     }
 
     // Remove all active mappings
     virtual void removeAllMappings() {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         typename std::map<int, MappingType*>::iterator it = mappings_.begin();
         
         while(it != mappings_.end()) {
@@ -115,25 +120,28 @@ public:
         
         // Now clear the container
         mappings_.clear();
+        pthread_mutex_unlock(&mappingsMutex_);
     }
     
     // Callback from mapping to say it's finished
     virtual void mappingFinished(int noteNumber) {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         removeMapping(noteNumber);
+        pthread_mutex_unlock(&mappingsMutex_);
     }
     
     // Suspend messages from a particular note
     virtual void suspendMapping(int noteNumber) {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         if(mappings_.count(noteNumber) == 0)
             return;
         mappings_[noteNumber]->suspend();
+        pthread_mutex_unlock(&mappingsMutex_);
     }
     
     // Suspend messages from all notes
     virtual void suspendAllMappings() {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         typename std::map<int, MappingType*>::iterator it = mappings_.begin();
         
         while(it != mappings_.end()) {
@@ -141,26 +149,31 @@ public:
             it->second->suspend();
             it++;
         }
+        pthread_mutex_unlock(&mappingsMutex_);
     }
     
     // Resume messages from a particular note
     virtual void resumeMapping(int noteNumber, bool resend) {
-        ScopedLock sl(mappingsMutex_);
-        if(mappings_.count(noteNumber) == 0)
+        pthread_mutex_lock(&mappingsMutex_);
+        if(mappings_.count(noteNumber) == 0) {
+        	pthread_mutex_unlock(&mappingsMutex_);
             return;
+        }
         //std::cout << "resuming mapping on note " << noteNumber << std::endl;
         mappings_[noteNumber]->resume(resend);
+        pthread_mutex_unlock(&mappingsMutex_);
     }
     
     // Resume messages on all notes
     virtual void resumeAllMappings(bool resend) {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         typename std::map<int, MappingType*>::iterator it = mappings_.begin();
         
         while(it != mappings_.end()) {
             it->second->resume(resend);
             it++;
         }
+        pthread_mutex_unlock(&mappingsMutex_);
     }
     
     // Whether this mapping is bypassed
@@ -220,7 +233,7 @@ public:
         if(midiConverter_ != 0 && controlName_ != "")
             midiConverter_->removeControl(controlName_.c_str());
         
-        ss << "/touchkeys/mapping/segment" << (int)keyboardSegment_.outputPort() << "/" << name;
+        ss << "/mapping/segment" << (int)keyboardSegment_.outputPort() << "/" << name;
         controlName_ = ss.str();
 
         // Add listener for new name
@@ -233,30 +246,30 @@ public:
         activeNotes_ = notes;
     }
     
-    // ****** Preset Save/Load ******
+    // TODO: ****** Preset Save/Load ******
     
     // These generate XML settings files and reload settings from them
     
-    virtual XmlElement* getPreset() {
-        PropertySet properties;
-        storeCommonProperties(properties);
-        
-        XmlElement* presetElement = properties.createXml("MappingFactory");
-        presetElement->setAttribute("type", "Unknown");
-        return presetElement;
-    }
-    
-    virtual bool loadPreset(XmlElement const* preset) {
-        if(preset == 0)
-            return false;
-        
-        PropertySet properties;
-        properties.restoreFromXml(*preset);
-        
-        if(!loadCommonProperties(properties))
-            return false;
-        return true;
-    }
+//    virtual XmlElement* getPreset() {
+//        PropertySet properties;
+//        storeCommonProperties(properties);
+//
+//        XmlElement* presetElement = properties.createXml("MappingFactory");
+//        presetElement->setAttribute("type", "Unknown");
+//        return presetElement;
+//    }
+//
+//    virtual bool loadPreset(XmlElement const* preset) {
+//        if(preset == 0)
+//            return false;
+//
+//        PropertySet properties;
+//        properties.restoreFromXml(*preset);
+//
+//        if(!loadCommonProperties(properties))
+//            return false;
+//        return true;
+//    }
     
     // ***** State Updaters *****
     
@@ -266,10 +279,10 @@ public:
     
     // Touch becomes active on a key where it wasn't previously
     virtual void touchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                    Node<KeyTouchFrame>* touchBuffer,
-                    Node<key_position>* positionBuffer,
+                    juniper::Node<KeyTouchFrame>* touchBuffer,
+                    juniper::Node<key_position>* positionBuffer,
                     KeyPositionTracker* positionTracker)  {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         // Add a new mapping if one doesn't exist already
         if(mappings_.count(noteNumber) == 0) {
 #ifdef DEBUG_TOUCHKEY_BASE_MAPPING_FACTORY
@@ -283,10 +296,10 @@ public:
     
     // Touch ends on a key where it wasn't previously
     virtual void touchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                    Node<KeyTouchFrame>* touchBuffer,
-                    Node<key_position>* positionBuffer,
+                    juniper::Node<KeyTouchFrame>* touchBuffer,
+                    juniper::Node<key_position>* positionBuffer,
                     KeyPositionTracker* positionTracker) {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         // If a mapping exists but the MIDI note is off, remove the mapping
         if(mappings_.count(noteNumber) != 0 && !midiNoteIsOn) {
 #ifdef DEBUG_TOUCHKEY_BASE_MAPPING_FACTORY
@@ -295,14 +308,15 @@ public:
             if(mappings_[noteNumber]->requestFinish())
                 removeMapping(noteNumber);
         }
+        pthread_mutex_unlock(&mappingsMutex_);
     }
     
     // MIDI note on for a key
     virtual void midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                    Node<KeyTouchFrame>* touchBuffer,
-                    Node<key_position>* positionBuffer,
+                    juniper::Node<KeyTouchFrame>* touchBuffer,
+                    juniper::Node<key_position>* positionBuffer,
                     KeyPositionTracker* positionTracker)  {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         // Add a new mapping if one doesn't exist already
         if(mappings_.count(noteNumber) == 0) {
 #ifdef DEBUG_TOUCHKEY_BASE_MAPPING_FACTORY
@@ -312,14 +326,15 @@ public:
             if((activeNotes_ & (1 << moduloNoteNumber)) && !bypassed_)
                 addMapping(noteNumber, touchBuffer, positionBuffer, positionTracker);
         }
+        pthread_mutex_unlock(&mappingsMutex_);
     }
 
     // MIDI note off for a key
     virtual void midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                     Node<KeyTouchFrame>* touchBuffer,
-                     Node<key_position>* positionBuffer,
+                     juniper::Node<KeyTouchFrame>* touchBuffer,
+                     juniper::Node<key_position>* positionBuffer,
                      KeyPositionTracker* positionTracker)  {
-        ScopedLock sl(mappingsMutex_);
+        pthread_mutex_lock(&mappingsMutex_);
         // If a mapping exists but the touch is off, remove the mapping
         if(mappings_.count(noteNumber) != 0 && !touchIsOn) {
 #ifdef DEBUG_TOUCHKEY_BASE_MAPPING_FACTORY
@@ -328,19 +343,21 @@ public:
             if(mappings_[noteNumber]->requestFinish())
                 removeMapping(noteNumber);
         }
+
+        pthread_mutex_unlock(&mappingsMutex_);
     }
     
     // Subclasses of this one won't care about these two methods:
     
     // Key goes active from continuous key position
     virtual void keyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                         Node<KeyTouchFrame>* touchBuffer,
-                         Node<key_position>* positionBuffer,
+                         juniper::Node<KeyTouchFrame>* touchBuffer,
+                         juniper::Node<key_position>* positionBuffer,
                          KeyPositionTracker* positionTracker) {}
     // Key goes idle from continuous key position
     virtual void keyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                       Node<KeyTouchFrame>* touchBuffer,
-                       Node<key_position>* positionBuffer,
+                       juniper::Node<KeyTouchFrame>* touchBuffer,
+                       juniper::Node<key_position>* positionBuffer,
                        KeyPositionTracker* positionTracker) {}
     
     // But we do use this one to send out default values:
@@ -391,56 +408,56 @@ protected:
     // a new mapping.
     virtual void initializeMappingParameters(int noteNumber, MappingType *mapping) {}
     
-    // This method adds the common mapping properties to the given PropertySet
-    void storeCommonProperties(PropertySet& properties) {
-        properties.setValue("controlName", String(controlName_));
-        properties.setValue("inputRangeMin", inputRangeMin_);
-        properties.setValue("inputRangeMax", inputRangeMax_);
-        properties.setValue("inputRangeCenter", inputRangeCenter_);
-        properties.setValue("outOfRangeBehavior", outOfRangeBehavior_);
-        properties.setValue("midiControllerNumber", midiControllerNumber_);
-        properties.setValue("bypassed", bypassed_);
-        properties.setValue("activeNotes", (int)activeNotes_);
-    }
-    
-    // This method loads the common mapping properties from the given PropertySet
-    bool loadCommonProperties(PropertySet const& properties) {
-        if(!properties.containsKey("controlName") ||
-           !properties.containsKey("inputRangeMin") ||
-           !properties.containsKey("inputRangeMax") ||
-           !properties.containsKey("inputRangeCenter") ||
-           !properties.containsKey("outOfRangeBehavior") ||
-           !properties.containsKey("midiControllerNumber") ||
-           !properties.containsKey("bypassed") ||
-           !properties.containsKey("activeNotes")) {
-            return false;
-        }
-        
-        // Setting the MIDI controller number needs to be done with
-        // the setMidiParameters() method which will update midiControllerNumber_
-        int tempMidiController = 1;
-        
-        controlName_ = properties.getValue("controlName").toUTF8();
-        inputRangeMin_ = properties.getDoubleValue("inputRangeMin");
-        inputRangeMax_ = properties.getDoubleValue("inputRangeMax");
-        inputRangeCenter_ = properties.getDoubleValue("inputRangeCenter");
-        outOfRangeBehavior_ = properties.getIntValue("outOfRangeBehavior");
-        tempMidiController = properties.getIntValue("midiControllerNumber");
-        bypassed_ = properties.getBoolValue("bypassed");
-        activeNotes_ = properties.getIntValue("activeNotes");
-        
-        setMidiParameters(tempMidiController, inputRangeMin_, inputRangeMax_, inputRangeCenter_);
-        
-        return true;
-    }
-    
+//    // TODO: This method adds the common mapping properties to the given PropertySet
+//    void storeCommonProperties(PropertySet& properties) {
+//        properties.setValue("controlName", String(controlName_));
+//        properties.setValue("inputRangeMin", inputRangeMin_);
+//        properties.setValue("inputRangeMax", inputRangeMax_);
+//        properties.setValue("inputRangeCenter", inputRangeCenter_);
+//        properties.setValue("outOfRangeBehavior", outOfRangeBehavior_);
+//        properties.setValue("midiControllerNumber", midiControllerNumber_);
+//        properties.setValue("bypassed", bypassed_);
+//        properties.setValue("activeNotes", (int)activeNotes_);
+//    }
+//
+//    // TODO: This method loads the common mapping properties from the given PropertySet
+//    bool loadCommonProperties(PropertySet const& properties) {
+//        if(!properties.containsKey("controlName") ||
+//           !properties.containsKey("inputRangeMin") ||
+//           !properties.containsKey("inputRangeMax") ||
+//           !properties.containsKey("inputRangeCenter") ||
+//           !properties.containsKey("outOfRangeBehavior") ||
+//           !properties.containsKey("midiControllerNumber") ||
+//           !properties.containsKey("bypassed") ||
+//           !properties.containsKey("activeNotes")) {
+//            return false;
+//        }
+//
+//        // Setting the MIDI controller number needs to be done with
+//        // the setMidiParameters() method which will update midiControllerNumber_
+//        int tempMidiController = 1;
+//
+//        controlName_ = properties.getValue("controlName").toUTF8();
+//        inputRangeMin_ = properties.getDoubleValue("inputRangeMin");
+//        inputRangeMax_ = properties.getDoubleValue("inputRangeMax");
+//        inputRangeCenter_ = properties.getDoubleValue("inputRangeCenter");
+//        outOfRangeBehavior_ = properties.getIntValue("outOfRangeBehavior");
+//        tempMidiController = properties.getIntValue("midiControllerNumber");
+//        bypassed_ = properties.getBoolValue("bypassed");
+//        activeNotes_ = properties.getIntValue("activeNotes");
+//
+//        setMidiParameters(tempMidiController, inputRangeMin_, inputRangeMax_, inputRangeCenter_);
+//
+//        return true;
+//    }
+//
 private:
     // ***** Private Methods *****
     
     // Add a new mapping
     void addMapping(int noteNumber,
-                    Node<KeyTouchFrame>* touchBuffer,
-                    Node<key_position>* positionBuffer,
+                    juniper::Node<KeyTouchFrame>* touchBuffer,
+                    juniper::Node<key_position>* positionBuffer,
                     KeyPositionTracker* positionTracker)  {
         // TODO: mutex
         removeMapping(noteNumber);  // Free any mapping that's already present on this note
@@ -479,7 +496,7 @@ protected:
     MidiKeyboardSegment& keyboardSegment_;         // Segment of the keyboard that this mapping addresses
     OscMidiConverter *midiConverter_;              // Object to convert OSC messages to MIDI
     std::map<int, MappingType*> mappings_;         // Collection of active mappings
-    CriticalSection mappingsMutex_;                // Mutex protecting mappings from changes
+    pthread_mutex_t mappingsMutex_;                // Mutex protecting mappings from changes
     
     std::string controlName_;                           // Name of the mapping in long..
     std::string shortControlName_;                      // ... and short forms

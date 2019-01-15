@@ -95,16 +95,16 @@ public:
     MappingEditorComponent* createExtendedEditor();
 #endif
     
-    // ****** Preset Save/Load ******
-    XmlElement* getPreset();
-    bool loadPreset(XmlElement const* preset);
+    // TODO: ****** Preset Save/Load ******
+//    XmlElement* getPreset();
+//    bool loadPreset(XmlElement const* preset);
     
     // ***** State Updaters *****
     
     // Override the MIDI note off method to process the release angle
     /*void midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                     Node<KeyTouchFrame>* touchBuffer,
-                     Node<key_position>* positionBuffer,
+                     juniper::Node<KeyTouchFrame>* touchBuffer,
+                     juniper::Node<key_position>* positionBuffer,
                      KeyPositionTracker* positionTracker);*/
     
     //void midiNoteOffReceived(int channel);

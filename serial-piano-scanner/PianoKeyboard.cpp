@@ -115,11 +115,11 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 	va_list v;
 	va_start(v, type);	
 	
-	// Make a new OSC message which we will use both internally and externally
-	lo_message msg = lo_message_new();
-	lo_message_add_varargs(msg, type, v);
-	int argc = lo_message_get_argc(msg);
-	lo_arg **argv = lo_message_get_argv(msg);
+	// TODO: Make a new OSC message which we will use both internally and externally
+//	lo_message msg = lo_message_new();
+//	lo_message_add_varargs(msg, type, v);
+//	int argc = lo_message_get_argc(msg);
+//	lo_arg **argv = lo_message_get_argv(msg);
 	
 	// Internal handler lookup first
 	// Lock the mutex so the list of listeners doesn't change midway through
@@ -136,17 +136,18 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 	ret = noteListeners_.equal_range((std::string)path);
 	
 //    double timeInHandlers = 0;
-	std::chrono::milliseconds timeInHandlers = 0;
+	long int timeInHandlers = 0;
     int numHandlers = 0; // DEBUG
 	it = ret.first;
 	while(it != ret.second) {
 		OscHandler *object = (*it++).second;
 
-		std::chrono::milliseconds before = std::chrono::high_resolution_clock::now();
-
+		auto before_epoch = std::chrono::high_resolution_clock::now().time_since_epoch();
+		auto before = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 //        double before = Time::getMillisecondCounterHiRes();
-		object->oscHandlerMethod(path, type, argc, argv, 0);
-		timeInHandlers += std::chrono::high_resolution_clock::now() - before;
+//		object->oscHandlerMethod(path, type, argc, argv, 0);
+		auto difference = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() - before;
+		timeInHandlers += (long int)difference;
 //        timeInHandlers += Time::getMillisecondCounterHiRes() - before;
         numHandlers++; // DEBUG
 	}
@@ -157,10 +158,11 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
     //    cout << "sendMessage(): timeInHandlers = " << timeInHandlers << " for " << numHandlers << " handlers (msg " << path << ")\n";
 
 	// Now send this message to any external OSC sources	
-	if(oscTransmitter_ != 0)
-		oscTransmitter_->sendMessage(path, type, msg);
+//	if(oscTransmitter_ != 0)
+//		oscTransmitter_->sendMessage(path, type, msg);
 	
-	lo_message_free(msg);	
+
+//	lo_message_free(msg);
 	va_end(v);
 
 
@@ -255,54 +257,54 @@ void PianoKeyboard::clearMappings() {
     mappings_.clear();
 }
 
-//// Mapping factory methods: tell each registered factory about these events if it listens to this particular note
-//void PianoKeyboard::tellAllMappingFactoriesTouchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-//                                                      juniper::Node<KeyTouchFrame>* touchBuffer,
-//                                                      juniper::Node<key_position>* positionBuffer,
-//                                                      KeyPositionTracker* positionTracker) {
+// Mapping factory methods: tell each registered factory about these events if it listens to this particular note
+void PianoKeyboard::tellAllMappingFactoriesTouchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
+                                                      juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                      juniper::Node<key_position>* positionBuffer,
+                                                      KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
 //    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
 //    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
 //        if(it->first->respondsToNote(noteNumber))
 //            it->second->touchBegan(noteNumber, midiNoteIsOn, keyMotionActive, touchBuffer, positionBuffer, positionTracker);
 //    }
-//}
-//
-//void PianoKeyboard::tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-//                                                      juniper::Node<KeyTouchFrame>* touchBuffer,
-//                                                      juniper::Node<key_position>* positionBuffer,
-//                                                      KeyPositionTracker* positionTracker) {
+}
+
+void PianoKeyboard::tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
+                                                      juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                      juniper::Node<key_position>* positionBuffer,
+                                                      KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
 //    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
 //    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
 //        if(it->first->respondsToNote(noteNumber))
 //            it->second->touchEnded(noteNumber, midiNoteIsOn, keyMotionActive, touchBuffer, positionBuffer, positionTracker);
 //    }
-//}
-//
-//void PianoKeyboard::tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-//                                                           juniper::Node<KeyTouchFrame>* touchBuffer,
-//                                                           juniper::Node<key_position>* positionBuffer,
-//                                                           KeyPositionTracker* positionTracker) {
+}
+
+void PianoKeyboard::tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
+                                                           juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                           juniper::Node<key_position>* positionBuffer,
+                                                           KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
 //    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
 //    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
 //        if(it->first->respondsToNote(noteNumber))
 //            it->second->keyMotionActive(noteNumber, midiNoteIsOn, touchIsOn, touchBuffer, positionBuffer, positionTracker);
 //    }
-//}
-//
-//void PianoKeyboard::tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-//                                                         juniper::Node<KeyTouchFrame>* touchBuffer,
-//                                                         juniper::Node<key_position>* positionBuffer,
-//                                                         KeyPositionTracker* positionTracker) {
+}
+
+void PianoKeyboard::tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
+                                                         juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                         juniper::Node<key_position>* positionBuffer,
+                                                         KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
 //    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
 //    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
 //        if(it->first->respondsToNote(noteNumber))
 //            it->second->keyMotionIdle(noteNumber, midiNoteIsOn, touchIsOn, touchBuffer, positionBuffer, positionTracker);
 //    }
-//}
+}
 
 // Destructor
 

@@ -24,7 +24,7 @@
 
 #include "TouchkeyMultiFingerTriggerMapping.h"
 #include "TouchkeyMultiFingerTriggerMappingFactory.h"
-#include "../../TouchKeys/MidiOutputController.h"
+#include "../../MidiOutputController.h"
 
 // Class constants
 const int TouchkeyMultiFingerTriggerMapping::kDefaultFilterBufferLength = 30;
@@ -44,8 +44,8 @@ const int TouchkeyMultiFingerTriggerMapping::kDefaultTriggerOffNoteVel = -1;
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-TouchkeyMultiFingerTriggerMapping::TouchkeyMultiFingerTriggerMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                                                         Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+TouchkeyMultiFingerTriggerMapping::TouchkeyMultiFingerTriggerMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                         juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : TouchkeyBaseMapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker),
 numTouchesForTrigger_(kDefaultNumTouchesForTrigger), numFramesForTrigger_(kDefaultNumFramesForTrigger),
 numConsecutiveTapsForTrigger_(kDefaultNumConsecutiveTapsForTrigger), maxTapSpacing_(kDefaultMaxTapSpacing),
@@ -76,7 +76,7 @@ void TouchkeyMultiFingerTriggerMapping::disengage(bool shouldDelete) {
 
 // Reset state back to defaults
 void TouchkeyMultiFingerTriggerMapping::reset() {
-    ScopedLock sl(sampleBufferMutex_);
+    pthread_mutex_lock(&sampleBufferMutex_);
     
     TouchkeyBaseMapping::reset();
     pastSamples_.clear();
@@ -88,6 +88,7 @@ void TouchkeyMultiFingerTriggerMapping::reset() {
     hasGeneratedTap_ = false;
     lastTapStartTimestamp_ = missing_value<timestamp_type>::missing();
     hasTriggered_ = false;
+    pthread_mutex_unlock(&sampleBufferMutex_);
 }
 
 // Resend all current parameters

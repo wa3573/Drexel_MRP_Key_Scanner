@@ -25,7 +25,7 @@
 #include "TouchkeyReleaseAngleMapping.h"
 #include "TouchkeyReleaseAngleMappingFactory.h"
 #include "../MappingFactory.h"
-#include "../../TouchKeys/MidiOutputController.h"
+#include "../../MidiOutputController.h"
 #include "../MappingScheduler.h"
 
 #define DEBUG_RELEASE_ANGLE_MAPPING
@@ -42,8 +42,8 @@ const float TouchkeyReleaseAngleMapping::kDefaultDownMinimumAngle = 1.0;
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-TouchkeyReleaseAngleMapping::TouchkeyReleaseAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                                                         Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+TouchkeyReleaseAngleMapping::TouchkeyReleaseAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                         juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : TouchkeyBaseMapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker, false),
   upEnabled_(true), downEnabled_(true), upMinimumAngle_(kDefaultUpMinimumAngle), downMinimumAngle_(kDefaultDownMinimumAngle),
   pastSamples_(kDefaultFilterBufferLength), maxLookbackTime_(kDefaultMaxLookbackTime)
@@ -54,10 +54,11 @@ TouchkeyReleaseAngleMapping::TouchkeyReleaseAngleMapping(PianoKeyboard &keyboard
 
 // Reset state back to defaults
 void TouchkeyReleaseAngleMapping::reset() {
-    ScopedLock sl(sampleBufferMutex_);
+    pthread_mutex_lock(&sampleBufferMutex_);
     
     TouchkeyBaseMapping::reset();
     pastSamples_.clear();
+    pthread_mutex_unlock(&sampleBufferMutex_);
 }
 
 // Resend all current parameters
@@ -126,12 +127,13 @@ void TouchkeyReleaseAngleMapping::setDownVelocity(int sequence, int velocity) {
 // This method receives data from the touch buffer or possibly the continuous key angle (not used here)
 void TouchkeyReleaseAngleMapping::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
     if(who == touchBuffer_) {
-        ScopedLock sl(sampleBufferMutex_);
+        pthread_mutex_lock(&sampleBufferMutex_);
         
         // Save the latest frame, even if it is an empty touch (we need to know what happened even
         // after the touch ends since the MIDI off may come later)
         if(!touchBuffer_->empty())
             pastSamples_.insert(touchBuffer_->latest(), touchBuffer_->latestTimestamp());
+        pthread_mutex_unlock(&sampleBufferMutex_);
     }
 }
 
@@ -155,15 +157,15 @@ void TouchkeyReleaseAngleMapping::processRelease(/*timestamp_type timestamp*/) {
         return;
     }
     
-    sampleBufferMutex_.enter();
+    pthread_mutex_lock(&sampleBufferMutex_);
     
     // Look backwards from the current timestamp to find the velocity
     float calculatedVelocity = missing_value<float>::missing();
     bool touchWasOn = false;
     
     if(!pastSamples_.empty()) {
-        Node<KeyTouchFrame>::size_type index = pastSamples_.endIndex() - 1;
-        Node<KeyTouchFrame>::size_type mostRecentTouchPresentIndex = pastSamples_.endIndex() - 1;
+        juniper::Node<KeyTouchFrame>::size_type index = pastSamples_.endIndex() - 1;
+        juniper::Node<KeyTouchFrame>::size_type mostRecentTouchPresentIndex = pastSamples_.endIndex() - 1;
         timestamp_type lastTimestamp = pastSamples_.timestampAt(index);
         
         while(index >= pastSamples_.beginIndex()) {
@@ -215,7 +217,7 @@ void TouchkeyReleaseAngleMapping::processRelease(/*timestamp_type timestamp*/) {
 #endif
     }
     
-    sampleBufferMutex_.exit();
+    pthread_mutex_unlock(&sampleBufferMutex_);
     
     if(!missing_value<float>::isMissing(calculatedVelocity)) {
 #ifdef DEBUG_RELEASE_ANGLE_MAPPING
@@ -234,7 +236,7 @@ void TouchkeyReleaseAngleMapping::processRelease(/*timestamp_type timestamp*/) {
 
 void TouchkeyReleaseAngleMapping::sendReleaseAngleMessage(float releaseAngle, bool force) {
     if(force || !suspended_) {
-        keyboard_.sendMessage("/touchkeys/releaseangle", "if", noteNumber_, releaseAngle, LO_ARGS_END);
+        keyboard_.sendMessage("/releaseangle", "if", noteNumber_, releaseAngle, LO_ARGS_END);
         
         if(keyboard_.midiOutputController() == 0)
             return;

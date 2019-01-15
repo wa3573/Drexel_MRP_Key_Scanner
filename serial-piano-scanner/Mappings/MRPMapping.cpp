@@ -42,8 +42,8 @@ const float MRPMapping::kVibratoRateScaler = 0.005;
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-MRPMapping::MRPMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                     Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+MRPMapping::MRPMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                     juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : Mapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker),
   noteIsOn_(false), lastIntensity_(missing_value<float>::missing()),
   lastBrightness_(missing_value<float>::missing()), lastPitch_(missing_value<float>::missing()),
@@ -124,7 +124,7 @@ void MRPMapping::setAftertouchSensitivity(float sensitivity) {
 // This is called by another MRPMapping when it finds a pitch bend starting.
 // Add the sending note to our list of bends, with the sending note marked
 // as controlling the bend
-void MRPMapping::enablePitchBend(int toNote, Node<key_position>* toPositionBuffer,
+void MRPMapping::enablePitchBend(int toNote, juniper::Node<key_position>* toPositionBuffer,
                                 KeyPositionTracker *toPositionTracker) {
     if(toPositionBuffer == 0 || toPositionTracker == 0)
         return;
@@ -551,7 +551,7 @@ timestamp_type MRPMapping::findTimestampOfPartialPress() {
     if(positionTracker_->empty())
         return missing_value<timestamp_type>::missing();
     //Node<int>::reverse_iterator it = positionTracker_->rbegin();
-    Node<int>::size_type index = positionTracker_->endIndex() - 1;
+    juniper::Node<int>::size_type index = positionTracker_->endIndex() - 1;
     bool foundPartialPressState = false;
     timestamp_type earliestPartialPressTimestamp;
 

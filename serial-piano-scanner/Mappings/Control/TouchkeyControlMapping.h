@@ -29,7 +29,7 @@
 #include <map>
 #include <boost/bind.hpp>
 #include "../TouchkeyBaseMapping.h"
-#include "../../Utility/IIRFilter.h"
+#include "../../IIRFilter.h"
 
 // This class handles the implementation of a basic MIDI/OSC control message
 // based on touch data. It can use absolute or relative position in the X
@@ -75,8 +75,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	TouchkeyControlMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                             Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+	TouchkeyControlMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                             juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 	
     // ***** Destructor *****
     
@@ -160,15 +160,15 @@ private:
     float lastValue_;                          // Where the touch was at the last frame we received
     int idsOfCurrentTouches_[3];                // Which touch ID(s) we're currently following
     timestamp_type lastTimestamp_;              // When the last data point arrived
-    Node<float>::size_type lastProcessedIndex_; // Index of the last filtered position sample we've handled
+    juniper::Node<float>::size_type lastProcessedIndex_; // Index of the last filtered position sample we've handled
     
     float controlEngageLocation_;                  // Where the controller was engaged (i.e. where the threshold was crossed, if relative)
     float controlScalerPositive_, controlScalerNegative_; // Translation between position and control values for upward and downward motions
 
     float lastControlValue_;                    // The last value we sent out
     
-    Node<float> rawValues_;                     // Most recent values
-    //CriticalSection rawValueAccessMutex_;       // Mutex protecting access to raw values buffer
+    juniper::Node<float> rawValues_;                     // Most recent values
+    //pthread_mutex_t rawValueAccessMutex_;       // Mutex protecting access to raw values buffer
 };
 
 

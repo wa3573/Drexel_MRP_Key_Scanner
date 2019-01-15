@@ -33,8 +33,9 @@ void TriggerSource::sendTrigger(timestamp_type timestamp) {
 #endif
     
     if(triggerDestinationsModified_) {
-        ScopedLock sl(triggerSourceMutex_);
+        pthread_mutex_lock(&triggerSourceMutex_);
         processAddRemoveQueue();
+        pthread_mutex_unlock(&triggerSourceMutex_);
     }
     
     std::set<TriggerDestination*>::iterator it = triggerDestinations_.begin();
@@ -55,7 +56,7 @@ void TriggerSource::addTriggerDestination(TriggerDestination* dest) {
 #endif
 	if(dest == 0 || (void*)dest == (void*)this)
 		return;
-    ScopedLock sl(triggerSourceMutex_);
+    pthread_mutex_lock(&triggerSourceMutex_);
     // Make sure this trigger isn't already present
     if(triggerDestinations_.count(dest) == 0) {
         triggersToAdd_.insert(dest);
@@ -64,13 +65,14 @@ void TriggerSource::addTriggerDestination(TriggerDestination* dest) {
     // If the trigger is also slated to be removed, cancel that request
     if(triggersToRemove_.count(dest) != 0)
         triggersToRemove_.erase(dest);
+    pthread_mutex_unlock(&triggerSourceMutex_);
 }
 
 void TriggerSource::removeTriggerDestination(TriggerDestination* dest) {
 #ifdef DEBUG_TRIGGERS
     std::cerr << "removeTriggerDestination (" << this << "): " << dest << "\n";
 #endif
-    ScopedLock sl(triggerSourceMutex_);
+    pthread_mutex_lock(&triggerSourceMutex_);
     // Check whether this trigger is actually present
     if(triggerDestinations_.count(dest) != 0) {
         triggersToRemove_.insert(dest);
@@ -79,18 +81,20 @@ void TriggerSource::removeTriggerDestination(TriggerDestination* dest) {
     // If the trigger is also slated to be added, cancel that request
     if(triggersToAdd_.count(dest) != 0)
         triggersToAdd_.erase(dest);
+    pthread_mutex_unlock(&triggerSourceMutex_);
 }	
 
 void TriggerSource::clearTriggerDestinations() {
 #ifdef DEBUG_TRIGGERS
     std::cerr << "clearTriggerDestinations (" << this << ")\n";
 #endif
-    ScopedLock sl(triggerSourceMutex_);
+    pthread_mutex_lock(&triggerSourceMutex_);
     processAddRemoveQueue();
 	std::set<TriggerDestination*>::iterator it;
 	for(it = triggerDestinations_.begin(); it != triggerDestinations_.end(); ++it)
 		(*it)->triggerSourceDeleted(this);		
 	triggerDestinations_.clear();
+	pthread_mutex_unlock(&triggerSourceMutex_);
 }
 
 // Process everything in the add and remove groups and transfer them

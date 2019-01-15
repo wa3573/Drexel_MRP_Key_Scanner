@@ -22,6 +22,7 @@
 */
 
 #include "MidiOutputController.h"
+#include <vector>
 
 #undef DEBUG_MIDI_OUTPUT_CONTROLLER
 #undef MIDI_OUTPUT_CONTROLLER_DEBUG_RAW
@@ -35,82 +36,82 @@ MidiOutputController::MidiOutputController()
 // indices and names for each device.  The index will later be passed back
 // to indicate which device to open.
 
-vector<pair<int, string> > MidiOutputController::availableMidiDevices() {
-	vector<pair<int, string> > deviceList;
-    
-	try {
-        StringArray deviceStrings = MidiOutput::getDevices();
-		
-		for(int i = 0; i < deviceStrings.size(); i++) {
-			pair<int, string> p(i, string(deviceStrings[i].toUTF8()));
-			deviceList.push_back(p);
-		}
-	}
-	catch(...) {
-		deviceList.clear();
-	}
-	
-	return deviceList;
-}
+//vector<pair<int, string> > MidiOutputController::availableMidiDevices() {
+//	vector<pair<int, string> > deviceList;
+//
+//	try {
+//        StringArray deviceStrings = MidiOutput::getDevices();
+//
+//		for(int i = 0; i < deviceStrings.size(); i++) {
+//			pair<int, string> p(i, string(deviceStrings[i].toUTF8()));
+//			deviceList.push_back(p);
+//		}
+//	}
+//	catch(...) {
+//		deviceList.clear();
+//	}
+//
+//	return deviceList;
+//}
 
 // Open a new MIDI output port, given an index related to the list from
 // availableMidiDevices().  Returns true on success.
 
-bool MidiOutputController::enablePort(int identifier, int deviceNumber) {
-	if(deviceNumber < 0)
-		return false;
-    
-    // Check if there is a port for this identifier, and disable it if so
-    if(activePorts_.count(identifier) > 0)
-        disablePort(identifier);
-	
-    MidiOutput *device = MidiOutput::openDevice(deviceNumber);
-    
-    if(device == 0) {
-        cout << "Failed to enable MIDI output port " << deviceNumber << ")\n";
-        return false;
-    }
-    
-#ifdef DEBUG_MIDI_OUTPUT_CONTROLLER
-    cout << "Enabling MIDI output port " << deviceNumber << " for ID " << identifier << "\n";
-#endif
-    
-    // Save the device in the set of ports
-    MidiOutputControllerRecord record;
-    record.portNumber = deviceNumber;
-    record.output = device;
-    
-    activePorts_[identifier] = record;
-    
-	return true;
-}
-
-#ifndef JUCE_WINDOWS
-bool MidiOutputController::enableVirtualPort(int identifier, const char *name) {
-    // Check if there is a port for this identifier, and disable it if so
-    if(activePorts_.count(identifier) > 0)
-        disablePort(identifier);
-    
-    // Try to create a new port
-    MidiOutput* device = MidiOutput::createNewDevice(name);
-    if(device == 0) {
-        cout << "Failed to enable MIDI virtual output port " << name << ")\n";
-        return false;
-    }
-    
-    MidiOutputControllerRecord record;
-    record.portNumber = kMidiVirtualOutputPortNumber;
-    record.output = device;
-    
-    activePorts_[identifier] = record;
-    
-#ifdef DEBUG_MIDI_OUTPUT_CONTROLLER
-    cout << "Enabling virtual output port " << name << endl;
-#endif
-    
-	return true;
-}
-#endif
+//bool MidiOutputController::enablePort(int identifier, int deviceNumber) {
+//	if(deviceNumber < 0)
+//		return false;
+//
+//    // Check if there is a port for this identifier, and disable it if so
+//    if(activePorts_.count(identifier) > 0)
+//        disablePort(identifier);
+//
+//    MidiOutput *device = MidiOutput::openDevice(deviceNumber);
+//
+//    if(device == 0) {
+//        cout << "Failed to enable MIDI output port " << deviceNumber << ")\n";
+//        return false;
+//    }
+//
+//#ifdef DEBUG_MIDI_OUTPUT_CONTROLLER
+//    cout << "Enabling MIDI output port " << deviceNumber << " for ID " << identifier << "\n";
+//#endif
+//
+//    // Save the device in the set of ports
+//    MidiOutputControllerRecord record;
+//    record.portNumber = deviceNumber;
+//    record.output = device;
+//
+//    activePorts_[identifier] = record;
+//
+//	return true;
+//}
+//
+//#ifndef JUCE_WINDOWS
+//bool MidiOutputController::enableVirtualPort(int identifier, const char *name) {
+//    // Check if there is a port for this identifier, and disable it if so
+//    if(activePorts_.count(identifier) > 0)
+//        disablePort(identifier);
+//
+//    // Try to create a new port
+//    MidiOutput* device = MidiOutput::createNewDevice(name);
+//    if(device == 0) {
+//        cout << "Failed to enable MIDI virtual output port " << name << ")\n";
+//        return false;
+//    }
+//
+//    MidiOutputControllerRecord record;
+//    record.portNumber = kMidiVirtualOutputPortNumber;
+//    record.output = device;
+//
+//    activePorts_[identifier] = record;
+//
+//#ifdef DEBUG_MIDI_OUTPUT_CONTROLLER
+//    cout << "Enabling virtual output port " << name << endl;
+//#endif
+//
+//	return true;
+//}
+//#endif
 
 void MidiOutputController::disablePort(int identifier) {
 	if(activePorts_.count(identifier) <= 0)
@@ -164,104 +165,104 @@ std::vector<std::pair<int, int> > MidiOutputController::enabledPorts() {
     
     return ports;
 }
-
-// Get the name of a particular MIDI input port
-String MidiOutputController::deviceName(int portNumber) {
-    StringArray const& deviceStrings = MidiOutput::getDevices();
-    if(portNumber < 0 || portNumber >= deviceStrings.size())
-        return "";
-    return deviceStrings[portNumber];
-}
-
-// Find the index of a device with a given name; return -1 if not found
-int MidiOutputController::indexOfDeviceNamed(String const& name) {
-    StringArray const& deviceStrings = MidiOutput::getDevices();
-    
-    for(int i = 0; i < deviceStrings.size(); i++) {
-        if(name == deviceStrings[i])
-            return i;
-    }
-    
-    return -1;
-}
-
-// Send a MIDI Note On message
+//
+//// Get the name of a particular MIDI input port
+//String MidiOutputController::deviceName(int portNumber) {
+//    StringArray const& deviceStrings = MidiOutput::getDevices();
+//    if(portNumber < 0 || portNumber >= deviceStrings.size())
+//        return "";
+//    return deviceStrings[portNumber];
+//}
+//
+//// Find the index of a device with a given name; return -1 if not found
+//int MidiOutputController::indexOfDeviceNamed(String const& name) {
+//    StringArray const& deviceStrings = MidiOutput::getDevices();
+//
+//    for(int i = 0; i < deviceStrings.size(); i++) {
+//        if(name == deviceStrings[i])
+//            return i;
+//    }
+//
+//    return -1;
+//}
+//
+//// Send a MIDI Note On message
 void MidiOutputController::sendNoteOn(int port, unsigned char channel, unsigned char note, unsigned char velocity) {
-	sendMessage(port,
-                MidiMessage((int)((channel & 0x0F) | kMidiMessageNoteOn),
-                            (int)(note & 0x7F),
-                            (int)(velocity & 0x7F)));
+//	sendMessage(port,
+//                MidiMessage((int)((channel & 0x0F) | kMidiMessageNoteOn),
+//                            (int)(note & 0x7F),
+//                            (int)(velocity & 0x7F)));
 }
-
-// Send a MIDI Note Off message
+//
+//// Send a MIDI Note Off message
 void MidiOutputController::sendNoteOff(int port, unsigned char channel, unsigned char note, unsigned char velocity) {
-	sendMessage(port,
-                MidiMessage((int)((channel & 0x0F) | kMidiMessageNoteOff),
-                            (int)(note & 0x7F),
-                            (int)(velocity & 0x7F)));
+//	sendMessage(port,
+//                MidiMessage((int)((channel & 0x0F) | kMidiMessageNoteOff),
+//                            (int)(note & 0x7F),
+//                            (int)(velocity & 0x7F)));
 }
-
-// Send a MIDI Control Change message
+//
+//// Send a MIDI Control Change message
 void MidiOutputController::sendControlChange(int port, unsigned char channel, unsigned char control, unsigned char value) {
-	sendMessage(port,
-                MidiMessage((int)((channel & 0x0F) | kMidiMessageControlChange),
-                            (int)(control & 0x7F),
-                            (int)(value & 0x7F)));
+//	sendMessage(port,
+//                MidiMessage((int)((channel & 0x0F) | kMidiMessageControlChange),
+//                            (int)(control & 0x7F),
+//                            (int)(value & 0x7F)));
 }
-
-// Send a MIDI Program Change message
+//
+//// Send a MIDI Program Change message
 void MidiOutputController::sendProgramChange(int port, unsigned char channel, unsigned char value) {
-	sendMessage(port,
-                MidiMessage((int)((channel & 0x0F) | kMidiMessageProgramChange),
-                            (int)(value & 0x7F)));
+//	sendMessage(port,
+//                MidiMessage((int)((channel & 0x0F) | kMidiMessageProgramChange),
+//                            (int)(value & 0x7F)));
 }
-
-// Send a Channel Aftertouch message
+//
+//// Send a Channel Aftertouch message
 void MidiOutputController::sendAftertouchChannel(int port, unsigned char channel, unsigned char value) {
-	sendMessage(port,
-                MidiMessage((int)((channel & 0x0F) | kMidiMessageAftertouchChannel),
-                            (int)(value & 0x7F)));
+//	sendMessage(port,
+//                MidiMessage((int)((channel & 0x0F) | kMidiMessageAftertouchChannel),
+//                            (int)(value & 0x7F)));
 }
-
-// Send a Polyphonic Aftertouch message
+//
+//// Send a Polyphonic Aftertouch message
 void MidiOutputController::sendAftertouchPoly(int port, unsigned char channel, unsigned char note, unsigned char value) {
-	sendMessage(port,
-                MidiMessage((int)((channel & 0x0F) | kMidiMessageAftertouchPoly),
-                            (int)(note & 0x7F),
-                            (int)(value & 0x7F)));
+//	sendMessage(port,
+//                MidiMessage((int)((channel & 0x0F) | kMidiMessageAftertouchPoly),
+//                            (int)(note & 0x7F),
+//                            (int)(value & 0x7F)));
 }
-
-// Send a Pitch Wheel message
+//
+//// Send a Pitch Wheel message
 void MidiOutputController::sendPitchWheel(int port, unsigned char channel, unsigned int value) {
-	sendMessage(port,
-                MidiMessage((int)((channel & 0x0F) | kMidiMessagePitchWheel),
-                            (int)(value & 0x7F),
-                            (int)((value >> 7) & 0x7F)));
+//	sendMessage(port,
+//                MidiMessage((int)((channel & 0x0F) | kMidiMessagePitchWheel),
+//                            (int)(value & 0x7F),
+//                            (int)((value >> 7) & 0x7F)));
 }
-
-// Send a MIDI system reset message
+//
+//// Send a MIDI system reset message
 void MidiOutputController::sendReset(int port) {
-	sendMessage(port, MidiMessage(kMidiMessageReset));
+//	sendMessage(port, MidiMessage(kMidiMessageReset));
 }
-
-// Send a generic MIDI message (pre-formatted data)
-void MidiOutputController::sendMessage(int port, const MidiMessage& message) {
-#ifdef MIDI_OUTPUT_CONTROLLER_DEBUG_RAW
-    int dataSize = message.getRawDataSize();
-    const unsigned char *data = message.getRawData();
-    
-	cout << "MIDI Output " << port << ": ";
-	for(int debugPrint = 0; debugPrint < dataSize; debugPrint++)
-		printf("%x ", data[debugPrint]);
-	cout << endl;
-#endif /* MIDI_OUTPUT_CONTROLLER_DEBUG_RAW */
-    
-	if(activePorts_.count(port) == 0) {
-#ifdef MIDI_OUTPUT_CONTROLLER_DEBUG_RAW
-        cout << "MIDI Output: no port on " << port << endl;
-#endif
-		return;
-    }
-    
-	activePorts_[port].output->sendMessageNow(message);
-}
+//
+//// Send a generic MIDI message (pre-formatted data)
+//void MidiOutputController::sendMessage(int port, const MidiMessage& message) {
+//#ifdef MIDI_OUTPUT_CONTROLLER_DEBUG_RAW
+//    int dataSize = message.getRawDataSize();
+//    const unsigned char *data = message.getRawData();
+//
+//	cout << "MIDI Output " << port << ": ";
+//	for(int debugPrint = 0; debugPrint < dataSize; debugPrint++)
+//		printf("%x ", data[debugPrint]);
+//	cout << endl;
+//#endif /* MIDI_OUTPUT_CONTROLLER_DEBUG_RAW */
+//
+//	if(activePorts_.count(port) == 0) {
+//#ifdef MIDI_OUTPUT_CONTROLLER_DEBUG_RAW
+//        cout << "MIDI Output: no port on " << port << endl;
+//#endif
+//		return;
+//    }
+//
+//	activePorts_[port].output->sendMessageNow(message);
+//}

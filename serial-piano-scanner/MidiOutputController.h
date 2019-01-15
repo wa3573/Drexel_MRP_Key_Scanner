@@ -25,18 +25,21 @@
 #define MIDI_OUTPUT_CONTROLLER_H
 
 #include <map>
+#include <vector>
 
 const std::string kMidiVirtualOutputName = "TouchKeys";
 
 using namespace std;
 
 class MidiOutputController {
+	typedef char MidiOutput;
+
 private:
     struct MidiOutputControllerRecord {
         int portNumber;
         // TODO: MidiOutput
-//        MidiOutput *output;
-        const char* output;
+        MidiOutput *output;
+//        const char* output;
     };
     
 public:
@@ -49,7 +52,7 @@ public:
 	MidiOutputController();
 	
 	// Query available devices
-	vector<pair<int, string> > availableMidiDevices();
+	std::vector<pair<int, string> > availableMidiDevices();
 	
 	// Methods to connect/disconnect from a target port
     bool enablePort(int identifier, int deviceNumber);

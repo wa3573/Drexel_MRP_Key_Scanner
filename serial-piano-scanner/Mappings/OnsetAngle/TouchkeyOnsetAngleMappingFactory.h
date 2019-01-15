@@ -47,16 +47,16 @@ public:
     
     virtual const std::string factoryTypeName() { return "Onset\nAngle"; }
     
-    // ****** Preset Save/Load ******
-    XmlElement* getPreset();
-    bool loadPreset(XmlElement const* preset);
+//    // TODO: ****** Preset Save/Load ******
+//    XmlElement* getPreset();
+//    bool loadPreset(XmlElement const* preset);
     
     // ***** State Updaters *****
     
     // Override the MIDI note on method to process the onset angle
     void midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                     Node<KeyTouchFrame>* touchBuffer,
-                     Node<key_position>* positionBuffer,
+                     juniper::Node<KeyTouchFrame>* touchBuffer,
+                     juniper::Node<key_position>* positionBuffer,
                      KeyPositionTracker* positionTracker);
     
 };

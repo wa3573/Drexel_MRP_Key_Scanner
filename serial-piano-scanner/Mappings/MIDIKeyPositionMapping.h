@@ -26,9 +26,9 @@
 
 #include <map>
 #include <boost/bind.hpp>
-#include "../TouchKeys/KeyTouchFrame.h"
-#include "../TouchKeys/KeyPositionTracker.h"
-#include "../TouchKeys/PianoKeyboard.h"
+#include "../KeyTouchFrame.h"
+#include "../KeyPositionTracker.h"
+#include "../PianoKeyboard.h"
 #include "Mapping.h"
 
 // This class handles the mapping from continuous key position to
@@ -53,8 +53,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	MIDIKeyPositionMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-               Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+	MIDIKeyPositionMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+               juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 	
 	// Copy constructor
 	MIDIKeyPositionMapping(MIDIKeyPositionMapping const& obj);

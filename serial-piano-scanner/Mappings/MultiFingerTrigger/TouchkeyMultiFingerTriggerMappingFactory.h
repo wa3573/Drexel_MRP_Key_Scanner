@@ -84,9 +84,9 @@ public:
     // ****** OSC Control Support ******
     OscMessage* oscControlMethod(const char *path, const char *types,
                                  int numValues, lo_arg **values, void *data);
-    // ****** Preset Save/Load ******
-    XmlElement* getPreset();
-    bool loadPreset(XmlElement const* preset);
+    // TODO: ****** Preset Save/Load ******
+//    XmlElement* getPreset();
+//    bool loadPreset(XmlElement const* preset);
     
 private:
     // ***** Private Methods *****

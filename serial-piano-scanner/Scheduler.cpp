@@ -20,25 +20,25 @@
 //  Scheduler.cpp: allows actions to be scheduled at future times. Runs a
 //  thread in which these actions are executed.
 //*/
-//
-//#include "Scheduler.h"
-//#undef DEBUG_SCHEDULER
-//
-//using std::cout;
-//
-//const timestamp_diff_type Scheduler::kAllowableAdvanceExecutionTime = milliseconds_to_timestamp(1.0);
-//
-//// Start the thread handling the scheduling.  Pass it an initial timestamp.
-//void Scheduler::start(timestamp_type where) {
+
+#include "Scheduler.h"
+#undef DEBUG_SCHEDULER
+
+using std::cout;
+
+const timestamp_diff_type Scheduler::kAllowableAdvanceExecutionTime = milliseconds_to_timestamp(1.0);
+
+// Start the thread handling the scheduling.  Pass it an initial timestamp.
+void Scheduler::start(timestamp_type where) {
 //	if(isRunning_)
 //		return;
 //    startingTimestamp_ = where;
 //    startThread();
-//}
-//
-//// Stop the scheduler thread if it is currently running.  Events will remain
-//// in the queue unless explicitly cleared.
-//void Scheduler::stop() {
+}
+
+// Stop the scheduler thread if it is currently running.  Events will remain
+// in the queue unless explicitly cleared.
+void Scheduler::stop() {
 //	if(!isRunning_)
 //		return;
 //
@@ -48,18 +48,18 @@
 //    stopThread(-1);
 //
 //	isRunning_ = false;
-//}
-//
-//// Return the current timestamp, relative to this class's start time.
-//timestamp_type Scheduler::currentTimestamp() {
+}
+
+// Return the current timestamp, relative to this class's start time.
+timestamp_type Scheduler::currentTimestamp() {
 //	if(!isRunning_)
 //		return 0;
 //    return milliseconds_to_timestamp(Time::getMillisecondCounterHiRes() - startTimeMilliseconds_);
 //	//return ptime_to_timestamp(microsec_clock::universal_time() - startTime_);
-//}
-//
-//// Schedule a new event
-//void Scheduler::schedule(void *who, action func, timestamp_type timestamp) {
+}
+
+// Schedule a new event
+void Scheduler::schedule(void *who, action func, timestamp_type timestamp) {
 //    ScopedLock sl(eventMutex_);
 //
 //#ifdef DEBUG_SCHEDULER
@@ -79,10 +79,10 @@
 //    // time of the next event has changed
 //    if(newActionWillComeFirst)
 //        waitableEvent_.signal();
-//}
-//
-//// Remove an existing event
-//void Scheduler::unschedule(void *who, timestamp_type timestamp) {
+}
+
+// Remove an existing event
+void Scheduler::unschedule(void *who, timestamp_type timestamp) {
 //#ifdef DEBUG_SCHEDULER
 //    std::cerr << "Scheduler::unschedule: " << who << ", " << timestamp << std::endl;
 //#endif
@@ -127,22 +127,22 @@
 //    std::cerr << "Scheduler::unschedule: done\n";
 //#endif
 //	// No need to wake up the thread...
-//}
-//
-//// Clear all events from the queue
-//void Scheduler::clear() {
+}
+
+// Clear all events from the queue
+void Scheduler::clear() {
 //    ScopedLock sl(eventMutex_);
 //
 //	events_.clear();
 //
 //	// No need to signal the condition variable.  If the thread is waiting, it can keep waiting.
-//}
-//
-//// This function runs in its own thread (from the Juce parent class).  It looks for the next event
-//// in the queue.  When its time arrives, the event is executed and removed from the queue.
-//// When the queue is empty, or the next event has not arrived yet, the thread sleeps.
-//
-//void Scheduler::run() {
+}
+
+// This function runs in its own thread (from the Juce parent class).  It looks for the next event
+// in the queue.  When its time arrives, the event is executed and removed from the queue.
+// When the queue is empty, or the next event has not arrived yet, the thread sleeps.
+
+void Scheduler::run() {
 //    // Start with the mutex locked.  The wait() methods will unlock it.
 //    eventMutex_.enter();
 //
@@ -216,4 +216,4 @@
 //    }
 //
 //    eventMutex_.exit();
-//}
+}

@@ -27,6 +27,7 @@
 #include "Mapping.h"
 #include "MappingFactory.h"
 #include "MappingScheduler.h"
+#include <functional>
 
 // Class constants
 const timestamp_diff_type Mapping::kDefaultUpdateInterval = microseconds_to_timestamp(5500);
@@ -36,16 +37,16 @@ const timestamp_diff_type Mapping::kDefaultUpdateInterval = microseconds_to_time
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-Mapping::Mapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                       Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+Mapping::Mapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                       juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : keyboard_(keyboard), factory_(factory), noteNumber_(noteNumber), touchBuffer_(touchBuffer),
 positionBuffer_(positionBuffer), positionTracker_(positionTracker), engaged_(false),
 suspended_(false), updateInterval_(kDefaultUpdateInterval),
 nextScheduledTimestamp_(0)
 {
-    // Create a statically bound call to the performMapping() method that
+    // TODO: Create a statically bound call to the performMapping() method that
     // we use each time we schedule a new mapping
-    mappingAction_ = boost::bind(&Mapping::performMapping, this);
+//    mappingAction_ = std::bind(&Mapping::performMapping, this);
 }
 
 // Copy constructor
@@ -54,9 +55,9 @@ touchBuffer_(obj.touchBuffer_), positionBuffer_(obj.positionBuffer_), positionTr
 engaged_(obj.engaged_), updateInterval_(obj.updateInterval_),
 nextScheduledTimestamp_(obj.nextScheduledTimestamp_)
 {
-    // Create a statically bound call to the performMapping() method that
+    // TODO: Create a statically bound call to the performMapping() method that
     // we use each time we schedule a new mapping
-    mappingAction_ = boost::bind(&Mapping::performMapping, this);
+//    mappingAction_ = std::bind(&Mapping::performMapping, this);
     
     // Register ourself if already engaged since the scheduler won't have a copy of this object
     if(engaged_) {

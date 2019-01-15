@@ -32,9 +32,20 @@ public:
 		typedef value_type& pointer;
 		typedef std::forward_iterator_tag iterator_category;
 
+		iterator() : buf_(NULL), pos_(0)
+		{
+
+		}
+
 		iterator(container_type* buf, size_t start_pos) :
 				buf_(buf), pos_(start_pos)
 		{
+		}
+
+		iterator(const iterator& other) :
+			buf_(other.buf_), pos_(other.pos_)
+		{
+
 		}
 
 		contained_type& operator*()
@@ -310,6 +321,12 @@ public:
 
 	typedef size_t size_type;
 
+	explicit circular_buffer() :
+			array_(0), array_size_(0), head_(
+					0), tail_(0), contents_size_(0)
+	{
+	}
+
 	explicit circular_buffer(std::size_t size) :
 			array_(std::unique_ptr<T[]>(new T[size])), array_size_(size), head_(
 					0), tail_(0), contents_size_(0)
@@ -437,6 +454,45 @@ inline void circular_buffer<T>::push_back(T item)
 }
 
 template<class T>
+inline void circular_buffer<T>::push_front(T item)
+{
+	pthread_mutex_lock(&mutex_);
+//	array_[head_] = item;
+//
+//	if (is_full_) {
+//		tail_ = (tail_ + 1) % array_size_;
+//	}
+//
+//	head_ = (head_ + 1) % array_size_;
+//	is_full_ = (head_ == tail_);
+
+//	increment_tail();
+//
+//	if (contents_size_ == array_size_) {
+//		increment_head();
+//	}
+//
+//	array_[tail_] = item;
+
+	if (!contents_size_) {
+		array_[head_] = item;
+		tail_ = head_;
+		++contents_size_;
+	} else if (contents_size_ != array_size_) {
+		increment_head();
+		array_[head_] = item;
+	} else {
+		// We always accept data when full
+		// and lose the front()
+		increment_head();
+		increment_tail();
+		array_[head_] = item;
+	}
+
+	pthread_mutex_unlock(&mutex_);
+}
+
+template<class T>
 inline T circular_buffer<T>::pop_front()
 {
 	if (empty()) {
@@ -446,6 +502,21 @@ inline T circular_buffer<T>::pop_front()
 	pthread_mutex_lock(&mutex_);
 	auto value = front();
 	increment_head();
+	pthread_mutex_unlock(&mutex_);
+
+	return value;
+}
+
+template<class T>
+inline T circular_buffer<T>::pop_back()
+{
+	if (empty()) {
+		return T();
+	}
+
+	pthread_mutex_lock(&mutex_);
+	auto value = back();
+	increment_tail();
 	pthread_mutex_unlock(&mutex_);
 
 	return value;

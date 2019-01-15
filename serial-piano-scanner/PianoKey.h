@@ -175,10 +175,7 @@ private:
 	// key position data.
 	
 	void changeState(key_state newState);
-//	void changeState(key_state ne//		if(after < before)
-			//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
-			//		return (size_type)(--it - timestamps_->begin()) + this->firstSampleIndex_;wState, timestamp_type timestamp);
-	
+	void changeState(key_state newState, timestamp_type timestamp);
 	void terminateActivity();
 	
 	// ***** Member Variables *****
@@ -204,7 +201,7 @@ private:
 
 	juniper::Node<key_position> positionBuffer_;     // Buffer that holds the key positions
 //	TODO: KeyIdleDetector: does not name a type
-//	KeyIdleDetector idleDetector_;          // Detector for whether the key is still or moving
+	KeyIdleDetector idleDetector_;          // Detector for whether the key is still or moving
     KeyPositionTracker positionTracker_;    // Object to track the various active states of the key
     timestamp_type timeOfLastGuiUpdate_;    // How long it's been since the last key position GUI call
     timestamp_type timeOfLastDebugPrint_;   // TESTING

@@ -26,10 +26,12 @@
 #ifndef __touchkeys__MappingFactory__
 #define __touchkeys__MappingFactory__
 
+#define TOUCHKEYS_NO_GUI
+
 #include <map>
 #include <boost/bind.hpp>
 #include "Mapping.h"
-#include "../GUI/MappingEditorComponent.h"
+//#include "../GUI/MappingEditorComponent.h"
 
 // This virtual base class defines a singular factory object from which individual
 // instances of mapping objects can be created and destroyed. How the mappings are
@@ -93,33 +95,33 @@ public:
     
     // Touch becomes active on a key where it wasn't previously
     virtual void touchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                            Node<KeyTouchFrame>* touchBuffer,
-                            Node<key_position>* positionBuffer,
+                            juniper::Node<KeyTouchFrame>* touchBuffer,
+                            juniper::Node<key_position>* positionBuffer,
                             KeyPositionTracker* positionTracker) = 0;
     // Touch ends on a key where it wasn't previously
     virtual void touchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                            Node<KeyTouchFrame>* touchBuffer,
-                            Node<key_position>* positionBuffer,
+                            juniper::Node<KeyTouchFrame>* touchBuffer,
+                            juniper::Node<key_position>* positionBuffer,
                             KeyPositionTracker* positionTracker) = 0;
     // MIDI note on for a key
     virtual void midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                            Node<KeyTouchFrame>* touchBuffer,
-                            Node<key_position>* positionBuffer,
+                            juniper::Node<KeyTouchFrame>* touchBuffer,
+                            juniper::Node<key_position>* positionBuffer,
                             KeyPositionTracker* positionTracker) = 0;
     // MIDI note off for a key
     virtual void midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                             Node<KeyTouchFrame>* touchBuffer,
-                             Node<key_position>* positionBuffer,
+                             juniper::Node<KeyTouchFrame>* touchBuffer,
+                             juniper::Node<key_position>* positionBuffer,
                              KeyPositionTracker* positionTracker) = 0;
     // Key goes active from continuous key position
     virtual void keyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                                 Node<KeyTouchFrame>* touchBuffer,
-                                 Node<key_position>* positionBuffer,
+                                 juniper::Node<KeyTouchFrame>* touchBuffer,
+                                 juniper::Node<key_position>* positionBuffer,
                                  KeyPositionTracker* positionTracker) = 0;
     // Key goes idle from continuous key position
     virtual void keyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                               Node<KeyTouchFrame>* touchBuffer,
-                               Node<key_position>* positionBuffer,
+                               juniper::Node<KeyTouchFrame>* touchBuffer,
+                               juniper::Node<key_position>* positionBuffer,
                                KeyPositionTracker* positionTracker) = 0;
     
     // Notification from key that a note is about to be sent out
@@ -146,12 +148,12 @@ public:
         return 0;
     }
     
-    // ****** Preset Save/Load ******
+    // TODO: ****** Preset Save/Load ******
     // These methods generate XML settings files and reload values from them
     // The specific implementation is up to the subclass
     
-    virtual XmlElement* getPreset() = 0;
-    virtual bool loadPreset(XmlElement const* preset) = 0;
+//    virtual XmlElement* getPreset() = 0;
+//    virtual bool loadPreset(XmlElement const* preset) = 0;
     
 protected:
 	// ***** Member Variables *****

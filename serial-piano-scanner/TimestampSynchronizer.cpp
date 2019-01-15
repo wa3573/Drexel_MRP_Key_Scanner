@@ -53,7 +53,7 @@ void TimestampSynchronizer::initialize(double clockTimeMilliseconds,
 // Given a frame number, calculate a current timestamp
 timestamp_type TimestampSynchronizer::synchronizedTimestamp(int rawFrameNumber) {
 	// Calculate the current system clock-related timestamp
-	timestamp_type clockTime = startingTimestamp_ + milliseconds_to_timestamp(std::chrono::high_resolution_clock::now() - startingClockTimeMilliseconds_);
+	timestamp_type clockTime = startingTimestamp_ + milliseconds_to_timestamp(std::chrono::high_resolution_clock::now().time_since_epoch().count() - startingClockTimeMilliseconds_);
 	timestamp_type frameTime;
 
 	// Retrieve the timestamp of the previous frame
@@ -128,16 +128,16 @@ timestamp_type TimestampSynchronizer::synchronizedTimestamp(int rawFrameNumber) 
 			juniper::NodeIterator<pair<int, timestamp_type> >it_second = history_.begin();
 			
 			// TODO: it->second
-			it_second++;
-			for(it = history_.begin(); it != history_.end(); ++it) {
-				timestamp_diff_type l = (it.timestamp() - it_second);
-				if(l > maxLatency)
-					maxLatency = l;
-				if(l < minLatency)
-					minLatency = l;
-
-				it_second++;
-			}
+//			it_second++;
+//			for(it = history_.begin(); it != history_.end(); ++it) {
+//				timestamp_diff_type l = (it.timestamp() - it_second);
+//				if(l > maxLatency)
+//					maxLatency = l;
+//				if(l < minLatency)
+//					minLatency = l;
+//
+//				it_second++;
+//			}
 			
 			//cout << "frame " << rawFrameNumber << ": rate = " << currentSampleInterval_ << " clock = " << clockTime << " frame = " << frameTime << " latency = " 
 			//	<< currentLatency << " max = " << maxLatency << " min = " << minLatency << endl;

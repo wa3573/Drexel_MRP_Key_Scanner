@@ -45,8 +45,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	TouchkeyOnsetAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                                Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+	TouchkeyOnsetAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                                juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 	
     // ***** Modifiers *****
     
@@ -79,9 +79,9 @@ private:
     
 	// ***** Member Variables *****
     
-    Node<KeyTouchFrame> pastSamples_;           // Locations of touch
+    juniper::Node<KeyTouchFrame> pastSamples_;           // Locations of touch
     timestamp_diff_type maxLookbackTime_;       // How long to look backwards to find release velocity
-    CriticalSection sampleBufferMutex_;         // Mutex to protect threaded access to sample buffer
+    pthread_mutex_t sampleBufferMutex_;         // Mutex to protect threaded access to sample buffer
     
     float startingPitchBendSemitones_;          // The value of pitch bend to start with
     float lastPitchBendSemitones_;              // The last pitch value we sent out

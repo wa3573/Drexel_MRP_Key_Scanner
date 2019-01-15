@@ -30,43 +30,43 @@ const timestamp_diff_type TouchkeyOnsetAngleMappingFactory::kDefaultMaxLookbackT
 
 TouchkeyOnsetAngleMappingFactory::TouchkeyOnsetAngleMappingFactory(PianoKeyboard &keyboard, MidiKeyboardSegment& segment)
 : TouchkeyBaseMappingFactory<TouchkeyOnsetAngleMapping>(keyboard, segment) {
-    //setName("/touchkeys/scoop");
+    //setName("/scoop");
     setMidiParameters(MidiKeyboardSegment::kControlPitchWheel, -2.0, 2.0, 0.0);
 }
 
-// ****** Preset Save/Load ******
-XmlElement* TouchkeyOnsetAngleMappingFactory::getPreset() {
-    PropertySet properties;
-    
-    storeCommonProperties(properties);
-    
-    // No properties for now
-    
-    XmlElement* preset = properties.createXml("MappingFactory");
-    preset->setAttribute("type", "OnsetAngle");
-    
-    return preset;
-}
-
-bool TouchkeyOnsetAngleMappingFactory::loadPreset(XmlElement const* preset) {
-    if(preset == 0)
-        return false;
-    
-    PropertySet properties;
-    properties.restoreFromXml(*preset);
-    
-    if(!loadCommonProperties(properties))
-        return false;
-    
-    // Nothing specific to do for now
-    
-    return true;
-}
+// TODO: ****** Preset Save/Load ******
+//XmlElement* TouchkeyOnsetAngleMappingFactory::getPreset() {
+//    PropertySet properties;
+//
+//    storeCommonProperties(properties);
+//
+//    // No properties for now
+//
+//    XmlElement* preset = properties.createXml("MappingFactory");
+//    preset->setAttribute("type", "OnsetAngle");
+//
+//    return preset;
+//}
+//
+//bool TouchkeyOnsetAngleMappingFactory::loadPreset(XmlElement const* preset) {
+//    if(preset == 0)
+//        return false;
+//
+//    PropertySet properties;
+//    properties.restoreFromXml(*preset);
+//
+//    if(!loadCommonProperties(properties))
+//        return false;
+//
+//    // Nothing specific to do for now
+//
+//    return true;
+//}
 
 // MIDI note ended: see whether the mapping was suspended and if not, execute the angle calculation
 void TouchkeyOnsetAngleMappingFactory::midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                                                     Node<KeyTouchFrame>* touchBuffer,
-                                                     Node<key_position>* positionBuffer,
+                                                     juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                     juniper::Node<key_position>* positionBuffer,
                                                      KeyPositionTracker* positionTracker) {
     // Call base class method
     TouchkeyBaseMappingFactory<TouchkeyOnsetAngleMapping>::midiNoteOn(noteNumber, touchIsOn, keyMotionActive, touchBuffer, positionBuffer, positionTracker);

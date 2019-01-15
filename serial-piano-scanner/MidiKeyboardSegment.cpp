@@ -26,14 +26,14 @@
 
 #include "MidiKeyboardSegment.h"
 #include "MidiOutputController.h"
-#include "../Mappings/MappingFactory.h"
-#include "../Mappings/Vibrato/TouchkeyVibratoMappingFactory.h"
-#include "../Mappings/PitchBend/TouchkeyPitchBendMappingFactory.h"
-#include "../Mappings/Control/TouchkeyControlMappingFactory.h"
-#include "../Mappings/ReleaseAngle/TouchkeyReleaseAngleMappingFactory.h"
-#include "../Mappings/OnsetAngle/TouchkeyOnsetAngleMappingFactory.h"
-#include "../Mappings/MultiFingerTrigger/TouchkeyMultiFingerTriggerMappingFactory.h"
-#include "../Mappings/KeyDivision/TouchkeyKeyDivisionMappingFactory.h"
+#include "Mappings/MappingFactory.h"
+#include "Mappings/Vibrato/TouchkeyVibratoMappingFactory.h"
+#include "Mappings/PitchBend/TouchkeyPitchBendMappingFactory.h"
+#include "Mappings/Control/TouchkeyControlMappingFactory.h"
+#include "Mappings/ReleaseAngle/TouchkeyReleaseAngleMappingFactory.h"
+#include "Mappings/OnsetAngle/TouchkeyOnsetAngleMappingFactory.h"
+#include "Mappings/MultiFingerTrigger/TouchkeyMultiFingerTriggerMappingFactory.h"
+//#include "../Mappings/KeyDivision/TouchkeyKeyDivisionMappingFactory.h"
 #include "OscMidiConverter.h"
 #include <algorithm>
 #include <string>
@@ -79,23 +79,25 @@ MidiKeyboardSegment::~MidiKeyboardSegment() {
     keyboard_.removeMappingFactory(this);
 }
 
-bool MidiKeyboardSegment::respondsToMessage(const MidiMessage& message) {
-    int channel = message.getChannel();
-
-    // If the message is not something universal, check if it matches our channel
-    if(channel > 0) {
-        if(!(channelMask_ && (1 << (channel - 1))))
-            return false;
-    }
-    
-    // If the message has a note number, see if it's in range
-    if(message.isNoteOn() || message.isNoteOff() || message.isAftertouch()) {
-        int noteNumber = message.getNoteNumber();
-        if(noteNumber < noteMin_ || noteNumber > noteMax_)
-            return false;
-    }
-    
-    return true;
+bool MidiKeyboardSegment::respondsToMessage(MidiMessage& message) {
+//    int channel = message.getChannel();
+//
+//    // If the message is not something universal, check if it matches our channel
+//    if(channel > 0) {
+//        if(!(channelMask_ && (1 << (channel - 1))))
+//            return false;
+//    }
+//
+//    // If the message has a note number, see if it's in range
+////    if(message.getType() == kmmNoteOn || message.getType() == kmmNoteOff || message.isAftertouch()) {
+//    if(message.getType() == kmmNoteOn || message.getType() == kmmNoteOff) {
+////        int noteNumber = message.getNoteNumber();
+//
+//        if(noteNumber < noteMin_ || noteNumber > noteMax_)
+//            return false;
+//    }
+//
+//    return true;
 }
 
 bool MidiKeyboardSegment::respondsToNote(int noteNumber) {
@@ -326,131 +328,131 @@ void MidiKeyboardSegment::setOutputChannelLowest(int ch) {
     // MPE-TODO: send new RPN 6 for disabling old zone and creating new one
     outputChannelLowest_ = ch;
 }
-
-// Handle an incoming MIDI message
+//
+//// Handle an incoming MIDI message
 void MidiKeyboardSegment::midiHandlerMethod(MidiInput* source, const MidiMessage& message) {
-    // Log the timestamps of note onsets and releases, regardless of the mode
-    // of processing
-    if(message.isNoteOn()) {
-        if(message.getNoteNumber() >= 0 && message.getNoteNumber() < 128)
-            noteOnsetTimestamps_[message.getNoteNumber()] = keyboard_.schedulerCurrentTimestamp();
-    }
-    else if(message.isNoteOff()) {
-        // Remove the onset timestamp unless we have the specific condition:
-        // (damper pedal enabled) && (pedal is down) && (polyphonic mode)
-        // In this condition, onsets will be removed when note goes off
-        if(message.getNoteNumber() >= 0 && message.getNoteNumber() < 128) {
-            if(!damperPedalEnabled_ || controllerValues_[kMidiControllerDamperPedal] < kPedalActiveValue ||
-               (mode_ != ModePolyphonic && mode_ != ModeMPE)) {
-                noteOnsetTimestamps_[message.getNoteNumber()] = 0;
-            }
-        }
-    }
-    else if(message.isAllNotesOff() || message.isAllSoundOff()) {
-        for(int i = 0; i < 128; i++)
-            noteOnsetTimestamps_[i] = 0;
-    }
-    
-    // Log the values of incoming control changes in case mappings need to use them later
-    if(message.isController() && !(message.isAllNotesOff() || message.isAllSoundOff())) {
-        // Handle damper pedal specially: it may affect note allocation
-        if(message.getControllerNumber() == kMidiControllerDamperPedal) {
-            if(message.getControllerValue() < kPedalActiveValue &&
-               controllerValues_[kMidiControllerDamperPedal] >= kPedalActiveValue) {
-                damperPedalWentOff();
-            }
-        }
-        
-        if(message.getControllerNumber() >= 0 && message.getControllerNumber() < 128) {
-            if(message.getControllerNumber() == 1 && usesKeyboardModWheel_) {
-                controllerValues_[message.getControllerNumber()] = message.getControllerValue();
-                handleControlChangeRetransit(message.getControllerNumber(), message);
-            }
-            else if(message.getControllerNumber() >= 64 && message.getControllerNumber() <= 69
-                     && usesKeyboardPedals_) {
-                // MPE-TODO send this on master zone
-                controllerValues_[message.getControllerNumber()] = message.getControllerValue();
-                handleControlChangeRetransit(message.getControllerNumber(), message);
-            }
-            else if(usesKeyboardMidiControllers_) {
-                controllerValues_[message.getControllerNumber()] = message.getControllerValue();
-                handleControlChangeRetransit(message.getControllerNumber(), message);
-            }
-        }
-    }
-    else if(message.isChannelPressure()) {
-        if(usesKeyboardChannelPressure_) {
-            controllerValues_[kControlChannelAftertouch] = message.getChannelPressureValue();
-            handleControlChangeRetransit(kControlChannelAftertouch, message);
-        }
-    }
-    else if(message.isPitchWheel()) {
-        if(usesKeyboardPitchWheel_) {
-            if(mode_ == ModeMPE) {
-                // MPE-TODO send this on master zone instead of putting it into the calculations
-            }
-            else {
-                controllerValues_[kControlPitchWheel] = message.getPitchWheelValue();
-                handleControlChangeRetransit(kControlPitchWheel, message);
-            }
-        }
-    }
-    else {
-        // Process the message differently depending on the current mode
-        switch(mode_) {
-            case ModePassThrough:
-                modePassThroughHandler(source, message);
-                break;
-            case ModeMonophonic:
-                modeMonophonicHandler(source, message);
-                break;
-            case ModePolyphonic:
-                modePolyphonicHandler(source, message);
-                break;
-            case ModeMPE:
-                modeMPEHandler(source, message);
-                break;
-            case ModeOff:
-            default:
-                // Ignore message
-                break;
-        }
-    }
+//    // Log the timestamps of note onsets and releases, regardless of the mode
+//    // of processing
+//    if(message.getType() == kmmNoteOn) {
+//        if(message.getNoteNumber() >= 0 && message.getNoteNumber() < 128)
+//            noteOnsetTimestamps_[message.getNoteNumber()] = keyboard_.schedulerCurrentTimestamp();
+//    }
+//    else if(message.getType() == kmmNoteOff) {
+//        // Remove the onset timestamp unless we have the specific condition:
+//        // (damper pedal enabled) && (pedal is down) && (polyphonic mode)
+//        // In this condition, onsets will be removed when note goes off
+//        if(message.getNoteNumber() >= 0 && message.getNoteNumber() < 128) {
+//            if(!damperPedalEnabled_ || controllerValues_[kMidiControllerDamperPedal] < kPedalActiveValue ||
+//               (mode_ != ModePolyphonic && mode_ != ModeMPE)) {
+//                noteOnsetTimestamps_[message.getNoteNumber()] = 0;
+//            }
+//        }
+//    }
+//    else if(message.isAllNotesOff() || message.isAllSoundOff()) {
+//        for(int i = 0; i < 128; i++)
+//            noteOnsetTimestamps_[i] = 0;
+//    }
+//
+//    // Log the values of incoming control changes in case mappings need to use them later
+//    if(message.isController() && !(message.isAllNotesOff() || message.isAllSoundOff())) {
+//        // Handle damper pedal specially: it may affect note allocation
+//        if(message.getControllerNumber() == kMidiControllerDamperPedal) {
+//            if(message.getControllerValue() < kPedalActiveValue &&
+//               controllerValues_[kMidiControllerDamperPedal] >= kPedalActiveValue) {
+//                damperPedalWentOff();
+//            }
+//        }
+//
+//        if(message.getControllerNumber() >= 0 && message.getControllerNumber() < 128) {
+//            if(message.getControllerNumber() == 1 && usesKeyboardModWheel_) {
+//                controllerValues_[message.getControllerNumber()] = message.getControllerValue();
+//                handleControlChangeRetransit(message.getControllerNumber(), message);
+//            }
+//            else if(message.getControllerNumber() >= 64 && message.getControllerNumber() <= 69
+//                     && usesKeyboardPedals_) {
+//                // MPE-TODO send this on master zone
+//                controllerValues_[message.getControllerNumber()] = message.getControllerValue();
+//                handleControlChangeRetransit(message.getControllerNumber(), message);
+//            }
+//            else if(usesKeyboardMidiControllers_) {
+//                controllerValues_[message.getControllerNumber()] = message.getControllerValue();
+//                handleControlChangeRetransit(message.getControllerNumber(), message);
+//            }
+//        }
+//    }
+//    else if(message.isChannelPressure()) {
+//        if(usesKeyboardChannelPressure_) {
+//            controllerValues_[kControlChannelAftertouch] = message.getChannelPressureValue();
+//            handleControlChangeRetransit(kControlChannelAftertouch, message);
+//        }
+//    }
+//    else if(message.isPitchWheel()) {
+//        if(usesKeyboardPitchWheel_) {
+//            if(mode_ == ModeMPE) {
+//                // MPE-TODO send this on master zone instead of putting it into the calculations
+//            }
+//            else {
+//                controllerValues_[kControlPitchWheel] = message.getPitchWheelValue();
+//                handleControlChangeRetransit(kControlPitchWheel, message);
+//            }
+//        }
+//    }
+//    else {
+//        // Process the message differently depending on the current mode
+//        switch(mode_) {
+//            case ModePassThrough:
+//                modePassThroughHandler(source, message);
+//                break;
+//            case ModeMonophonic:
+//                modeMonophonicHandler(source, message);
+//                break;
+//            case ModePolyphonic:
+//                modePolyphonicHandler(source, message);
+//                break;
+//            case ModeMPE:
+//                modeMPEHandler(source, message);
+//                break;
+//            case ModeOff:
+//            default:
+//                // Ignore message
+//                break;
+//        }
+//    }
 }
-
-// OscHandler method which parses incoming OSC messages we've registered for.  In this case,
-// we use OSC callbacks to find out about touch data for notes we want to trigger.
-
+//
+//// OscHandler method which parses incoming OSC messages we've registered for.  In this case,
+//// we use OSC callbacks to find out about touch data for notes we want to trigger.
+//
 bool MidiKeyboardSegment::oscHandlerMethod(const char *path, const char *types, int numValues, lo_arg **values, void *data) {
-    if(touchkeyStandaloneMode_) {
-        if(!strcmp(path, "/touchkeys/on") && numValues > 0) {
-            int noteNumber = values[0]->i;
-            if(!respondsToNote(noteNumber))
-                return true;
-            if(noteNumber >= 0 && noteNumber < 128) {
-                // Generate MIDI note on for this message
-                MidiMessage msg(MidiMessage::noteOn(1, noteNumber, (uint8)64));
-                midiHandlerMethod(0, msg);
-            }
-            return true;
-        }
-        else if(!strcmp(path, "/touchkeys/off") && numValues > 0) {
-            int noteNumber = values[0]->i;
-            if(!respondsToNote(noteNumber))
-                return true;
-            if(noteNumber >= 0 && noteNumber < 128) {
-                // Generate MIDI note off for this message
-                MidiMessage msg(MidiMessage::noteOff(1, noteNumber));
-                midiHandlerMethod(0, msg);
-            }
-            return true;
-        }
-    }
-    
-	if(mode_ == ModePolyphonic || mode_ == ModeMPE) {
-		modePolyphonicMPENoteOnCallback(path, types, numValues, values);
-	}
-	
+//    if(touchkeyStandaloneMode_) {
+//        if(!strcmp(path, "/touchkeys/on") && numValues > 0) {
+//            int noteNumber = values[0]->i;
+//            if(!respondsToNote(noteNumber))
+//                return true;
+//            if(noteNumber >= 0 && noteNumber < 128) {
+//                // Generate MIDI note on for this message
+//                MidiMessage msg(MidiMessage::noteOn(1, noteNumber, (uint8)64));
+//                midiHandlerMethod(0, msg);
+//            }
+//            return true;
+//        }
+//        else if(!strcmp(path, "/touchkeys/off") && numValues > 0) {
+//            int noteNumber = values[0]->i;
+//            if(!respondsToNote(noteNumber))
+//                return true;
+//            if(noteNumber >= 0 && noteNumber < 128) {
+//                // Generate MIDI note off for this message
+//                MidiMessage msg(MidiMessage::noteOff(1, noteNumber));
+//                midiHandlerMethod(0, msg);
+//            }
+//            return true;
+//        }
+//    }
+//
+//	if(mode_ == ModePolyphonic || mode_ == ModeMPE) {
+//		modePolyphonicMPENoteOnCallback(path, types, numValues, values);
+//	}
+//
 	return true;
 }
 
@@ -507,7 +509,8 @@ OscMessage* MidiKeyboardSegment::oscControlMethod(const char *path, const char *
         
         vector<MappingFactory*>::iterator it;
         for(it = mappingFactories_.begin(); it != mappingFactories_.end(); ++it) {
-            lo_message_add_string(response->message(), (*it)->getShortName().c_str());
+//        	TODO: liblo lo_message_add_string
+//            lo_message_add_string(response->message(), (*it)->getShortName().c_str());
         }
         
         return response;
@@ -708,7 +711,7 @@ OscMidiConverter* MidiKeyboardSegment::acquireOscMidiConverter(int controlId) {
     if(oscMidiConverters_.count(controlId) == 0) {
         converter = new OscMidiConverter(keyboard_, *this, controlId);
         converter->setMidiOutputController(midiOutputController_);
-        
+
         oscMidiConverters_[controlId] = converter;
         oscMidiConverterReferenceCounts_[controlId] = 1;
     }
@@ -724,7 +727,7 @@ OscMidiConverter* MidiKeyboardSegment::acquireOscMidiConverter(int controlId) {
             oscMidiConverterReferenceCounts_[controlId]++;
         converter = oscMidiConverters_[controlId];
     }
-    
+
     return converter;
 }
 
@@ -736,7 +739,7 @@ void MidiKeyboardSegment::releaseOscMidiConverter(int controlId) {
         cerr << "BUG: releasing a missing OSC-MIDI converter\n";
         return;
     }
-    
+
     oscMidiConverterReferenceCounts_[controlId]--;
     if(oscMidiConverterReferenceCounts_[controlId] == 0) {
         // This was the last release of this converter. Delete it.
@@ -762,9 +765,9 @@ int MidiKeyboardSegment::numberOfMappingFactories() {
 }
 
 // Return the name of the given mapping factory type
-String MidiKeyboardSegment::mappingFactoryNameForIndex(int index) {
+std::string MidiKeyboardSegment::mappingFactoryNameForIndex(int index) {
     if(index < 0 || index >= kNumMappingFactoryTypes)
-        return String();
+        return std::string();
     return kMappingFactoryNames[index];
 }
 
@@ -777,8 +780,6 @@ MappingFactory* MidiKeyboardSegment::createMappingFactoryForIndex(int index) {
             return new TouchkeyVibratoMappingFactory(keyboard_, *this);
         case 2:
             return new TouchkeyPitchBendMappingFactory(keyboard_, *this);
-        case 3:
-            return new TouchkeyKeyDivisionMappingFactory(keyboard_, *this);
         case 4:
             return new TouchkeyMultiFingerTriggerMappingFactory(keyboard_, *this);
         case 5:
@@ -902,306 +903,306 @@ int MidiKeyboardSegment::indexOfMappingFactory(MappingFactory *factory) {
     return -1;
 }
 
-// Get an XML element describing current settings (for saving presets)
+// TODO: Get an XML element describing current settings (for saving presets)
 // This element will need to be released (or added to another XML element
 // that is released) by the caller
-XmlElement* MidiKeyboardSegment::getPreset() {
-    XmlElement* segmentElement = new XmlElement("Segment");
-
-    // Add segment settings
-    PropertySet properties;
-    properties.setValue("outputPort", outputPortNumber_);
-    properties.setValue("mode", mode_);
-    properties.setValue("channelMask", (int)channelMask_);
-    properties.setValue("noteMin", noteMin_);
-    properties.setValue("noteMax", noteMax_);
-    properties.setValue("outputChannelLowest", outputChannelLowest_);
-    properties.setValue("outputTransposition", outputTransposition_);
-    properties.setValue("damperPedalEnabled", damperPedalEnabled_);
-    // Don't set standalone mode; that's an input parameter
-    properties.setValue("usesKeyboardChannelPressure", usesKeyboardChannelPressure_);
-    properties.setValue("usesKeyboardPitchWheel", usesKeyboardPitchWheel_);
-    properties.setValue("usesKeyboardModWheel", usesKeyboardModWheel_);
-    properties.setValue("usesKeyboardPedals", usesKeyboardPedals_);
-    properties.setValue("usesKeyboardMidiControllers", usesKeyboardMidiControllers_);
-    properties.setValue("pitchWheelRange", pitchWheelRange_);
-    properties.setValue("retransmitMaxPolyphony", retransmitMaxPolyphony_);
-    properties.setValue("useVoiceStealing", useVoiceStealing_);
-
-    segmentElement->addChildElement(properties.createXml("Properties"));
-    
-    // Go through mapping factories and add their settings
-    vector<MappingFactory*>::iterator it;
-    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); ++it) {
-        XmlElement* factoryElement = (*it)->getPreset();
-        segmentElement->addChildElement(factoryElement);
-    }
-    
-    return segmentElement;
-}
-
-// Load settings from an XML element
-bool MidiKeyboardSegment::loadPreset(XmlElement const* preset) {
-    removeAllMappingFactories();
-    
-    XmlElement *propertiesElement = preset->getChildByName("Properties");
-    if(propertiesElement == 0)
-        return false;
-    
-    // Load segment settings
-    PropertySet properties;
-    properties.restoreFromXml(*propertiesElement);
-    
-    if(!properties.containsKey("outputPort"))
-        return false;
-    outputPortNumber_ = properties.getIntValue("outputPort");
-    if(!properties.containsKey("mode"))
-        return false;
-    int mode = properties.getIntValue("mode");
-    // Setting the mode affects a few other variables so use the
-    // functions rather than setting mode_ directly
-    if(mode == ModePassThrough)
-        setModePassThrough();
-    else if(mode == ModeMonophonic)
-        setModeMonophonic();
-    else if(mode == ModePolyphonic)
-        setModePolyphonic();
-    else if(mode == ModeMPE)
-        setModeMPE();
-    else // Off or unknown
-        setModeOff();
-    if(!properties.containsKey("channelMask"))
-        return false;
-    channelMask_ = properties.getIntValue("channelMask");
-    if(!properties.containsKey("noteMin"))
-        return false;
-    noteMin_ = properties.getIntValue("noteMin");
-    if(!properties.containsKey("noteMax"))
-        return false;
-    noteMax_ = properties.getIntValue("noteMax");
-    if(!properties.containsKey("outputChannelLowest"))
-        return false;
-    outputChannelLowest_ = properties.getIntValue("outputChannelLowest");
-    if(!properties.containsKey("outputTransposition"))
-        return false;
-    outputTransposition_ = properties.getIntValue("outputTransposition");
-    if(!properties.containsKey("damperPedalEnabled"))
-        return false;
-    damperPedalEnabled_ = properties.getBoolValue("damperPedalEnabled");
-    if(!properties.containsKey("usesKeyboardChannelPressure"))
-        return false;
-    usesKeyboardChannelPressure_ = properties.getBoolValue("usesKeyboardChannelPressure");
-    if(!properties.containsKey("usesKeyboardPitchWheel"))
-        return false;
-    usesKeyboardPitchWheel_ = properties.getBoolValue("usesKeyboardPitchWheel");
-    if(!properties.containsKey("usesKeyboardModWheel"))
-        return false;
-    usesKeyboardModWheel_ = properties.getBoolValue("usesKeyboardModWheel");
-    if(properties.containsKey("usesKeyboardPedals"))
-        usesKeyboardPedals_ = properties.getBoolValue("usesKeyboardPedals");
-    else
-        usesKeyboardPedals_ = false;    // For backwards compatibility with older versions
-    if(!properties.containsKey("usesKeyboardMidiControllers"))
-        return false;
-    usesKeyboardMidiControllers_ = properties.getBoolValue("usesKeyboardMidiControllers");
-    if(!properties.containsKey("pitchWheelRange"))
-        return false;
-    pitchWheelRange_ = properties.getDoubleValue("pitchWheelRange");
-    if(!properties.containsKey("retransmitMaxPolyphony"))
-        return false;
-    setPolyphony(properties.getIntValue("retransmitMaxPolyphony"));
-    if(!properties.containsKey("useVoiceStealing"))
-        return false;
-    useVoiceStealing_ = properties.getBoolValue("useVoiceStealing");
-    
-    // Load each mapping factory
-    XmlElement *element = preset->getChildByName("MappingFactory");
-    
-    while(element != 0) {
-        if(!element->hasAttribute("type"))
-            return false;
-        
-        // Create a new factory whose type depends on the XML tag
-        MappingFactory *factory;
-        String const& factoryType = element->getStringAttribute("type");
-        
-        if(factoryType == "Control")
-            factory = new TouchkeyControlMappingFactory(keyboard_, *this);
-        else if(factoryType == "Vibrato")
-            factory = new TouchkeyVibratoMappingFactory(keyboard_, *this);
-        else if(factoryType == "PitchBend")
-            factory = new TouchkeyPitchBendMappingFactory(keyboard_, *this);
-        else if(factoryType == "KeyDivision")
-            factory = new TouchkeyKeyDivisionMappingFactory(keyboard_, *this);
-        else if(factoryType == "MultiFingerTrigger")
-            factory = new TouchkeyMultiFingerTriggerMappingFactory(keyboard_, *this);
-        else if(factoryType == "OnsetAngle")
-            factory = new TouchkeyOnsetAngleMappingFactory(keyboard_, *this);
-        else if(factoryType == "ReleaseAngle")
-            factory = new TouchkeyReleaseAngleMappingFactory(keyboard_, *this);
-        else {
-            // Type unknown or unsupported; ignore and continue
-            element = element->getNextElementWithTagName("MappingFactory");
-            continue;
-        }
-        
-        // Tell factory to load its settings from this element
-        if(!factory->loadPreset(element)) {
-            delete factory;
-            return false;
-        }
-        
-        // Add factory; don't autogenerate name as it will be saved
-        addMappingFactory(factory, false);
-        
-        element = element->getNextElementWithTagName("MappingFactory");
-    }
-    
-    return true;
-}
+//XmlElement* MidiKeyboardSegment::getPreset() {
+//    XmlElement* segmentElement = new XmlElement("Segment");
+//
+//    // Add segment settings
+//    PropertySet properties;
+//    properties.setValue("outputPort", outputPortNumber_);
+//    properties.setValue("mode", mode_);
+//    properties.setValue("channelMask", (int)channelMask_);
+//    properties.setValue("noteMin", noteMin_);
+//    properties.setValue("noteMax", noteMax_);
+//    properties.setValue("outputChannelLowest", outputChannelLowest_);
+//    properties.setValue("outputTransposition", outputTransposition_);
+//    properties.setValue("damperPedalEnabled", damperPedalEnabled_);
+//    // Don't set standalone mode; that's an input parameter
+//    properties.setValue("usesKeyboardChannelPressure", usesKeyboardChannelPressure_);
+//    properties.setValue("usesKeyboardPitchWheel", usesKeyboardPitchWheel_);
+//    properties.setValue("usesKeyboardModWheel", usesKeyboardModWheel_);
+//    properties.setValue("usesKeyboardPedals", usesKeyboardPedals_);
+//    properties.setValue("usesKeyboardMidiControllers", usesKeyboardMidiControllers_);
+//    properties.setValue("pitchWheelRange", pitchWheelRange_);
+//    properties.setValue("retransmitMaxPolyphony", retransmitMaxPolyphony_);
+//    properties.setValue("useVoiceStealing", useVoiceStealing_);
+//
+//    segmentElement->addChildElement(properties.createXml("Properties"));
+//
+//    // Go through mapping factories and add their settings
+//    vector<MappingFactory*>::iterator it;
+//    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); ++it) {
+//        XmlElement* factoryElement = (*it)->getPreset();
+//        segmentElement->addChildElement(factoryElement);
+//    }
+//
+//    return segmentElement;
+//}
+//
+//// Load settings from an XML element
+//bool MidiKeyboardSegment::loadPreset(XmlElement const* preset) {
+//    removeAllMappingFactories();
+//
+//    XmlElement *propertiesElement = preset->getChildByName("Properties");
+//    if(propertiesElement == 0)
+//        return false;
+//
+//    // Load segment settings
+//    PropertySet properties;
+//    properties.restoreFromXml(*propertiesElement);
+//
+//    if(!properties.containsKey("outputPort"))
+//        return false;
+//    outputPortNumber_ = properties.getIntValue("outputPort");
+//    if(!properties.containsKey("mode"))
+//        return false;
+//    int mode = properties.getIntValue("mode");
+//    // Setting the mode affects a few other variables so use the
+//    // functions rather than setting mode_ directly
+//    if(mode == ModePassThrough)
+//        setModePassThrough();
+//    else if(mode == ModeMonophonic)
+//        setModeMonophonic();
+//    else if(mode == ModePolyphonic)
+//        setModePolyphonic();
+//    else if(mode == ModeMPE)
+//        setModeMPE();
+//    else // Off or unknown
+//        setModeOff();
+//    if(!properties.containsKey("channelMask"))
+//        return false;
+//    channelMask_ = properties.getIntValue("channelMask");
+//    if(!properties.containsKey("noteMin"))
+//        return false;
+//    noteMin_ = properties.getIntValue("noteMin");
+//    if(!properties.containsKey("noteMax"))
+//        return false;
+//    noteMax_ = properties.getIntValue("noteMax");
+//    if(!properties.containsKey("outputChannelLowest"))
+//        return false;
+//    outputChannelLowest_ = properties.getIntValue("outputChannelLowest");
+//    if(!properties.containsKey("outputTransposition"))
+//        return false;
+//    outputTransposition_ = properties.getIntValue("outputTransposition");
+//    if(!properties.containsKey("damperPedalEnabled"))
+//        return false;
+//    damperPedalEnabled_ = properties.getBoolValue("damperPedalEnabled");
+//    if(!properties.containsKey("usesKeyboardChannelPressure"))
+//        return false;
+//    usesKeyboardChannelPressure_ = properties.getBoolValue("usesKeyboardChannelPressure");
+//    if(!properties.containsKey("usesKeyboardPitchWheel"))
+//        return false;
+//    usesKeyboardPitchWheel_ = properties.getBoolValue("usesKeyboardPitchWheel");
+//    if(!properties.containsKey("usesKeyboardModWheel"))
+//        return false;
+//    usesKeyboardModWheel_ = properties.getBoolValue("usesKeyboardModWheel");
+//    if(properties.containsKey("usesKeyboardPedals"))
+//        usesKeyboardPedals_ = properties.getBoolValue("usesKeyboardPedals");
+//    else
+//        usesKeyboardPedals_ = false;    // For backwards compatibility with older versions
+//    if(!properties.containsKey("usesKeyboardMidiControllers"))
+//        return false;
+//    usesKeyboardMidiControllers_ = properties.getBoolValue("usesKeyboardMidiControllers");
+//    if(!properties.containsKey("pitchWheelRange"))
+//        return false;
+//    pitchWheelRange_ = properties.getDoubleValue("pitchWheelRange");
+//    if(!properties.containsKey("retransmitMaxPolyphony"))
+//        return false;
+//    setPolyphony(properties.getIntValue("retransmitMaxPolyphony"));
+//    if(!properties.containsKey("useVoiceStealing"))
+//        return false;
+//    useVoiceStealing_ = properties.getBoolValue("useVoiceStealing");
+//
+//    // Load each mapping factory
+//    XmlElement *element = preset->getChildByName("MappingFactory");
+//
+//    while(element != 0) {
+//        if(!element->hasAttribute("type"))
+//            return false;
+//
+//        // Create a new factory whose type depends on the XML tag
+//        MappingFactory *factory;
+//        String const& factoryType = element->getStringAttribute("type");
+//
+//        if(factoryType == "Control")
+//            factory = new TouchkeyControlMappingFactory(keyboard_, *this);
+//        else if(factoryType == "Vibrato")
+//            factory = new TouchkeyVibratoMappingFactory(keyboard_, *this);
+//        else if(factoryType == "PitchBend")
+//            factory = new TouchkeyPitchBendMappingFactory(keyboard_, *this);
+//        else if(factoryType == "KeyDivision")
+//            factory = new TouchkeyKeyDivisionMappingFactory(keyboard_, *this);
+//        else if(factoryType == "MultiFingerTrigger")
+//            factory = new TouchkeyMultiFingerTriggerMappingFactory(keyboard_, *this);
+//        else if(factoryType == "OnsetAngle")
+//            factory = new TouchkeyOnsetAngleMappingFactory(keyboard_, *this);
+//        else if(factoryType == "ReleaseAngle")
+//            factory = new TouchkeyReleaseAngleMappingFactory(keyboard_, *this);
+//        else {
+//            // Type unknown or unsupported; ignore and continue
+//            element = element->getNextElementWithTagName("MappingFactory");
+//            continue;
+//        }
+//
+//        // Tell factory to load its settings from this element
+//        if(!factory->loadPreset(element)) {
+//            delete factory;
+//            return false;
+//        }
+//
+//        // Add factory; don't autogenerate name as it will be saved
+//        addMappingFactory(factory, false);
+//
+//        element = element->getNextElementWithTagName("MappingFactory");
+//    }
+//
+//    return true;
+//}
 
 // Mode-specific MIDI handlers.  These methods handle incoming MIDI data according to the rules
 // defined by a particular mode of operation.
-
-// Pass-Through: Retransmit any input data to the output unmodified.
+//
+//// Pass-Through: Retransmit any input data to the output unmodified.
 void MidiKeyboardSegment::modePassThroughHandler(MidiInput* source, const MidiMessage& message) {
-    // Check if there is a note on or off, and update the keyboard class accordingly
-    if(message.isNoteOn()) {
-        int note = message.getNoteNumber();
-        if(keyboard_.key(note) != 0)
-            keyboard_.key(note)->midiNoteOn(this, message.getVelocity(), message.getChannel() - 1,
-                                            keyboard_.schedulerCurrentTimestamp());
-        
-        // Retransmit, possibly with transposition
-        if(midiOutputController_ != 0) {
-            MidiMessage newMessage = MidiMessage::noteOn(message.getChannel(), message.getNoteNumber() + outputTransposition_, message.getVelocity());
-            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
-        }
-    }
-    else if(message.isNoteOff()) {
-        int note = message.getNoteNumber();
-        if(keyboard_.key(note) != 0)
-            keyboard_.key(note)->midiNoteOff(this, keyboard_.schedulerCurrentTimestamp());
-        
-        // Retransmit, possibly with transposition
-        if(midiOutputController_ != 0) {
-            MidiMessage newMessage = MidiMessage::noteOff(message.getChannel(), message.getNoteNumber() + outputTransposition_);
-            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
-        }
-    }
-    else if(message.isAftertouch()) { // Polyphonic aftertouch: adjust to transposition
-        if(midiOutputController_ != 0) {
-            MidiMessage newMessage = MidiMessage::aftertouchChange(message.getChannel(), message.getNoteNumber() + outputTransposition_, message.getAfterTouchValue());
-            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
-        }
-    }
-    else if(midiOutputController_ != 0) // Anything else goes through unchanged
-        midiOutputController_->sendMessage(outputPortNumber_, message);
+//    // Check if there is a note on or off, and update the keyboard class accordingly
+//    if(message.getType() == kmmNoteOn) {
+//        int note = message.getNoteNumber();
+//        if(keyboard_.key(note) != 0)
+//            keyboard_.key(note)->midiNoteOn(this, message.getVelocity(), message.getChannel() - 1,
+//                                            keyboard_.schedulerCurrentTimestamp());
+//
+//        // Retransmit, possibly with transposition
+//        if(midiOutputController_ != 0) {
+//            MidiMessage newMessage = MidiMessage::noteOn(message.getChannel(), message.getNoteNumber() + outputTransposition_, message.getVelocity());
+//            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
+//        }
+//    }
+//    else if(message.getType() == kmmNoteOff) {
+//        int note = message.getNoteNumber();
+//        if(keyboard_.key(note) != 0)
+//            keyboard_.key(note)->midiNoteOff(this, keyboard_.schedulerCurrentTimestamp());
+//
+//        // Retransmit, possibly with transposition
+//        if(midiOutputController_ != 0) {
+//            MidiMessage newMessage = MidiMessage::noteOff(message.getChannel(), message.getNoteNumber() + outputTransposition_);
+//            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
+//        }
+//    }
+//    else if(message.isAftertouch()) { // Polyphonic aftertouch: adjust to transposition
+//        if(midiOutputController_ != 0) {
+//            MidiMessage newMessage = MidiMessage::aftertouchChange(message.getChannel(), message.getNoteNumber() + outputTransposition_, message.getAfterTouchValue());
+//            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
+//        }
+//    }
+//    else if(midiOutputController_ != 0) // Anything else goes through unchanged
+//        midiOutputController_->sendMessage(outputPortNumber_, message);
 }
 
-// Monophonic: all MIDI messages pass through to the output, which is assumed to be a monosynth.
-// However the most recent key which determines the currently sounding note will have its mapping
-// active; all others are suspended.
+//// Monophonic: all MIDI messages pass through to the output, which is assumed to be a monosynth.
+//// However the most recent key which determines the currently sounding note will have its mapping
+//// active; all others are suspended.
 void MidiKeyboardSegment::modeMonophonicHandler(MidiInput* source, const MidiMessage& message) {
-    if(message.isNoteOn()) {
-        // First suspend any other mappings. This might include the current note if the touch
-        // data has caused a mapping to be created.
-        if(keyboard_.mappingFactory(this) != 0) {
-            keyboard_.mappingFactory(this)->suspendAllMappings();
-        }
-        
-        // And turn on note on MIDI controller
-        if(midiOutputController_ != 0) {
-            MidiMessage newMessage = MidiMessage::noteOn(message.getChannel(), message.getNoteNumber() + outputTransposition_, message.getVelocity());
-            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
-        }
-        
-        // Now start the next one
-        int note = message.getNoteNumber();
-        if(keyboard_.key(note) != 0)
-            keyboard_.key(note)->midiNoteOn(this, message.getVelocity(),
-                                            message.getChannel() - 1, keyboard_.schedulerCurrentTimestamp());
-        
-        // Now resume the current note's mapping
-        if(keyboard_.mappingFactory(this) != 0) {
-            keyboard_.mappingFactory(this)->resumeMapping(note, true);
-        }
-    }
-    else if(message.isNoteOff()) {
-        // First stop this note
-        int note = message.getNoteNumber();
-        if(keyboard_.key(note) != 0)
-            keyboard_.key(note)->midiNoteOff(this, keyboard_.schedulerCurrentTimestamp());
-        
-        // Then reactivate the most recent note's mappings
-        if(keyboard_.mappingFactory(this) != 0) {
-            int newest = newestNote();
-            if(newest >= 0)
-                keyboard_.mappingFactory(this)->resumeMapping(newest, true);
-        }
-        
-        // And turn off note on MIDI controller
-        if(midiOutputController_ != 0) {
-            MidiMessage newMessage = MidiMessage::noteOff(message.getChannel(), message.getNoteNumber() + outputTransposition_, message.getVelocity());
-            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
-        }
-    }
+//    if(message.getType() == kmmNoteOn) {
+//        // First suspend any other mappings. This might include the current note if the touch
+//        // data has caused a mapping to be created.
+//        if(keyboard_.mappingFactory(this) != 0) {
+//            keyboard_.mappingFactory(this)->suspendAllMappings();
+//        }
+//
+//        // And turn on note on MIDI controller
+//        if(midiOutputController_ != 0) {
+//            MidiMessage newMessage = MidiMessage::noteOn(message.getChannel(), message.getNoteNumber() + outputTransposition_, message.getVelocity());
+//            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
+//        }
+//
+//        // Now start the next one
+//        int note = message.getNoteNumber();
+//        if(keyboard_.key(note) != 0)
+//            keyboard_.key(note)->midiNoteOn(this, message.getVelocity(),
+//                                            message.getChannel() - 1, keyboard_.schedulerCurrentTimestamp());
+//
+//        // Now resume the current note's mapping
+//        if(keyboard_.mappingFactory(this) != 0) {
+//            keyboard_.mappingFactory(this)->resumeMapping(note, true);
+//        }
+//    }
+//    else if(message.getType() == kmmNoteOff) {
+//        // First stop this note
+//        int note = message.getNoteNumber();
+//        if(keyboard_.key(note) != 0)
+//            keyboard_.key(note)->midiNoteOff(this, keyboard_.schedulerCurrentTimestamp());
+//
+//        // Then reactivate the most recent note's mappings
+//        if(keyboard_.mappingFactory(this) != 0) {
+//            int newest = newestNote();
+//            if(newest >= 0)
+//                keyboard_.mappingFactory(this)->resumeMapping(newest, true);
+//        }
+//
+//        // And turn off note on MIDI controller
+//        if(midiOutputController_ != 0) {
+//            MidiMessage newMessage = MidiMessage::noteOff(message.getChannel(), message.getNoteNumber() + outputTransposition_, message.getVelocity());
+//            midiOutputController_->sendMessage(outputPortNumber_, newMessage);
+//        }
+//    }
 }
-
-// Polyphonic: Each incoming note gets its own unique MIDI channel so its controllers
-// can be manipulated separately (e.g. by touchkey data).  Keep track of available channels
-// and currently active notes.
+//
+//// TODO: Polyphonic: Each incoming note gets its own unique MIDI channel so its controllers
+//// can be manipulated separately (e.g. by touchkey data).  Keep track of available channels
+//// and currently active notes.
 void MidiKeyboardSegment::modePolyphonicHandler(MidiInput* source, const MidiMessage& message) {
-	
-    if(message.getRawDataSize() <= 0)
-        return;
-    const unsigned char *rawData = message.getRawData();
-    
-	if(rawData[0] == kMidiMessageReset) {
-		// Reset state and pass along to all relevant channels
-		
-		retransmitChannelForNote_.clear();	// Clear current note information
-		retransmitChannelsAvailable_.clear();
-        retransmitNotesHeldInPedal_.clear();
-		for(int i = 0; i < retransmitMaxPolyphony_; i++) {
-			retransmitChannelsAvailable_.insert(i);
-		}
-		if(midiOutputController_ != 0)
-			midiOutputController_->sendReset(outputPortNumber_);
-	}
-    else if(message.isNoteOn()) {
-        if(retransmitChannelForNote_.count(message.getNoteNumber()) > 0
-           && retransmitNotesHeldInPedal_.count(message.getNoteNumber()) == 0) {
-            // Case (2)-- retrigger an existing note
-            if(midiOutputController_ != 0) {
-                midiOutputController_->sendNoteOn(outputPortNumber_, retransmitChannelForNote_[message.getNoteNumber()],
-                                                  message.getNoteNumber() + outputTransposition_, message.getVelocity());
-            }
-        }
-        else {
-            // New note
-            modePolyphonicNoteOn(message.getNoteNumber(), message.getVelocity());
-        }
-    }
-    else if(message.isNoteOff()) {
-        modePolyphonicNoteOff(message.getNoteNumber());
-    }
-    else if(message.isAllNotesOff() || message.isAllSoundOff()) {
-        retransmitChannelForNote_.clear();	// Clear current note information
-        retransmitChannelsAvailable_.clear();
-        retransmitNotesHeldInPedal_.clear();
-        for(int i = 0; i < retransmitMaxPolyphony_; i++)
-            retransmitChannelsAvailable_.insert(i);
-    }
-    else if(message.isAftertouch()) { // polyphonic aftertouch
-        if(retransmitChannelForNote_.count(message.getNoteNumber()) > 0) {
-            int retransmitChannel = retransmitChannelForNote_[message.getNoteNumber()];
-            if(midiOutputController_ != 0) {
-                midiOutputController_->sendAftertouchPoly(outputPortNumber_, retransmitChannel,
-                                                          message.getNoteNumber() + outputTransposition_, message.getAfterTouchValue());
-            }
-        }
-    }
+//
+////    if(message.getRawDataSize() <= 0)
+////        return;
+//    const unsigned char *rawData = message.;
+//
+//	if(rawData[0] == kMidiMessageReset) {
+//		// Reset state and pass along to all relevant channels
+//
+//		retransmitChannelForNote_.clear();	// Clear current note information
+//		retransmitChannelsAvailable_.clear();
+//        retransmitNotesHeldInPedal_.clear();
+//		for(int i = 0; i < retransmitMaxPolyphony_; i++) {
+//			retransmitChannelsAvailable_.insert(i);
+//		}
+//		if(midiOutputController_ != 0)
+//			midiOutputController_->sendReset(outputPortNumber_);
+//	}
+//    else if(message.getType() == kmmNoteOn) {
+//        if(retransmitChannelForNote_.count(message.getNoteNumber()) > 0
+//           && retransmitNotesHeldInPedal_.count(message.getNoteNumber()) == 0) {
+//            // Case (2)-- retrigger an existing note
+//            if(midiOutputController_ != 0) {
+//                midiOutputController_->sendNoteOn(outputPortNumber_, retransmitChannelForNote_[message.getNoteNumber()],
+//                                                  message.getNoteNumber() + outputTransposition_, message.getVelocity());
+//            }
+//        }
+//        else {
+//            // New note
+//            modePolyphonicNoteOn(message.getNoteNumber(), message.getVelocity());
+//        }
+//    }
+//    else if(message.getType() == kmmNoteOff) {
+//        modePolyphonicNoteOff(message.getNoteNumber());
+//    }
+//    else if(message.isAllNotesOff() || message.isAllSoundOff()) {
+//        retransmitChannelForNote_.clear();	// Clear current note information
+//        retransmitChannelsAvailable_.clear();
+//        retransmitNotesHeldInPedal_.clear();
+//        for(int i = 0; i < retransmitMaxPolyphony_; i++)
+//            retransmitChannelsAvailable_.insert(i);
+//    }
+//    else if(message.isAftertouch()) { // polyphonic aftertouch
+//        if(retransmitChannelForNote_.count(message.getNoteNumber()) > 0) {
+//            int retransmitChannel = retransmitChannelForNote_[message.getNoteNumber()];
+//            if(midiOutputController_ != 0) {
+//                midiOutputController_->sendAftertouchPoly(outputPortNumber_, retransmitChannel,
+//                                                          message.getNoteNumber() + outputTransposition_, message.getAfterTouchValue());
+//            }
+//        }
+//    }
 }
 
 // Handle note on message in polyphonic mode.  Allocate a new channel
@@ -1256,7 +1257,7 @@ void MidiKeyboardSegment::modePolyphonicNoteOn(unsigned char note, unsigned char
 #ifdef DEBUG_MIDI_KEYBOARD_SEGMENT
                     cout << "Stealing note " << oldNote << " from pedal for note " << (int)note << endl;
 #endif
-                    modePolyphonicNoteOff(oldNote, true);
+//                    modePolyphonicNoteOff(oldNote, true);
                 }
             }
             
@@ -1278,7 +1279,8 @@ void MidiKeyboardSegment::modePolyphonicNoteOn(unsigned char note, unsigned char
 #ifdef DEBUG_MIDI_KEYBOARD_SEGMENT
                     cout << "Stealing note " << oldNote << " for note " << (int)note << endl;
 #endif
-                    modePolyphonicNoteOff(oldNote, true);
+
+//                    modePolyphonicNoteOff(oldNote, true);
                 }
                 else {
                     // No channels available.  Print a warning and finish
@@ -1303,73 +1305,73 @@ void MidiKeyboardSegment::modePolyphonicNoteOn(unsigned char note, unsigned char
 	// The above function will cause a callback to be generated, which in turn will generate
 	// the Note On message.
 }
-
-// Handle note off message in polyphonic mode.  Release any channel
-// associated with this note.
-void MidiKeyboardSegment::modePolyphonicNoteOff(unsigned char note, bool forceOff) {    
-	// If no channel associated with this note, ignore it
-	if(retransmitChannelForNote_.count(note) == 0) {
-        if(note >= 0 && note < 128)
-            noteOnsetTimestamps_[note] = 0;
-		return;
-    }
-    
-	if(keyboard_.key(note) != 0) {
-		keyboard_.key(note)->midiNoteOff(this, keyboard_.schedulerCurrentTimestamp());
-	}
-
-    int oldNoteChannel = retransmitChannelForNote_[note];
-    
-    if(midiOutputController_ != 0) {
-        if(forceOff) {
-            // To silence a note, we need to clear any pedals that might be holding it
-            if(controllerValues_[kMidiControllerDamperPedal] >= kPedalActiveValue) {
-                midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel,
-                                                         kMidiControllerDamperPedal, 0);
-            }
-            if(controllerValues_[kMidiControllerSostenutoPedal] >= kPedalActiveValue) {
-                midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel,
-                                                         kMidiControllerSostenutoPedal, 0);
-            }
-            
-            // Send All Notes Off and All Sound Off
-            midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel, kMidiControlAllNotesOff, 0);
-            midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel, kMidiControlAllSoundOff, 0);
-        }
-        else {
-            // Send a Note Off message to the appropriate channel
-            midiOutputController_->sendNoteOff(outputPortNumber_, oldNoteChannel, note + outputTransposition_);
-        }
-    }
-    
-    // If the pedal is enabled and currently active, don't re-enable this channel
-    // just yet. Instead, let the note continue ringing until we have to steal it later.
-    if(damperPedalEnabled_ && controllerValues_[kMidiControllerDamperPedal] >= kPedalActiveValue && !forceOff) {
-        retransmitNotesHeldInPedal_.insert(note);
-    }
-    else {
-        // Otherwise release the channel mapping associated with this note
-        if(retransmitNotesHeldInPedal_.count(note) > 0)
-            retransmitNotesHeldInPedal_.erase(note);
-        retransmitChannelsAvailable_.insert(retransmitChannelForNote_[note]);
-        retransmitChannelForNote_.erase(note);
-        if(note >= 0 && note < 128)
-            noteOnsetTimestamps_[note] = 0;
-    }
-    
-    if(forceOff) {
-        // Now re-enable any pedals that we might have temporarily lifted on this channel
-        if(controllerValues_[kMidiControllerDamperPedal] >= kPedalActiveValue) {
-            midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel,
-                                                     kMidiControllerDamperPedal,
-                                                     controllerValues_[kMidiControllerDamperPedal]);
-        }
-        if(controllerValues_[kMidiControllerSostenutoPedal] >= kPedalActiveValue) {
-            midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel,
-                                                     kMidiControllerSostenutoPedal,
-                                                     controllerValues_[kMidiControllerSostenutoPedal]);
-        }
-    }
+//
+//// Handle note off message in polyphonic mode.  Release any channel
+//// associated with this note.
+void MidiKeyboardSegment::modePolyphonicNoteOff(unsigned char note, bool forceOff) {
+//	// If no channel associated with this note, ignore it
+//	if(retransmitChannelForNote_.count(note) == 0) {
+//        if(note >= 0 && note < 128)
+//            noteOnsetTimestamps_[note] = 0;
+//		return;
+//    }
+//
+//	if(keyboard_.key(note) != 0) {
+//		keyboard_.key(note)->midiNoteOff(this, keyboard_.schedulerCurrentTimestamp());
+//	}
+//
+//    int oldNoteChannel = retransmitChannelForNote_[note];
+//
+//    if(midiOutputController_ != 0) {
+//        if(forceOff) {
+//            // To silence a note, we need to clear any pedals that might be holding it
+//            if(controllerValues_[kMidiControllerDamperPedal] >= kPedalActiveValue) {
+//                midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel,
+//                                                         kMidiControllerDamperPedal, 0);
+//            }
+//            if(controllerValues_[kMidiControllerSostenutoPedal] >= kPedalActiveValue) {
+//                midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel,
+//                                                         kMidiControllerSostenutoPedal, 0);
+//            }
+//
+//            // Send All Notes Off and All Sound Off
+//            midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel, kMidiControlAllNotesOff, 0);
+//            midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel, kMidiControlAllSoundOff, 0);
+//        }
+//        else {
+//            // Send a Note Off message to the appropriate channel
+//            midiOutputController_->sendNoteOff(outputPortNumber_, oldNoteChannel, note + outputTransposition_);
+//        }
+//    }
+//
+//    // If the pedal is enabled and currently active, don't re-enable this channel
+//    // just yet. Instead, let the note continue ringing until we have to steal it later.
+//    if(damperPedalEnabled_ && controllerValues_[kMidiControllerDamperPedal] >= kPedalActiveValue && !forceOff) {
+//        retransmitNotesHeldInPedal_.insert(note);
+//    }
+//    else {
+//        // Otherwise release the channel mapping associated with this note
+//        if(retransmitNotesHeldInPedal_.count(note) > 0)
+//            retransmitNotesHeldInPedal_.erase(note);
+//        retransmitChannelsAvailable_.insert(retransmitChannelForNote_[note]);
+//        retransmitChannelForNote_.erase(note);
+//        if(note >= 0 && note < 128)
+//            noteOnsetTimestamps_[note] = 0;
+//    }
+//
+//    if(forceOff) {
+//        // Now re-enable any pedals that we might have temporarily lifted on this channel
+//        if(controllerValues_[kMidiControllerDamperPedal] >= kPedalActiveValue) {
+//            midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel,
+//                                                     kMidiControllerDamperPedal,
+//                                                     controllerValues_[kMidiControllerDamperPedal]);
+//        }
+//        if(controllerValues_[kMidiControllerSostenutoPedal] >= kPedalActiveValue) {
+//            midiOutputController_->sendControlChange(outputPortNumber_, oldNoteChannel,
+//                                                     kMidiControllerSostenutoPedal,
+//                                                     controllerValues_[kMidiControllerSostenutoPedal]);
+//        }
+//    }
 }
 
 // Callback function after we request a note on.  PianoKey class will respond
@@ -1395,10 +1397,10 @@ void MidiKeyboardSegment::modePolyphonicMPENoteOnCallback(const char *path, cons
     if(!respondsToNote(midiNote))
         return;
 	
-	// Send the Note On message to the correct channel
-	if(midiOutputController_ != 0) {
-		midiOutputController_->sendNoteOn(outputPortNumber_, midiChannel, midiNote + outputTransposition_, midiVelocity);
-	}
+	// TODO: Send the Note On message to the correct channel
+//	if(midiOutputController_ != 0) {
+//		midiOutputController_->sendNoteOn(outputPortNumber_, midiChannel, midiNote + outputTransposition_, midiVelocity);
+//	}
 }
 
 // MPE (Multidimensional Polyphonic Expression): Each incoming note gets its own unique MIDI channel.
@@ -1511,57 +1513,57 @@ int MidiKeyboardSegment::newestNote() {
     
     return newestNoteNumber;
 }
-
-// Given a controller number (including special "controllers" channel-pressure and pitch-wheel),
-// retransit or not to outgoing MIDI channels depending on the current behaviour defined in
-// controllerActions_.
+//
+//// Given a controller number (including special "controllers" channel-pressure and pitch-wheel),
+//// retransit or not to outgoing MIDI channels depending on the current behaviour defined in
+//// controllerActions_.
 void MidiKeyboardSegment::handleControlChangeRetransit(int controllerNumber, const MidiMessage& message) {
-    // MPE-TODO need a new mode for sending on master zone, e.g. for pitch wheel
-    if(midiOutputController_ == 0)
-        return;
-    if(controllerActions_[controllerNumber] == kControlActionPassthrough) {
-        // Tell OSC-MIDI converter to resend if present, otherwise pass through
-        if(oscMidiConverters_.count(controllerNumber) != 0) {
-            oscMidiConverters_[controllerNumber]->resend(message.getChannel() - 1);
-        }
-        else {
-            // Send this control change through unchanged
-            midiOutputController_->sendMessage(outputPortNumber_, message);
-        }
-    }
-    else if(controllerActions_[controllerNumber] == kControlActionBroadcast) {
-        // Send this control change to all active channels
-        MidiMessage newMessage(message); // Modifiable copy of the original message
-        
-        if(oscMidiConverters_.count(controllerNumber) != 0) {
-            for(int i = 0; i < retransmitMaxPolyphony_; i++)
-                oscMidiConverters_[controllerNumber]->resend(i);
-        }
-        else {
-            for(int i = 0; i < retransmitMaxPolyphony_; i++) {
-                newMessage.setChannel(i + 1); // Juce uses 1-16, we use 0-15
-                midiOutputController_->sendMessage(outputPortNumber_, newMessage);
-            }
-        }
-    }
-    else if(controllerActions_[controllerNumber] == kControlActionSendToLatest) {
-        // Send this control change to the channel of the most recent note
-        int noteNumber = newestNote();
-        if(noteNumber < 0)
-            return;
-        if(keyboard_.key(noteNumber) != 0) {
-            int channel = keyboard_.key(noteNumber)->midiChannel();
-            
-            if(oscMidiConverters_.count(controllerNumber) != 0)
-                oscMidiConverters_[controllerNumber]->resend(channel);
-            else {
-                MidiMessage newMessage(message); // Modifiable copy of the original message
-                newMessage.setChannel(channel + 1);  // Juce uses 1-16, we use 0-15
-                midiOutputController_->sendMessage(outputPortNumber_, newMessage);
-            }
-        }
-    }
-    else {} // Block or unknown action
+//    // MPE-TODO need a new mode for sending on master zone, e.g. for pitch wheel
+//    if(midiOutputController_ == 0)
+//        return;
+//    if(controllerActions_[controllerNumber] == kControlActionPassthrough) {
+//        // Tell OSC-MIDI converter to resend if present, otherwise pass through
+//        if(oscMidiConverters_.count(controllerNumber) != 0) {
+//            oscMidiConverters_[controllerNumber]->resend(message.getChannel() - 1);
+//        }
+//        else {
+//            // Send this control change through unchanged
+//            midiOutputController_->sendMessage(outputPortNumber_, message);
+//        }
+//    }
+//    else if(controllerActions_[controllerNumber] == kControlActionBroadcast) {
+//        // Send this control change to all active channels
+//        MidiMessage newMessage(message); // Modifiable copy of the original message
+//
+//        if(oscMidiConverters_.count(controllerNumber) != 0) {
+//            for(int i = 0; i < retransmitMaxPolyphony_; i++)
+//                oscMidiConverters_[controllerNumber]->resend(i);
+//        }
+//        else {
+//            for(int i = 0; i < retransmitMaxPolyphony_; i++) {
+//                newMessage.setChannel(i + 1); // Juce uses 1-16, we use 0-15
+//                midiOutputController_->sendMessage(outputPortNumber_, newMessage);
+//            }
+//        }
+//    }
+//    else if(controllerActions_[controllerNumber] == kControlActionSendToLatest) {
+//        // Send this control change to the channel of the most recent note
+//        int noteNumber = newestNote();
+//        if(noteNumber < 0)
+//            return;
+//        if(keyboard_.key(noteNumber) != 0) {
+//            int channel = keyboard_.key(noteNumber)->midiChannel();
+//
+//            if(oscMidiConverters_.count(controllerNumber) != 0)
+//                oscMidiConverters_[controllerNumber]->resend(channel);
+//            else {
+//                MidiMessage newMessage(message); // Modifiable copy of the original message
+//                newMessage.setChannel(channel + 1);  // Juce uses 1-16, we use 0-15
+//                midiOutputController_->sendMessage(outputPortNumber_, newMessage);
+//            }
+//        }
+//    }
+//    else {} // Block or unknown action
 }
 
 // Set all controllers to behave a particular way when messages received
@@ -1588,7 +1590,7 @@ void MidiKeyboardSegment::damperPedalWentOff() {
     retransmitNotesHeldInPedal_.clear();
 }
 
-// Handle the actual sending of the pitch wheel range RPN to a specific channel
+// TODO: Handle the actual sending of the pitch wheel range RPN to a specific channel
 void MidiKeyboardSegment::sendMidiPitchWheelRangeHelper(int channel) {
     if(midiOutputController_ == 0)
         return;
@@ -1598,12 +1600,12 @@ void MidiKeyboardSegment::sendMidiPitchWheelRangeHelper(int channel) {
     int minorRange = (int)(100.0 * (pitchWheelRange_ - floorf(pitchWheelRange_)));
     
     // Set RPN controller = 0
-    midiOutputController_->sendControlChange(outputPortNumber_, channel, 101, 0);
-    midiOutputController_->sendControlChange(outputPortNumber_, channel, 100, 0);
-    // Set data value MSB/LSB for bend range in semitones
-    midiOutputController_->sendControlChange(outputPortNumber_, channel, 6, majorRange);
-    midiOutputController_->sendControlChange(outputPortNumber_, channel, 38, minorRange);
-    // Set RPN controller back to 16383
-    midiOutputController_->sendControlChange(outputPortNumber_, channel, 101, 127);
-    midiOutputController_->sendControlChange(outputPortNumber_, channel, 100, 127);
+//    midiOutputController_->sendControlChange(outputPortNumber_, channel, 101, 0);
+//    midiOutputController_->sendControlChange(outputPortNumber_, channel, 100, 0);
+//    // Set data value MSB/LSB for bend range in semitones
+//    midiOutputController_->sendControlChange(outputPortNumber_, channel, 6, majorRange);
+//    midiOutputController_->sendControlChange(outputPortNumber_, channel, 38, minorRange);
+//    // Set RPN controller back to 16383
+//    midiOutputController_->sendControlChange(outputPortNumber_, channel, 101, 127);
+//    midiOutputController_->sendControlChange(outputPortNumber_, channel, 100, 127);
 }

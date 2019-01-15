@@ -22,7 +22,6 @@
 */
 
 #include "TouchkeyPitchBendMappingFactory.h"
-#include "TouchkeyPitchBendMappingShortEditor.h"
 
 // Default constructor, containing a reference to the PianoKeyboard class.
 
@@ -38,7 +37,7 @@ bendIgnoresTwoFingers_(TouchkeyPitchBendMapping::kDefaultIgnoresTwoFingers),
 bendIgnoresThreeFingers_(TouchkeyPitchBendMapping::kDefaultIgnoresThreeFingers)
 {
     // Set up the MIDI converter to use pitch wheel
-    // setName("/touchkeys/pitchbend");
+    // setName("/pitchbend");
     setBendParameters();
 }
 
@@ -184,60 +183,60 @@ OscMessage* TouchkeyPitchBendMappingFactory::oscControlMethod(const char *path, 
     return TouchkeyBaseMappingFactory<TouchkeyPitchBendMapping>::oscControlMethod(path, types, numValues, values, data);
 }
 
-// ****** Preset Save/Load ******
-XmlElement* TouchkeyPitchBendMappingFactory::getPreset() {
-    PropertySet properties;
-    
-    storeCommonProperties(properties);
-    
-    properties.setValue("bendRangeSemitones", bendRangeSemitones_);
-    properties.setValue("bendThresholdSemitones", bendThresholdSemitones_);
-    properties.setValue("bendThresholdKeyLength", bendThresholdKeyLength_);
-    properties.setValue("bendMode", bendMode_);
-    properties.setValue("fixedModeMinEnableDistance", fixedModeMinEnableDistance_);
-    properties.setValue("fixedModeBufferDistance", fixedModeBufferDistance_);
-    properties.setValue("bendIgnoresTwoFingers", bendIgnoresTwoFingers_);
-    properties.setValue("bendIgnoresThreeFingers", bendIgnoresThreeFingers_);
-    
-    XmlElement* preset = properties.createXml("MappingFactory");
-    preset->setAttribute("type", "PitchBend");
-    
-    return preset;
-}
-
-bool TouchkeyPitchBendMappingFactory::loadPreset(XmlElement const* preset) {
-    if(preset == 0)
-        return false;
-    
-    PropertySet properties;
-    properties.restoreFromXml(*preset);
-    
-    if(!loadCommonProperties(properties))
-        return false;
-    if(!properties.containsKey("bendRangeSemitones") ||
-       !properties.containsKey("bendThresholdSemitones") ||
-       !properties.containsKey("bendThresholdKeyLength") ||
-       !properties.containsKey("bendMode") ||
-       !properties.containsKey("fixedModeMinEnableDistance") ||
-       !properties.containsKey("fixedModeBufferDistance") ||
-       !properties.containsKey("bendIgnoresTwoFingers") ||
-       !properties.containsKey("bendIgnoresThreeFingers"))
-        return false;
-    
-    bendRangeSemitones_ = properties.getDoubleValue("bendRangeSemitones");
-    bendThresholdSemitones_ = properties.getDoubleValue("bendThresholdSemitones");
-    bendThresholdKeyLength_ = properties.getDoubleValue("bendThresholdKeyLength");
-    bendMode_ = properties.getIntValue("bendMode");
-    fixedModeMinEnableDistance_ = properties.getDoubleValue("fixedModeMinEnableDistance");
-    fixedModeBufferDistance_ = properties.getDoubleValue("fixedModeBufferDistance");
-    bendIgnoresTwoFingers_ = properties.getBoolValue("bendIgnoresTwoFingers");
-    bendIgnoresThreeFingers_ = properties.getBoolValue("bendIgnoresThreeFingers");
-    
-    // Update MIDI information
-    setBendParameters();
-    
-    return true;
-}
+// TODO: ****** Preset Save/Load ******
+//XmlElement* TouchkeyPitchBendMappingFactory::getPreset() {
+//    PropertySet properties;
+//
+//    storeCommonProperties(properties);
+//
+//    properties.setValue("bendRangeSemitones", bendRangeSemitones_);
+//    properties.setValue("bendThresholdSemitones", bendThresholdSemitones_);
+//    properties.setValue("bendThresholdKeyLength", bendThresholdKeyLength_);
+//    properties.setValue("bendMode", bendMode_);
+//    properties.setValue("fixedModeMinEnableDistance", fixedModeMinEnableDistance_);
+//    properties.setValue("fixedModeBufferDistance", fixedModeBufferDistance_);
+//    properties.setValue("bendIgnoresTwoFingers", bendIgnoresTwoFingers_);
+//    properties.setValue("bendIgnoresThreeFingers", bendIgnoresThreeFingers_);
+//
+//    XmlElement* preset = properties.createXml("MappingFactory");
+//    preset->setAttribute("type", "PitchBend");
+//
+//    return preset;
+//}
+//
+//bool TouchkeyPitchBendMappingFactory::loadPreset(XmlElement const* preset) {
+//    if(preset == 0)
+//        return false;
+//
+//    PropertySet properties;
+//    properties.restoreFromXml(*preset);
+//
+//    if(!loadCommonProperties(properties))
+//        return false;
+//    if(!properties.containsKey("bendRangeSemitones") ||
+//       !properties.containsKey("bendThresholdSemitones") ||
+//       !properties.containsKey("bendThresholdKeyLength") ||
+//       !properties.containsKey("bendMode") ||
+//       !properties.containsKey("fixedModeMinEnableDistance") ||
+//       !properties.containsKey("fixedModeBufferDistance") ||
+//       !properties.containsKey("bendIgnoresTwoFingers") ||
+//       !properties.containsKey("bendIgnoresThreeFingers"))
+//        return false;
+//
+//    bendRangeSemitones_ = properties.getDoubleValue("bendRangeSemitones");
+//    bendThresholdSemitones_ = properties.getDoubleValue("bendThresholdSemitones");
+//    bendThresholdKeyLength_ = properties.getDoubleValue("bendThresholdKeyLength");
+//    bendMode_ = properties.getIntValue("bendMode");
+//    fixedModeMinEnableDistance_ = properties.getDoubleValue("fixedModeMinEnableDistance");
+//    fixedModeBufferDistance_ = properties.getDoubleValue("fixedModeBufferDistance");
+//    bendIgnoresTwoFingers_ = properties.getBoolValue("bendIgnoresTwoFingers");
+//    bendIgnoresThreeFingers_ = properties.getBoolValue("bendIgnoresThreeFingers");
+//
+//    // Update MIDI information
+//    setBendParameters();
+//
+//    return true;
+//}
 
 // ***** Private Methods *****
 

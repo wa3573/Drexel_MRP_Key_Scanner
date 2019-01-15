@@ -24,7 +24,7 @@
 
 #include "PianoKey.h"
 #include "PianoKeyboard.h"
-//#include "../Mappings/MappingFactory.h"
+#include "Mappings/MappingFactory.h"
 
 #undef TOUCHKEYS_LEGACY_OSC
 
@@ -57,7 +57,7 @@ PianoKey::~PianoKey() {
 // Disable the key from sending events.  Do this by removing anything that
 // listens to its status.
 void PianoKey::disable() {
-	ScopedLock sl(stateMutex_);
+	pthread_mutex_lock(&stateMutex_);
     
 	if(state_ == kKeyStateDisabled) {
 		return;
@@ -68,28 +68,31 @@ void PianoKey::disable() {
 	
 	terminateActivity();
 	changeState(kKeyStateDisabled);	
+	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Start listening for key activity.  This will allow the state to transition to
 // idle, and then to active as appropriate.
 void PianoKey::enable() {
-	ScopedLock sl(stateMutex_);
+	pthread_mutex_lock(&stateMutex_);
     
 	if(state_ != kKeyStateDisabled) {
 		return;
 	}
 	changeState(kKeyStateUnknown);	
+	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Reset the key to its default state
 void PianoKey::reset() {
-	ScopedLock sl(stateMutex_);
+	pthread_mutex_lock(&stateMutex_);
 	
 	terminateActivity();		// Stop any current activity
 	positionBuffer_.clear();	// Clear all history
 	stateBuffer_.clear();
 	idleDetector_.clear();
 	changeState(kKeyStateUnknown);	// Reinitialize with unknown state
+	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Insert a new sample in the key buffer
@@ -98,9 +101,9 @@ void PianoKey::insertSample(key_position pos, timestamp_type ts) {
     
     if((timestamp_diff_type)ts - (timestamp_diff_type)timeOfLastGuiUpdate_ > kPianoKeyGuiUpdateInterval) {
         timeOfLastGuiUpdate_ = ts;
-        if(keyboard_.gui() != 0) {
-            keyboard_.gui()->setAnalogValueForKey(noteNumber_, pos);
-        }
+//        if(keyboard_.gui() != 0) {
+//            keyboard_.gui()->setAnalogValueForKey(noteNumber_, pos);
+//        }
     }
     
     /*if((timestamp_diff_type)ts - (timestamp_diff_type)timeOfLastDebugPrint_ > 1.0) {
@@ -138,19 +141,21 @@ void PianoKey::insertSample(key_position pos, timestamp_type ts) {
 
 // If a key is active, force it to become idle, stopping any processes that it has created
 void PianoKey::forceIdle() {
-	ScopedLock sl(stateMutex_);
+	pthread_mutex_lock(&stateMutex_);
     
 	if(state_ == kKeyStateDisabled || state_ == kKeyStateIdle) {
 		return;
 	}
 	terminateActivity();
 	changeState(kKeyStateIdle);
+
+	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Handle triggers sent when specific conditions are met (called by various objects)
 
 void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
-	ScopedLock sl(stateMutex_);
+	pthread_mutex_lock(&stateMutex_);
 	
 	if(who == &idleDetector_) {
 		//std::cout << "Key " << noteNumber_ << ": IdleDetector says: " << idleDetector_.latest() << std::endl;
@@ -233,41 +238,43 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
                     velocityInfo = positionTracker_.pressVelocity();
                     cout << "  escapement time = " << velocityInfo.first << " velocity = " << velocityInfo.second << endl;
                     
-                    if(keyboard_.graphGUI() != 0) {
-                        keyboard_.graphGUI()->setKeyPressStart(positionTracker_.pressStart().position, positionTracker_.pressStart().timestamp);
-                        keyboard_.graphGUI()->setKeyPressFinish(positionTracker_.pressFinish().position, positionTracker_.pressFinish().timestamp);
-                        keyboard_.graphGUI()->copyKeyDataFromBuffer(positionBuffer_, positionTracker_.pressStart().index - 10,
-                                                                    positionBuffer_.endIndex());
-                    }
+//                    if(keyboard_.graphGUI() != 0) {
+//                        keyboard_.graphGUI()->setKeyPressStart(positionTracker_.pressStart().position, positionTracker_.pressStart().timestamp);
+//                        keyboard_.graphGUI()->setKeyPressFinish(positionTracker_.pressFinish().position, positionTracker_.pressFinish().timestamp);
+//                        keyboard_.graphGUI()->copyKeyDataFromBuffer(positionBuffer_, positionTracker_.pressStart().index - 10,
+//                                                                    positionBuffer_.endIndex());
+//                    }
                     break;
                 case kPositionTrackerStateReleaseInProgress:
                     //keyboard_.setKeyLEDColorRGB(noteNumber_, 0, 0, 1.0);
                     recentEvent = positionTracker_.releaseStart();
                     cout << "  start = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
-                    if(keyboard_.graphGUI() != 0) {
-                        keyboard_.graphGUI()->setKeyReleaseStart(positionTracker_.releaseStart().position, positionTracker_.releaseStart().timestamp);
-                        keyboard_.graphGUI()->copyKeyDataFromBuffer(positionBuffer_, positionTracker_.pressStart().index - 10,
-                                                                    positionBuffer_.endIndex());
-                        //keyboard_.graphGUI()->copyKeyDataFromBuffer(testFilter_, testFilter_.indexNearestTo(positionBuffer_.timestampAt(positionTracker_.pressStart().index - 10)), testFilter_.endIndex());
-                    }
+//                    if(keyboard_.graphGUI() != 0) {
+//                        keyboard_.graphGUI()->setKeyReleaseStart(positionTracker_.releaseStart().position, positionTracker_.releaseStart().timestamp);
+//                        keyboard_.graphGUI()->copyKeyDataFromBuffer(positionBuffer_, positionTracker_.pressStart().index - 10,
+//                                                                    positionBuffer_.endIndex());
+//                        //keyboard_.graphGUI()->copyKeyDataFromBuffer(testFilter_, testFilter_.indexNearestTo(positionBuffer_.timestampAt(positionTracker_.pressStart().index - 10)), testFilter_.endIndex());
+//                    }
                     break;
                 case kPositionTrackerStateReleaseFinished:
                     //keyboard_.setKeyLEDColorRGB(noteNumber_, 0.5, 0, 1.0);
                     recentEvent = positionTracker_.releaseFinish();
                     cout << "  finish = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
-                    if(keyboard_.graphGUI() != 0) {
-                        keyboard_.graphGUI()->setKeyReleaseStart(positionTracker_.releaseStart().position, positionTracker_.releaseStart().timestamp);
-                        keyboard_.graphGUI()->setKeyReleaseFinish(positionTracker_.releaseFinish().position, positionTracker_.releaseFinish().timestamp);
-                        keyboard_.graphGUI()->copyKeyDataFromBuffer(positionBuffer_, positionTracker_.pressStart().index - 10,
-                                                                    positionBuffer_.endIndex());
-                        //keyboard_.graphGUI()->copyKeyDataFromBuffer(testFilter_, testFilter_.indexNearestTo(positionBuffer_.timestampAt(positionTracker_.pressStart().index - 10)), testFilter_.endIndex());
-                    }
+//                    if(keyboard_.graphGUI() != 0) {
+//                        keyboard_.graphGUI()->setKeyReleaseStart(positionTracker_.releaseStart().position, positionTracker_.releaseStart().timestamp);
+//                        keyboard_.graphGUI()->setKeyReleaseFinish(positionTracker_.releaseFinish().position, positionTracker_.releaseFinish().timestamp);
+//                        keyboard_.graphGUI()->copyKeyDataFromBuffer(positionBuffer_, positionTracker_.pressStart().index - 10,
+//                                                                    positionBuffer_.endIndex());
+//                        //keyboard_.graphGUI()->copyKeyDataFromBuffer(testFilter_, testFilter_.indexNearestTo(positionBuffer_.timestampAt(positionTracker_.pressStart().index - 10)), testFilter_.endIndex());
+//                    }
                     break;
                 default:
                     break;
             }
         }
     }
+
+	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Update the current state
@@ -327,9 +334,10 @@ void PianoKey::midiNoteOn(MidiKeyboardSegment *who, int velocity, int channel, t
         touchWaitingSource_ = who;
 		touchIsWaiting_ = true;
 		touchWaitingTimestamp_ = keyboard_.schedulerCurrentTimestamp() + touchTimeoutInterval_;
-		keyboard_.scheduleEvent(this, 
-								boost::bind(&PianoKey::touchTimedOut, this),
-								touchWaitingTimestamp_);
+//		TODO: midiNoteOn() schedule event
+//		keyboard_.scheduleEvent(this,
+//								boost::bind(&PianoKey::touchTimedOut, this),
+//								touchWaitingTimestamp_);
 	}
 }
 
@@ -405,9 +413,9 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 	keyboard_.sendMessage("/midi/noteon", "iii", noteNumber_, midiChannel_, midiVelocity_, LO_ARGS_END);
     
     // Update GUI if it is available. TODO: fix the ordering problem for real!
-	if(keyboard_.gui() != 0 && midiNoteIsOn_) {
-		keyboard_.gui()->setMidiActive(noteNumber_, true);
-	}
+//	if(keyboard_.gui() != 0 && midiNoteIsOn_) {
+//		keyboard_.gui()->setMidiActive(noteNumber_, true);
+//	}
 }
 
 // Note Off message from associated MIDI keyboard.  Clear all old MIDI state.
@@ -416,8 +424,7 @@ void PianoKey::midiNoteOff(MidiKeyboardSegment *who, timestamp_type timestamp) {
 	midiOffTimestamp_ = timestamp;
     
     if(keyboard_.mappingFactory(who) != 0)
-        keyboard_.mappingFactory(who)->midiNoteOff(noteNumber_, touchIsActive_, (idleDetector_.idleState() == kIdleDetectorActive),
-                                               &touchBuffer_, &positionBuffer_, &positionTracker_);
+        keyboard_.mappingFactory(who)->midiNoteOff(noteNumber_, touchIsActive_, (idleDetector_.idleState() == kIdleDetectorActive), &touchBuffer_, &positionBuffer_, &positionTracker_);
     
 	keyboard_.sendMessage("/midi/noteoff", "ii", noteNumber_, midiChannel_, LO_ARGS_END);
     
@@ -426,9 +433,9 @@ void PianoKey::midiNoteOff(MidiKeyboardSegment *who, timestamp_type timestamp) {
 	midiAftertouch_.clear();
     
     // Update GUI if it is available
-	if(keyboard_.gui() != 0) {
-		keyboard_.gui()->setMidiActive(noteNumber_, false);
-	}
+//	if(keyboard_.gui() != 0) {
+//		keyboard_.gui()->setMidiActive(noteNumber_, false);
+//	}
 }
 
 // Aftertouch (either channel or polyphonic) message from associated MIDI keyboard
@@ -602,10 +609,10 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 		midiNoteOnHelper(touchWaitingSource_);
 	}
 	
-	// Update GUI if it is available
-	if(keyboard_.gui() != 0) {
-		keyboard_.gui()->setTouchForKey(noteNumber_, newFrame);
-	}
+//	// Update GUI if it is available
+//	if(keyboard_.gui() != 0) {
+//		keyboard_.gui()->setTouchForKey(noteNumber_, newFrame);
+//	}
 }
 
 // This is called when all touch is removed from a key.  Clear out the previous state
@@ -636,10 +643,10 @@ void PianoKey::touchOff(timestamp_type timestamp) {
 	touchIsActive_ = false;
 	touchBuffer_.clear();
     keyboard_.sendMessage("/touchkeys/off", "i", noteNumber_, LO_ARGS_END);
-	// Update GUI if it is available
-	if(keyboard_.gui() != 0) {
-		keyboard_.gui()->clearTouchForKey(noteNumber_);
-	}
+//	// Update GUI if it is available
+//	if(keyboard_.gui() != 0) {
+//		keyboard_.gui()->clearTouchForKey(noteNumber_);
+//	}
 }
 
 // This function is called when we time out waiting for a touch on the given note

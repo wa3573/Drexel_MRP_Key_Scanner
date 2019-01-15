@@ -127,20 +127,20 @@ public:
 	
 	// ***** Scheduling Methods *****
 	
-//	// Add or remove events from the scheduler queue
-//	void scheduleEvent(void *who, Scheduler::action func, timestamp_type timestamp) {
-//		futureEventScheduler_.schedule(who, func, timestamp);
-//	}
-//    void unscheduleEvent(void *who) {
-//		futureEventScheduler_.unschedule(who);
-//	}
-//	void unscheduleEvent(void *who, timestamp_type timestamp) {
-//		futureEventScheduler_.unschedule(who, timestamp);
-//	}
-//
-//	// Return the current timestamp associated with the scheduler
-//	timestamp_type schedulerCurrentTimestamp() { return futureEventScheduler_.currentTimestamp(); }
-//
+	// Add or remove events from the scheduler queue
+	void scheduleEvent(void *who, Scheduler::action func, timestamp_type timestamp) {
+		futureEventScheduler_.schedule(who, func, timestamp);
+	}
+    void unscheduleEvent(void *who) {
+		futureEventScheduler_.unschedule(who);
+	}
+	void unscheduleEvent(void *who, timestamp_type timestamp) {
+		futureEventScheduler_.unschedule(who, timestamp);
+	}
+
+	// Return the current timestamp associated with the scheduler
+	timestamp_type schedulerCurrentTimestamp() { return futureEventScheduler_.currentTimestamp(); }
+
 	// ***** Individual Key/Pedal Methods *****
 	
 	// Access to individual keys and pedals
@@ -186,42 +186,50 @@ public:
     std::vector<int> activeMappings();                   // Return a list of all active note mappings
     void clearMappings();                                // Remove all mappings
     
-//    TODO: mapping factories
-//    // Managing the mapping factories
-//    MappingFactory *mappingFactory(MidiKeyboardSegment* segment) {
+    // Managing the mapping factories
+    MappingFactory *mappingFactory(MidiKeyboardSegment* segment) {
+    	pthread_mutex_lock(&mappingFactoriesMutex_);
 //        ScopedReadLock sl(mappingFactoriesMutex_);
-//        if(mappingFactories_.count(segment) == 0)
-//            return 0;
-//        return mappingFactories_[segment];
-//    }
-//    void setMappingFactory(MidiKeyboardSegment* segment, MappingFactory *factory) {
+        if(mappingFactories_.count(segment) == 0) {
+        	pthread_mutex_unlock(&mappingFactoriesMutex_);
+            return 0;
+        }
+        pthread_mutex_unlock(&mappingFactoriesMutex_);
+        return mappingFactories_[segment];
+    }
+    void setMappingFactory(MidiKeyboardSegment* segment, MappingFactory *factory) {
 //        ScopedWriteLock sl(mappingFactoriesMutex_);
-//        mappingFactories_[segment] = factory;
-//    }
-//    void removeMappingFactory(MidiKeyboardSegment* segment) {
+    	pthread_mutex_lock(&mappingFactoriesMutex_);
+        mappingFactories_[segment] = factory;
+        pthread_mutex_unlock(&mappingFactoriesMutex_);
+    }
+    void removeMappingFactory(MidiKeyboardSegment* segment) {
 //        ScopedWriteLock sl(mappingFactoriesMutex_);
-//        if(mappingFactories_.count(segment) > 0)
-//            mappingFactories_.erase(segment);
-//    }
+    	pthread_mutex_lock(&mappingFactoriesMutex_);
+        if(mappingFactories_.count(segment) > 0)
+            mappingFactories_.erase(segment);
+
+        pthread_mutex_unlock(&mappingFactoriesMutex_);
+    }
     
     // Passing data to all mapping factories; these methods are not specific to a particular
     // MIDI input segment so we need to check with each factory whether it wants this data.
-//    void tellAllMappingFactoriesTouchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-//                                           juniper::Node<KeyTouchFrame>* touchBuffer,
-//                                           juniper::Node<key_position>* positionBuffer,
-//                                           KeyPositionTracker* positionTracker);
-//    void tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-//                                           juniper::Node<KeyTouchFrame>* touchBuffer,
-//                                           juniper::Node<key_position>* positionBuffer,
-//                                           KeyPositionTracker* positionTracker);
-//    void tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-//                                                juniper::Node<KeyTouchFrame>* touchBuffer,
-//                                                juniper::Node<key_position>* positionBuffer,
-//                                                KeyPositionTracker* positionTracker);
-//    void tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-//                                              juniper::Node<KeyTouchFrame>* touchBuffer,
-//                                              juniper::Node<key_position>* positionBuffer,
-//                                              KeyPositionTracker* positionTracker);
+    void tellAllMappingFactoriesTouchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
+                                           juniper::Node<KeyTouchFrame>* touchBuffer,
+                                           juniper::Node<key_position>* positionBuffer,
+                                           KeyPositionTracker* positionTracker);
+    void tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
+                                           juniper::Node<KeyTouchFrame>* touchBuffer,
+                                           juniper::Node<key_position>* positionBuffer,
+                                           KeyPositionTracker* positionTracker);
+    void tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
+                                                juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                juniper::Node<key_position>* positionBuffer,
+                                                KeyPositionTracker* positionTracker);
+    void tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
+                                              juniper::Node<KeyTouchFrame>* touchBuffer,
+                                              juniper::Node<key_position>* positionBuffer,
+                                              KeyPositionTracker* positionTracker);
     
     MappingScheduler& mappingScheduler() { return *mappingScheduler_; }
 	
@@ -269,7 +277,7 @@ private:
 	// This object can be used to schedule events to be executed at future timestamps,
 	// for example to handle timeouts.  This will often be called from within a particular
 	// key, but we should maintain one central repository for these events.
-//	Scheduler futureEventScheduler_;
+	Scheduler futureEventScheduler_;
     
     // Data related to mappings for active notes
     std::map<int, Mapping*> mappings_;            // Mappings from key motion to sound

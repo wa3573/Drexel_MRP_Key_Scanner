@@ -37,8 +37,8 @@ const int TouchkeyOnsetAngleMapping::kDefaultMaxLookbackSamples = 3;
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-TouchkeyOnsetAngleMapping::TouchkeyOnsetAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
-                                                         Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+TouchkeyOnsetAngleMapping::TouchkeyOnsetAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
+                                                         juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : TouchkeyBaseMapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker),
 pastSamples_(kDefaultFilterBufferLength), maxLookbackTime_(kDefaultMaxLookbackTime),
 startingPitchBendSemitones_(0), lastPitchBendSemitones_(0),
@@ -48,10 +48,12 @@ rampBeginTime_(missing_value<timestamp_type>::missing()), rampLength_(0)
 
 // Reset state back to defaults
 void TouchkeyOnsetAngleMapping::reset() {
-    ScopedLock sl(sampleBufferMutex_);
+    pthread_mutex_lock(&sampleBufferMutex_);
     
     TouchkeyBaseMapping::reset();
     pastSamples_.clear();
+
+    pthread_mutex_unlock(&sampleBufferMutex_);
 }
 
 // Resend all current parameters
@@ -62,12 +64,14 @@ void TouchkeyOnsetAngleMapping::resend() {
 // This method receives data from the touch buffer or possibly the continuous key angle (not used here)
 void TouchkeyOnsetAngleMapping::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
     if(who == touchBuffer_) {
-        ScopedLock sl(sampleBufferMutex_);
+        pthread_mutex_lock(&sampleBufferMutex_);
         
         // Save the latest frame, even if it is an empty touch (we need to know what happened even
         // after the touch ends since the MIDI off may come later)
         if(!touchBuffer_->empty())
             pastSamples_.insert(touchBuffer_->latest(), touchBuffer_->latestTimestamp());
+
+        pthread_mutex_unlock(&sampleBufferMutex_);
     }
 }
 
@@ -100,7 +104,7 @@ timestamp_type TouchkeyOnsetAngleMapping::performMapping() {
 
 void TouchkeyOnsetAngleMapping::processOnset(timestamp_type timestamp) {
 
-    sampleBufferMutex_.enter();
+    pthread_mutex_lock(&sampleBufferMutex_);
     
     // Look backwards from the current timestamp to find the velocity
     float calculatedVelocity = missing_value<float>::missing();
@@ -112,8 +116,8 @@ void TouchkeyOnsetAngleMapping::processOnset(timestamp_type timestamp) {
 #endif
     
     if(!pastSamples_.empty()) {
-        Node<KeyTouchFrame>::size_type index = pastSamples_.endIndex() - 1;
-        Node<KeyTouchFrame>::size_type mostRecentTouchPresentIndex = pastSamples_.endIndex() - 1;
+        juniper::Node<KeyTouchFrame>::size_type index = pastSamples_.endIndex() - 1;
+        juniper::Node<KeyTouchFrame>::size_type mostRecentTouchPresentIndex = pastSamples_.endIndex() - 1;
         while(index >= pastSamples_.beginIndex()) {
 #ifdef DEBUG_NOTE_ONSET_MAPPING
             std::cout << "examining sample " << index << " with " << pastSamples_[index].count << " touches and time diff " << timestamp - pastSamples_.timestampAt(index) << "\n";
@@ -166,7 +170,7 @@ void TouchkeyOnsetAngleMapping::processOnset(timestamp_type timestamp) {
 #endif
     }
     
-    sampleBufferMutex_.exit();
+    pthread_mutex_unlock(&sampleBufferMutex_);
     
     if(!missing_value<float>::isMissing(calculatedVelocity)) {
 #ifdef DEBUG_NOTE_ONSET_MAPPING
@@ -189,7 +193,7 @@ void TouchkeyOnsetAngleMapping::processOnset(timestamp_type timestamp) {
 
 void TouchkeyOnsetAngleMapping::sendOnsetAngleMessage(float onsetAngle, bool force) {
     if(force || !suspended_) {
-        keyboard_.sendMessage("/touchkeys/onsetangle", "if", noteNumber_, onsetAngle, LO_ARGS_END);
+        keyboard_.sendMessage("/onsetangle", "if", noteNumber_, onsetAngle, LO_ARGS_END);
     }
 }
 
@@ -197,5 +201,5 @@ void TouchkeyOnsetAngleMapping::sendOnsetAngleMessage(float onsetAngle, bool for
 // which can be mapped to MIDI CC externally
 void TouchkeyOnsetAngleMapping::sendPitchBendMessage(float pitchBendSemitones, bool force) {
     if(force || !suspended_)
-        keyboard_.sendMessage("/touchkeys/scoop", "if", noteNumber_, pitchBendSemitones, LO_ARGS_END);
+        keyboard_.sendMessage("/scoop", "if", noteNumber_, pitchBendSemitones, LO_ARGS_END);
 }

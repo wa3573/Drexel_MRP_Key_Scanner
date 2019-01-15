@@ -35,7 +35,7 @@
 #include <Midi.h>
 //#include "../JuceLibraryCode/JuceHeader.h"
 #include "PianoKeyboard.h"
-//#include "../Mappings/MappingFactorySplitter.h"
+#include "Mappings/MappingFactorySplitter.h"
 
 class OscMidiConverter;
 
@@ -97,7 +97,7 @@ public:
 	void setMidiOutputController(MidiOutputController* ct) { midiOutputController_ = ct; }
 	
     // Check whether this MIDI message is for this segment
-    bool respondsToMessage(const MidiChannelMessage& message);
+    bool respondsToMessage(MidiChannelMessage& message);
     bool respondsToNote(int noteNumber);
     
     // Set which channels we listen to
@@ -333,7 +333,7 @@ private:
     // Mapping between input notes and output channels.  Depending on the mode of operation,
 	// each note may be rebroadcast on its own MIDI channel.  Need to keep track of what goes where.
 	// key is MIDI note #, value is output channel (0-15)
-	map<int, int> retransmitChannelForNote_;
+	std::map<int, int> retransmitChannelForNote_;
 	set<int> retransmitChannelsAvailable_;
     set<int> retransmitNotesHeldInPedal_;
 	int retransmitMaxPolyphony_;
@@ -342,8 +342,8 @@ private:
     
     // OSC-MIDI conversion objects for use with data mapping. These are stored in each
     // keyboard segment and specific mapping factories can request one when needed.
-    map<int, OscMidiConverter*> oscMidiConverters_;
-    map<int, int> oscMidiConverterReferenceCounts_;
+    std::map<int, OscMidiConverter*> oscMidiConverters_;
+    std::map<int, int> oscMidiConverterReferenceCounts_;
 };
 
 #endif /* defined(__TouchKeys__MidiKeyboardSegment__) */
