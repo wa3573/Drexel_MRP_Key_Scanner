@@ -26,11 +26,9 @@
 #ifndef KEYCONTROL_KEYIDLEDETECTOR_H
 #define KEYCONTROL_KEYIDLEDETECTOR_H
 
-#include "Node.h"
-#include "Accumulator.h"
-//#include "Trigger.h"
-//#include "PianoKeyboard.h"
 #include "PianoTypes.h"
+#include "../Utility/Accumulator.h"
+#include "../Utility/Node.h"
 
 #define kKeyIdleNumSamples 10
 #define kDefaultKeyIdleThreshold (scale_key_position(0.05))

@@ -23,7 +23,7 @@
 #ifndef KEYCONTROL_PIANO_TYPES_H
 #define KEYCONTROL_PIANO_TYPES_H
 
-#include "Types.h"
+#include "../Utility/Types.h"
 
 #undef FIXED_POINT_PIANO_SAMPLES
 

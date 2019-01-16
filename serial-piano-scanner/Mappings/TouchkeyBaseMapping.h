@@ -28,9 +28,9 @@
 
 #include <map>
 #include <boost/bind.hpp>
-#include "../KeyTouchFrame.h"
-#include "../KeyPositionTracker.h"
-#include "../PianoKeyboard.h"
+#include "../TouchKeys/KeyTouchFrame.h"
+#include "../TouchKeys/KeyPositionTracker.h"
+#include "../TouchKeys/PianoKeyboard.h"
 #include "Mapping.h"
 
 // This class is a virtual base class for mappings which work specifically with TouchKeys

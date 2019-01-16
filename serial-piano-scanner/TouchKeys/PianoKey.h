@@ -29,15 +29,16 @@
 #include <set>
 #include <map>
 #include <list>
-//#include "../JuceLibraryCode/JuceHeader.h"
-#include "Node.h"
-#include "PianoTypes.h"
+
 #include "KeyIdleDetector.h"
 #include "KeyPositionTracker.h"
 #include "KeyTouchFrame.h"
-#include "Trigger.h"
-#include "Scheduler.h"
-//#include "../Utility/IIRFilter.h"
+#include "PianoTypes.h"
+//#include "../JuceLibraryCode/JuceHeader.h"
+#include "../Utility/Node.h"
+#include "../Utility/Scheduler.h"
+#include "../Utility/Trigger.h"
+//#include "../../Utility/IIRFilter.h"
 
 const unsigned int kPianoKeyStateBufferLength = 20;	// How many previous states to save
 const unsigned int kPianoKeyIdleBufferLength = 10;  // How many idle/active transitions to save

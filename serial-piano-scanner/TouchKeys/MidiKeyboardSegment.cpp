@@ -25,19 +25,20 @@
 */
 
 #include "MidiKeyboardSegment.h"
-#include "MidiOutputController.h"
-#include "Mappings/MappingFactory.h"
-#include "Mappings/Vibrato/TouchkeyVibratoMappingFactory.h"
-#include "Mappings/PitchBend/TouchkeyPitchBendMappingFactory.h"
-#include "Mappings/Control/TouchkeyControlMappingFactory.h"
-#include "Mappings/ReleaseAngle/TouchkeyReleaseAngleMappingFactory.h"
-#include "Mappings/OnsetAngle/TouchkeyOnsetAngleMappingFactory.h"
-#include "Mappings/MultiFingerTrigger/TouchkeyMultiFingerTriggerMappingFactory.h"
-//#include "../Mappings/KeyDivision/TouchkeyKeyDivisionMappingFactory.h"
-#include "OscMidiConverter.h"
+
+#include "../Mappings/MappingFactory.h"
+#include "../Mappings/Vibrato/TouchkeyVibratoMappingFactory.h"
+#include "../Mappings/PitchBend/TouchkeyPitchBendMappingFactory.h"
+#include "../Mappings/Control/TouchkeyControlMappingFactory.h"
+#include "../Mappings/ReleaseAngle/TouchkeyReleaseAngleMappingFactory.h"
+#include "../Mappings/OnsetAngle/TouchkeyOnsetAngleMappingFactory.h"
+#include "../Mappings/MultiFingerTrigger/TouchkeyMultiFingerTriggerMappingFactory.h"
+//#include "../../Mappings/KeyDivision/TouchkeyKeyDivisionMappingFactory.h"
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include "MidiOutputController.h"
+#include "OscMidiConverter.h"
 
 #undef DEBUG_MIDI_KEYBOARD_SEGMENT
 
@@ -182,8 +183,8 @@ void MidiKeyboardSegment::enableTouchkeyStandaloneMode() {
     if(touchkeyStandaloneMode_)
         return;
     
-    addOscListener("/touchkeys/on");
-    addOscListener("/touchkeys/off");
+    addOscListener("/on");
+    addOscListener("/off");
     touchkeyStandaloneMode_ = true;
 }
 
@@ -192,8 +193,8 @@ void MidiKeyboardSegment::disableTouchkeyStandaloneMode() {
     if(!touchkeyStandaloneMode_)
         return;
 
-    removeOscListener("/touchkeys/on");
-    removeOscListener("/touchkeys/off");
+    removeOscListener("/on");
+    removeOscListener("/off");
     touchkeyStandaloneMode_ = false;
 }
 
@@ -425,7 +426,7 @@ void MidiKeyboardSegment::midiHandlerMethod(MidiInput* source, const MidiMessage
 //
 bool MidiKeyboardSegment::oscHandlerMethod(const char *path, const char *types, int numValues, lo_arg **values, void *data) {
 //    if(touchkeyStandaloneMode_) {
-//        if(!strcmp(path, "/touchkeys/on") && numValues > 0) {
+//        if(!strcmp(path, "/on") && numValues > 0) {
 //            int noteNumber = values[0]->i;
 //            if(!respondsToNote(noteNumber))
 //                return true;
@@ -436,7 +437,7 @@ bool MidiKeyboardSegment::oscHandlerMethod(const char *path, const char *types, 
 //            }
 //            return true;
 //        }
-//        else if(!strcmp(path, "/touchkeys/off") && numValues > 0) {
+//        else if(!strcmp(path, "/off") && numValues > 0) {
 //            int noteNumber = values[0]->i;
 //            if(!respondsToNote(noteNumber))
 //                return true;
@@ -505,7 +506,7 @@ OscMessage* MidiKeyboardSegment::oscControlMethod(const char *path, const char *
         // Return a list of mapping names and types
         // TODO: this should be mutex-protected
         
-        OscMessage *response = OscTransmitter::createMessage("/list-mappings/result", "i", mappingFactories_.size(), LO_ARGS_END);
+        OscMessage *response = OscTransmitter::createMessage("/list-../Mappings/result", "i", mappingFactories_.size(), LO_ARGS_END);
         
         vector<MappingFactory*>::iterator it;
         for(it = mappingFactories_.begin(); it != mappingFactories_.end(); ++it) {

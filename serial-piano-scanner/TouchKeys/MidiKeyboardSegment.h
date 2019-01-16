@@ -34,8 +34,8 @@
 #include <set>
 #include <Midi.h>
 //#include "../JuceLibraryCode/JuceHeader.h"
+#include "../Mappings/MappingFactorySplitter.h"
 #include "PianoKeyboard.h"
-#include "Mappings/MappingFactorySplitter.h"
 
 class OscMidiConverter;
 

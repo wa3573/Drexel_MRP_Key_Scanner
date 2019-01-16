@@ -28,8 +28,9 @@
 
 #include <map>
 #include <boost/bind.hpp>
+
+#include "../../Utility/IIRFilter.h"
 #include "../TouchkeyBaseMapping.h"
-#include "../../IIRFilter.h"
 
 // This class handles the detection and mapping of vibrato gestures
 // based on Touchkey data. It outputs MIDI or OSC messages that

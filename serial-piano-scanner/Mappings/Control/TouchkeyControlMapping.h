@@ -28,8 +28,9 @@
 #include <iostream>
 #include <map>
 #include <boost/bind.hpp>
+
+#include "../../Utility/IIRFilter.h"
 #include "../TouchkeyBaseMapping.h"
-#include "../../IIRFilter.h"
 
 // This class handles the implementation of a basic MIDI/OSC control message
 // based on touch data. It can use absolute or relative position in the X

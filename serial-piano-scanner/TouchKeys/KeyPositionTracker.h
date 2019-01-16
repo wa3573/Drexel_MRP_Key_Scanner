@@ -26,10 +26,11 @@
 #define __touchkeys__KeyPositionTracker__
 
 #include <set>
-//#include "../Utility/Node.h"
-//#include "../Utility/Accumulator.h"
+
 #include "PianoTypes.h"
-#include "Node.h"
+//#include "../../Utility/Node.h"
+//#include "../../Utility/Accumulator.h"
+#include "../Utility/Node.h"
 
 typedef size_t capacity_type;
 

@@ -25,10 +25,11 @@
 #define __touchkeys__OscMidiConverter__
 
 #include <vector>
-#include "Osc.h"
-#include "MidiOutputController.h"
-#include "PianoKeyboard.h"
+
 #include "MidiKeyboardSegment.h"
+#include "MidiOutputController.h"
+#include "Osc.h"
+#include "PianoKeyboard.h"
 
 /* OscMidiConverter
  *

@@ -27,8 +27,8 @@
 
 #include <iostream>
 //#include "../JuceLibraryCode/JuceHeader.h"
-#include "Types.h"
 #include "Node.h"
+#include "Types.h"
 
 const int kTimestampSynchronizerHistoryLength = 100;
 

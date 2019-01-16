@@ -22,7 +22,8 @@
 */
 
 #include "MIDIKeyPositionMapping.h"
-#include "../MidiOutputController.h"
+
+#include "../TouchKeys/MidiOutputController.h"
 
 // Class constants
 const int MIDIKeyPositionMapping::kDefaultMIDIChannel = 0;

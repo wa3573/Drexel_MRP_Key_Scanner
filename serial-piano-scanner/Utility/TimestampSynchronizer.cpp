@@ -23,8 +23,9 @@
 */
 
 #include "TimestampSynchronizer.h"
-#include "Utility/Time.h"
+
 #include "Node.h"
+#include "Time.h"
 
 // Constructor
 TimestampSynchronizer::TimestampSynchronizer()

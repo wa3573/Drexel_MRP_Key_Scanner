@@ -24,7 +24,7 @@
 
 #include "TouchkeyMultiFingerTriggerMapping.h"
 #include "TouchkeyMultiFingerTriggerMappingFactory.h"
-#include "../../MidiOutputController.h"
+#include "../../TouchKeys/MidiOutputController.h"
 
 // Class constants
 const int TouchkeyMultiFingerTriggerMapping::kDefaultFilterBufferLength = 30;

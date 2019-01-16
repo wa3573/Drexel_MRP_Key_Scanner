@@ -22,10 +22,11 @@
 */
 
 #include "TouchkeyPitchBendMapping.h"
-#include "../../MidiOutputController.h"
 #include <vector>
 #include <climits>
 #include <cmath>
+
+#include "../../TouchKeys/MidiOutputController.h"
 #include "../MappingScheduler.h"
 
 #undef DEBUG_PITCHBEND_MAPPING

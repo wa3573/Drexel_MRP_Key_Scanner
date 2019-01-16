@@ -23,8 +23,9 @@
 */
 
 #include "PianoKey.h"
+
+#include "../Mappings/MappingFactory.h"
 #include "PianoKeyboard.h"
-#include "Mappings/MappingFactory.h"
 
 #undef TOUCHKEYS_LEGACY_OSC
 
@@ -361,7 +362,7 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 		// current number of touches.  The target (either MidiInputController or external)
 		// may use this to change its behavior independently of later changes in touch.
 		
-		keyboard_.sendMessage("/touchkeys/preonset", "iiiiiiffiffifff",
+		keyboard_.sendMessage("/preonset", "iiiiiiffiffifff",
 							  noteNumber_, midiChannel_, midiVelocity_,	// MIDI data
 							  frame.count, indexOfFirstTouch,	// General information: how many touches, which was first?
 							  frame.ids[0], frame.locs[0], frame.sizes[0], // Specific touch information
@@ -377,9 +378,9 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 #ifdef TOUCHKEYS_LEGACY_OSC
 		// Send move and resize gestures for each active touch
 		for(int i = 0; i < frame.count; i++) {
-			keyboard_.sendMessage("/touchkeys/move", "iiff", noteNumber_, frame.ids[i],
+			keyboard_.sendMessage("/move", "iiff", noteNumber_, frame.ids[i],
 								  frame.locs[i], frame.horizontal(i), LO_ARGS_END);
-			keyboard_.sendMessage("/touchkeys/resize", "iif", noteNumber_, frame.ids[i],
+			keyboard_.sendMessage("/resize", "iif", noteNumber_, frame.ids[i],
 								  frame.sizes[i], LO_ARGS_END);										
 		}
 		
@@ -389,18 +390,18 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 			float newCentroid = (frame.locs[0] + frame.locs[1]) / 2.0;
 			float newWidth = frame.locs[1] - frame.locs[0];	
 			
-			keyboard_.sendMessage("/touchkeys/twofinger/pinch", "iiif",
+			keyboard_.sendMessage("/twofinger/pinch", "iiif",
 								  noteNumber_, frame.ids[0], frame.ids[1], newWidth, LO_ARGS_END);
-			keyboard_.sendMessage("/touchkeys/twofinger/slide", "iiif",
+			keyboard_.sendMessage("/twofinger/slide", "iiif",
 								  noteNumber_, frame.ids[0], frame.ids[1], newCentroid, LO_ARGS_END);			
 		}
 		else if(frame.count == 3) {
 			float newCentroid = (frame.locs[0] + frame.locs[1] + frame.locs[2]) / 3.0;
 			float newWidth = frame.locs[2] - frame.locs[0];
 			
-			keyboard_.sendMessage("/touchkeys/threefinger/pinch", "iiiif",
+			keyboard_.sendMessage("/threefinger/pinch", "iiiif",
 								  noteNumber_, frame.ids[0], frame.ids[1], frame.ids[2], newWidth, LO_ARGS_END);
-			keyboard_.sendMessage("/touchkeys/threefinger/slide", "iiiif",
+			keyboard_.sendMessage("/threefinger/slide", "iiiif",
 								  noteNumber_, frame.ids[0], frame.ids[1], frame.ids[2], newCentroid, LO_ARGS_END);			
 		}
 #endif
@@ -460,7 +461,7 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 	// First check if the key was previously inactive.  If so, send a message
 	// that the touch has begun
 	if(!touchIsActive_) {
-		keyboard_.sendMessage("/touchkeys/on", "i", noteNumber_, LO_ARGS_END);
+		keyboard_.sendMessage("/on", "i", noteNumber_, LO_ARGS_END);
         keyboard_.tellAllMappingFactoriesTouchBegan(noteNumber_, midiNoteIsOn_, (idleDetector_.idleState() == kIdleDetectorActive),
                                                     &touchBuffer_, &positionBuffer_, &positionTracker_);
     }
@@ -511,10 +512,10 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 #ifdef TOUCHKEYS_LEGACY_OSC
 					// Send "move" messages for the points that have moved
                     if(fabsf(newFrame.locs[*it] - lastFrame.locs[counter]) > 0 /*moveThreshold_*/)
-						keyboard_.sendMessage("/touchkeys/move", "iiff", noteNumber_, newFrame.ids[*it],
+						keyboard_.sendMessage("/move", "iiff", noteNumber_, newFrame.ids[*it],
 													 newFrame.locs[*it], newFrame.horizontal(*it), LO_ARGS_END);
 					if(fabsf(newFrame.sizes[*it] - lastFrame.sizes[counter]) > 0 /*resizeThreshold_*/)
-						keyboard_.sendMessage("/touchkeys/resize", "iif", noteNumber_, newFrame.ids[*it],
+						keyboard_.sendMessage("/resize", "iif", noteNumber_, newFrame.ids[*it],
 													 newFrame.sizes[*it], LO_ARGS_END);
 #endif
 				}
@@ -548,10 +549,10 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 #ifdef TOUCHKEYS_LEGACY_OSC
 					// Send "move" messages for the points that have moved
 					if(fabsf(newFrame.locs[*it] - lastFrame.locs[counter]) > 0 /*moveThreshold_*/)
-						keyboard_.sendMessage("/touchkeys/move", "iiff", noteNumber_, newFrame.ids[*it],
+						keyboard_.sendMessage("/move", "iiff", noteNumber_, newFrame.ids[*it],
 													 newFrame.locs[*it], newFrame.horizontal(*it), LO_ARGS_END);
 					if(fabsf(newFrame.sizes[*it] - lastFrame.sizes[counter]) > 0 /*resizeThreshold_*/)
-						keyboard_.sendMessage("/touchkeys/resize", "iif", noteNumber_, newFrame.ids[*it],
+						keyboard_.sendMessage("/resize", "iif", noteNumber_, newFrame.ids[*it],
 													 newFrame.sizes[*it], LO_ARGS_END);
 #endif
 				}
@@ -573,10 +574,10 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 #ifdef TOUCHKEYS_LEGACY_OSC
 				// Send "move" messages for the points that have moved
 				if(fabsf(newFrame.locs[i] - lastFrame.locs[i]) > 0 /*moveThreshold_*/)
-					keyboard_.sendMessage("/touchkeys/move", "iiff", noteNumber_, newFrame.ids[i],
+					keyboard_.sendMessage("/move", "iiff", noteNumber_, newFrame.ids[i],
 												 newFrame.locs[i], newFrame.horizontal(i), LO_ARGS_END);
 				if(fabsf(newFrame.sizes[i] - lastFrame.sizes[i]) > 0 /*resizeThreshold_*/)
-					keyboard_.sendMessage("/touchkeys/resize", "iif", noteNumber_, newFrame.ids[i],
+					keyboard_.sendMessage("/resize", "iif", noteNumber_, newFrame.ids[i],
 												 newFrame.sizes[i], LO_ARGS_END);
 #endif
 			}
@@ -642,7 +643,7 @@ void PianoKey::touchOff(timestamp_type timestamp) {
 	// Send a message that the touch has ended
 	touchIsActive_ = false;
 	touchBuffer_.clear();
-    keyboard_.sendMessage("/touchkeys/off", "i", noteNumber_, LO_ARGS_END);
+    keyboard_.sendMessage("/off", "i", noteNumber_, LO_ARGS_END);
 //	// Update GUI if it is available
 //	if(keyboard_.gui() != 0) {
 //		keyboard_.gui()->clearTouchForKey(noteNumber_);
@@ -744,7 +745,7 @@ void PianoKey::touchAdd(const KeyTouchFrame& frame, int index, timestamp_type ti
 	KeyTouchEvent event = { kTouchEventAdd, timestamp, frame };
 	touchEvents_.insert(std::pair<int, KeyTouchEvent>(frame.ids[index], event));
 #ifdef TOUCHKEYS_LEGACY_OSC
-	keyboard_.sendMessage("/touchkeys/add", "iiifff", noteNumber_, frame.ids[index], frame.count,
+	keyboard_.sendMessage("/add", "iiifff", noteNumber_, frame.ids[index], frame.count,
 						  frame.locs[index], frame.sizes[index], frame.horizontal(index),
 						  LO_ARGS_END);
 #endif
@@ -757,7 +758,7 @@ void PianoKey::touchRemove(const KeyTouchFrame& frame, int idRemoved, int remain
 	KeyTouchEvent event = { kTouchEventRemove, timestamp, frame };
 	touchEvents_.insert(std::pair<int, KeyTouchEvent>(idRemoved, event));
 #ifdef TOUCHKEYS_LEGACY_OSC
-	keyboard_.sendMessage("/touchkeys/remove", "iii", noteNumber_, idRemoved,
+	keyboard_.sendMessage("/remove", "iii", noteNumber_, idRemoved,
 						  remainingCount, LO_ARGS_END);
 #endif
 }
@@ -773,11 +774,11 @@ void PianoKey::touchMultiFingerGestures(const KeyTouchFrame& lastFrame, const Ke
 		float newWidth = newFrame.locs[1] - newFrame.locs[0];
 		
 		if(fabsf(newWidth - previousWidth) >= 0 /*pinchThreshold_*/) {
-			keyboard_.sendMessage("/touchkeys/twofinger/pinch", "iiif",
+			keyboard_.sendMessage("/twofinger/pinch", "iiif",
 									noteNumber_, newFrame.ids[0], newFrame.ids[1], newWidth, LO_ARGS_END);
 		}
 		if(fabsf(newCentroid - previousCentroid) >= 0 /*slideThreshold_*/) {
-			keyboard_.sendMessage("/touchkeys/twofinger/slide", "iiif",
+			keyboard_.sendMessage("/twofinger/slide", "iiif",
 									noteNumber_, newFrame.ids[0], newFrame.ids[1], newCentroid, LO_ARGS_END);
 		}
 	}
@@ -788,11 +789,11 @@ void PianoKey::touchMultiFingerGestures(const KeyTouchFrame& lastFrame, const Ke
 		float newWidth = newFrame.locs[2] - newFrame.locs[0];
 		
 		if(fabsf(newWidth - previousWidth) >= 0 /*pinchThreshold_*/) {
-			keyboard_.sendMessage("/touchkeys/threefinger/pinch", "iiiif",
+			keyboard_.sendMessage("/threefinger/pinch", "iiiif",
 								  noteNumber_, newFrame.ids[0], newFrame.ids[1], newFrame.ids[2], newWidth, LO_ARGS_END);
 		}
 		if(fabsf(newCentroid - previousCentroid) >= 0 /*slideThreshold_*/) {
-			keyboard_.sendMessage("/touchkeys/threefinger/slide", "iiiif",
+			keyboard_.sendMessage("/threefinger/slide", "iiiif",
 								  noteNumber_, newFrame.ids[0], newFrame.ids[1], newFrame.ids[2], newCentroid, LO_ARGS_END);
 		}
 	}

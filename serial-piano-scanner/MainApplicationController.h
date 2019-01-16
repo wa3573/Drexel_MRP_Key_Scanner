@@ -31,11 +31,11 @@
 
 #include <iostream>
 #include <vector>
-#include "Osc.h"
+#include "TouchKeys/Osc.h"
 //#include "MidiInputController.h"
-#include "MidiKeyboardSegment.h"
-#include "MidiOutputController.h"
-#include "TouchkeyDevice.h"
+#include "TouchKeys/MidiKeyboardSegment.h"
+#include "TouchKeys/MidiOutputController.h"
+#include "TouchKeys/TouchkeyDevice.h"
 //#include "TouchkeyOscEmulator.h"
 #include "Mappings/Vibrato/TouchkeyVibratoMappingFactory.h"
 #include "Mappings/PitchBend/TouchkeyPitchBendMappingFactory.h"

@@ -5,10 +5,11 @@
  *      Author: William Anderson
  */
 
-#ifndef NODE_H_
-#define NODE_H_
+#ifndef UTILITY_NODE_H_
+#define UTILITY_NODE_H_
 
 #include <algorithm>
+
 #include "circular_buffer.h"
 #include "Trigger.h"
 #include "Types.h"
@@ -751,4 +752,4 @@ private:
 };
 
 }
-#endif /* NODE_H_ */
+#endif /* UTILITY_NODE_H_ */

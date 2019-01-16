@@ -20,11 +20,13 @@
  TouchkeyDevice.cpp: handles communication with the TouchKeys hardware
  */
 
+#include "TouchkeyDevice.h"
+
 #include <iomanip>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "Utility/Time.h"
+#include "../Utility/Time.h"
 
 #include <termios.h>
 #include <errno.h>
@@ -34,7 +36,6 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <libexplain/open.h>
-#include "TouchkeyDevice.h"
 
 const char* kKeyNames[13] = { "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ",
 		"G#", "A ", "A#", "B ", "c " };
@@ -49,7 +50,7 @@ TouchkeyDevice::TouchkeyDevice(PianoKeyboard& keyboard) :
 				kTransmissionLengthWhiteNewHardware), expectedLengthBlack_(
 				kTransmissionLengthBlackNewHardware), deviceHasRGBLEDs_(false), isCalibrated_(
 				false), calibrationInProgress_(false), keyCalibrators_(0), keyCalibratorsLength_(
-				0)
+				0), ioThread_(runLoop()), rawDataThread_(rawDataRunLoop()), ledThread_(ledUpdateLoop())
 {
 	// Tell the piano keyboard class how to call us back
 	keyboard_.setTouchkeyDevice(this);
@@ -361,9 +362,9 @@ bool TouchkeyDevice::startAutoGathering()
 	if(verbose_ >= 1)
 		cout << "Starting auto centroid collection\n";
 
-    // TODO: Start the data input and LED threads. Use control thread? Adapter?
-//    ioThread_.startThread();
-//    ledThread_.startThread();
+    // TODO: Start the data input and LED threads. Test Adapter!
+    ioThread_.startThread(this);
+    ledThread_.startThread(this);
 	autoGathering_ = true;
 
     // Tell the device to start scanning for new data
@@ -372,7 +373,7 @@ bool TouchkeyDevice::startAutoGathering()
             cout << "ERROR: unable to write startAutoGather command.  errno = " << errno << endl;
 	}
 
-	keyboard_.sendMessage("/touchkeys/allnotesoff", "", LO_ARGS_END);
+	keyboard_.sendMessage("/allnotesoff", "", LO_ARGS_END);
 //	if(keyboard_.gui() != 0) {
 //		// Update display: touch sensing enabled, which keys connected, no current touches
 //		keyboard_.gui()->setTouchSensingEnabled(true);
@@ -412,18 +413,18 @@ void TouchkeyDevice::stopAutoGathering(bool writeStopCommandToDevice)
 
     // TODO: Wait for run loop thread to finish. Set a timeout in case there's
     // some sort of device hangup
-//    if(ioThread_.getThreadId() != Thread::getCurrentThreadId())
-//        if(ioThread_.isThreadRunning())
-//            ioThread_.stopThread(3000);
-//    if(ledThread_.getThreadId() != Thread::getCurrentThreadId())
-//        if(ledThread_.isThreadRunning())
-//            ledThread_.stopThread(3000);
-//    if(rawDataThread_.getThreadId() != Thread::getCurrentThreadId())
-//        if(rawDataThread_.isThreadRunning())
-//            rawDataThread_.stopThread(3000);
+    if(ioThread_.getThreadId() != juniper::getCurrentThreadId())
+        if(ioThread_.isThreadRunning())
+            ioThread_.stopThread(3000);
+    if(ledThread_.getThreadId() != juniper::getCurrentThreadId())
+        if(ledThread_.isThreadRunning())
+            ledThread_.stopThread(3000);
+    if(rawDataThread_.getThreadId() != juniper::getCurrentThreadId())
+        if(rawDataThread_.isThreadRunning())
+            rawDataThread_.stopThread(3000);
 
     // Stop any currently playing notes
-	keyboard_.sendMessage("/touchkeys/allnotesoff", "", LO_ARGS_END);
+	keyboard_.sendMessage("/allnotesoff", "", LO_ARGS_END);
 
 	// Clear touch for all keys
 	//std::pair<int, int> keyboardRange = keyboard_.keyboardRange();
@@ -865,17 +866,16 @@ struct rawDataThreadArgs_t {
 	bool threadShouldExit = false;
 };
 
-// Loop for sending LED updates to the device, which must happen
-// in a separate thread from data collection so the device's capacity
-// to process incoming data doesn't gate its transmission of sensor data
-//void TouchkeyDevice::ledUpdateLoop(DeviceThread *thread) {
-void TouchkeyDevice::ledUpdateLoop(void* thread_args)
+
+//
+//// Loop for sending LED updates to the device, which must happen
+//// in a separate thread from data collection so the device's capacity
+//// to process incoming data doesn't gate its transmission of sensor data
+////void TouchkeyDevice::ledUpdateLoop(DeviceThread *thread) {
+void* TouchkeyDevice::ledUpdateLoopFunction(Thread* thread)
 {
-
-	ledThreadArgs_t* thread = (ledThreadArgs_t*) thread_args;
-
 	// Run until told to stop, looking for updates to send to the board
-	while (!shouldStop_ && !ledShouldStop_ && !thread->threadShouldExit) {
+	while (!shouldStop_ && !ledShouldStop_ && !thread->threadShouldExit()) {
 		while (!ledUpdateQueue_.empty()) {
 			// Get the update
 			RGBLEDUpdate updateStructure = ledUpdateQueue_.back();
@@ -900,6 +900,8 @@ void TouchkeyDevice::ledUpdateLoop(void* thread_args)
 
 		usleep(20);
 	}
+
+	return NULL;
 }
 
 bool TouchkeyDevice::openDevice(const char * inputDevicePath)
@@ -990,11 +992,9 @@ bool TouchkeyDevice::isOpen()
 //#endif
 }
 
-// Main run loop, which runs in its own thread
-void TouchkeyDevice::runLoop(void* thread_args)
+//// Main run loop, which runs in its own thread
+void* TouchkeyDevice::runLoopFunction(Thread* thread)
 {
-	runLoopThreadArgs_t* thread = (runLoopThreadArgs_t*) thread_args;
-
 	unsigned char buffer[1024];							// Raw data from device
 	unsigned char frame[TOUCHKEY_MAX_FRAME_LENGTH];	// Accumulated frame of data
 	int frameLength;
@@ -1009,7 +1009,7 @@ void TouchkeyDevice::runLoop(void* thread_args)
 	// Continuously read from the input device.  Read as much data as is available, up to
 	// 1024 bytes at a time.  If no data is available, wait 0.5ms before trying again.  USB
 	// data comes in every 1ms, so this guarantees no more than a 1ms wait for data, and often less.
-	while (!shouldStop_ && !thread->threadShouldExit) {
+	while (!shouldStop_ && !thread->threadShouldExit()) {
 
 		/*
 		 // This code for RGBLED testing
@@ -1115,14 +1115,16 @@ void TouchkeyDevice::runLoop(void* thread_args)
 			}
 		}
 	}
+
+
+	return NULL;
 }
 
-// Main run loop for gathering raw data from a particular key, used for debugging
-// and testing purposes
-void TouchkeyDevice::rawDataRunLoop(void* thread_args)
-{
-	ledThreadArgs_t* thread = (ledThreadArgs_t*) thread_args;
 
+//// Main run loop for gathering raw data from a particular key, used for debugging
+//// and testing purposes
+void* TouchkeyDevice::rawDataRunLoopFunction(Thread* thread)
+{
 	unsigned char buffer[1024];							// Raw data from device
 	unsigned char frame[TOUCHKEY_MAX_FRAME_LENGTH];	// Accumulated frame of data
 	int frameLength;
@@ -1145,7 +1147,7 @@ void TouchkeyDevice::rawDataRunLoop(void* thread_args)
 	// 1024 bytes at a time.  If no data is available, wait 0.5ms before trying again.  USB
 	// data comes in every 1ms, so this guarantees no more than a 1ms wait for data, and often less.
 
-	while (!shouldStop_ && !thread->threadShouldExit) {
+	while (!shouldStop_ && !thread->threadShouldExit()) {
 		// Every 100ms, request raw data from the active key
 		double currentTime = Time::getMillisecondCounterHiRes();
 
@@ -1420,7 +1422,7 @@ void TouchkeyDevice::processRawDataFrame(unsigned char * const buffer,
 
 	// TODO: Send raw data as an OSC blob
 //	lo_blob b = lo_blob_new(bufferLength, buffer);
-//	keyboard_.sendMessage("/touchkeys/rawbytes", "b", b, LO_ARGS_END);
+//	keyboard_.sendMessage("/rawbytes", "b", b, LO_ARGS_END);
 //	lo_blob_free(b);
 }
 
@@ -1596,7 +1598,7 @@ int TouchkeyDevice::processKeyCentroid(int frame, int octave, int key,
 
 			// Send raw OSC message if enabled
 			if (sendRawOscMessages_) {
-				keyboard_.sendMessage("/touchkeys/raw-off", "iii", octave, key,
+				keyboard_.sendMessage("/raw-off", "iii", octave, key,
 						frame,
 						LO_ARGS_END);
 			}
@@ -1633,7 +1635,7 @@ int TouchkeyDevice::processKeyCentroid(int frame, int octave, int key,
 
 	// Send raw OSC message if enabled
 	if (sendRawOscMessages_) {
-		keyboard_.sendMessage("/touchkeys/raw", "iiifffffff", octave, key,
+		keyboard_.sendMessage("/raw", "iiifffffff", octave, key,
 				frame, sliderPosition[0], sliderSize[0], sliderPosition[1],
 				sliderSize[1], sliderPosition[2], sliderSize[2],
 				sliderPositionH,
@@ -1864,7 +1866,7 @@ void TouchkeyDevice::processI2CResponseFrame(unsigned char * const buffer,
 
 	// TODO: Send raw data as an OSC blob
 //	lo_blob b = lo_blob_new(responseLength + 1, &buffer[2]);
-//	keyboard_.sendMessage("/touchkeys/rawbytes", "b", b, LO_ARGS_END);
+//	keyboard_.sendMessage("/rawbytes", "b", b, LO_ARGS_END);
 //	lo_blob_free(b);
 }
 

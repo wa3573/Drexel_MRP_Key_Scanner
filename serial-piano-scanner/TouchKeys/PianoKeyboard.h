@@ -29,15 +29,13 @@
 #include <iostream>
 #include <fstream>
 #include <map>
-#include "Types.h"
-#include "Node.h"
+
+#include "Osc.h"
 #include "PianoKey.h"
 #include "PianoTypes.h"
-//#include "PianoPedal.h"
-//#include "../Display/KeyboardDisplay.h"
-//#include "../Display/KeyPositionGraphDisplay.h"
-#include "Osc.h"
-#include "Scheduler.h"
+#include "../Utility/Node.h"
+#include "../Utility/Scheduler.h"
+#include "../Utility/Types.h"
 //#include "../JuceLibraryCode/JuceHeader.h"
 
 #define NUM_KEYS 88

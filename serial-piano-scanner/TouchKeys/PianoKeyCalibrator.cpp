@@ -21,6 +21,7 @@
 */
 
 #include "PianoKeyCalibrator.h"
+
 #include <unistd.h>
 
 // Constructor

@@ -9,7 +9,8 @@
 #define STATUSFRAME_H_
 
 #include <vector>
-#include "TouchkeyDevice.h"
+
+#include "TouchKeys/TouchkeyDevice.h"
 
 class StatusFrame {
 public:

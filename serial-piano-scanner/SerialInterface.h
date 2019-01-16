@@ -12,7 +12,7 @@
 #include <array>
 
 //#include "circular_buffer.h"
-#include "TouchkeyDevice.h"
+#include "TouchKeys/TouchkeyDevice.h"
 
 class SerialInterface {
 public:

@@ -24,12 +24,13 @@
 */
 
 #include "PianoKeyboard.h"
-#include "TouchkeyDevice.h"
-#include "Utility/Time.h"
-//#include "../Mappings/Mapping.h"
+
 #include "MidiOutputController.h"
-//#include "../Mappings/MappingFactory.h"
-//#include "../Mappings/MappingScheduler.h"
+#include "TouchkeyDevice.h"
+#include "../Utility/Time.h"
+//#include "../../Mappings/Mapping.h"
+//#include "../../Mappings/MappingFactory.h"
+//#include "../../Mappings/MappingScheduler.h"
 
 // Constructor
 PianoKeyboard::PianoKeyboard() 

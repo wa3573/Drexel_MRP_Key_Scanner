@@ -26,9 +26,10 @@
 
 #include <map>
 #include <boost/bind.hpp>
-#include "../KeyTouchFrame.h"
-#include "../KeyPositionTracker.h"
-#include "../PianoKeyboard.h"
+
+#include "../TouchKeys/KeyPositionTracker.h"
+#include "../TouchKeys/KeyTouchFrame.h"
+#include "../TouchKeys/PianoKeyboard.h"
 #include "Mapping.h"
 
 // This class handles the mapping from continuous key position to

@@ -22,6 +22,7 @@
 */
 
 #include "MidiOutputController.h"
+
 #include <vector>
 
 #undef DEBUG_MIDI_OUTPUT_CONTROLLER

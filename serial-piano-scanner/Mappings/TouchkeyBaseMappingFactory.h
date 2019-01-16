@@ -32,9 +32,9 @@
 #include <map>
 #include <sstream>
 #include "MappingFactory.h"
-#include "../OscMidiConverter.h"
-#include "../MidiOutputController.h"
-#include "../MidiKeyboardSegment.h"
+#include "../TouchKeys/MidiOutputController.h"
+#include "../TouchKeys/MidiKeyboardSegment.h"
+#include "../TouchKeys/OscMidiConverter.h"
 #include "MappingScheduler.h"
 
 #undef DEBUG_TOUCHKEY_BASE_MAPPING_FACTORY

@@ -24,8 +24,8 @@
 
 #include "TouchkeyBaseMapping.h"
 #include "MappingFactory.h"
-#include "../MidiOutputController.h"
 #include <string.h>
+#include "../TouchKeys/MidiOutputController.h"
 
 // Main constructor takes references/pointers from objects which keep track
 // of touch location, continuous key position and the state detected from that

@@ -25,7 +25,7 @@
 #include "TouchkeyReleaseAngleMapping.h"
 #include "TouchkeyReleaseAngleMappingFactory.h"
 #include "../MappingFactory.h"
-#include "../../MidiOutputController.h"
+#include "../../TouchKeys/MidiOutputController.h"
 #include "../MappingScheduler.h"
 
 #define DEBUG_RELEASE_ANGLE_MAPPING

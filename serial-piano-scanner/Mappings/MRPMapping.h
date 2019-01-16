@@ -26,11 +26,12 @@
 
 #include <map>
 #include <boost/bind.hpp>
-#include "../KeyTouchFrame.h"
-#include "../KeyPositionTracker.h"
-#include "../PianoKeyboard.h"
+
+#include "../TouchKeys/KeyPositionTracker.h"
+#include "../TouchKeys/KeyTouchFrame.h"
+#include "../TouchKeys/PianoKeyboard.h"
+#include "../Utility/IIRFilter.h"
 #include "Mapping.h"
-#include "../IIRFilter.h"
 
 // How many velocity samples to save in the buffer. Make sure this is
 // enough to cover the frequency of updates.

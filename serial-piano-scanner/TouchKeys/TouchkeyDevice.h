@@ -21,11 +21,12 @@
 #ifndef TOUCHKEY_DEVICE_H
 #define TOUCHKEY_DEVICE_H
 
-#include "PianoKeyCalibrator.h"
-#include "PianoKeyboard.h"
 #include "Osc.h"
-#include "TimestampSynchronizer.h"
+#include "PianoKeyboard.h"
 #include "PianoKeyCalibrator.h"
+#include "PianoKeyCalibrator.h"
+#include "../Utility/Thread.h"
+#include "../Utility/TimestampSynchronizer.h"
 
 #define TOUCHKEY_MAX_FRAME_LENGTH 256	// Maximum data length in a single frame
 #define ESCAPE_CHARACTER 0xFE			// Indicates control sequence
@@ -197,6 +198,8 @@ public:
     };
 
 public:
+    const TouchkeyDevice* currentInstance = this;
+
 	// ***** Constructor *****
 	TouchkeyDevice(PianoKeyboard& keyboard);
 
@@ -284,9 +287,96 @@ public:
 //    void setSensorDisplay(RawSensorDisplay *display) { sensorDisplay_ = display; }
 //
 //	// ***** Run Loop Functions *****
-    void ledUpdateLoop(void* thread_args);
-	void runLoop(void* thread_args);
-    void rawDataRunLoop(void* thread_args);
+    class ledUpdateLoop : public Thread {
+    public:
+    	ledUpdateLoop() : Thread("ledUpdateLoop")
+    	{
+    	}
+
+    	void* run()
+    	{
+    		enclosing->ledUpdateLoopFunction(this);
+
+    		this->exit();
+    		return NULL;
+    	}
+
+    	void startThread(TouchkeyDevice* enclosing)
+    	{
+    		this->enclosing = enclosing;
+
+    		int ret1 = pthread_create(getPthread(), NULL, (thread_function_ptr_t)&ledUpdateLoop::run, (void*) this);
+    		if (ret1) {
+    			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
+    		} else {
+    			init();
+    		}
+    	}
+
+    	TouchkeyDevice* enclosing;
+    };
+
+    class runLoop : public Thread {
+    public:
+    	runLoop() : Thread("runLoop")
+    	{
+    	}
+
+    	void startThread(TouchkeyDevice* enclosing)
+    	{
+    		this->enclosing = enclosing;
+
+    		int ret1 = pthread_create(getPthread(), NULL, (thread_function_ptr_t)&runLoop::run, (void*) this);
+    		if (ret1) {
+    			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
+    		} else {
+    			init();
+    		}
+    	}
+
+    	void* run()
+    	{
+    		enclosing->runLoopFunction(this);
+
+    		this->exit();
+    		return NULL;
+    	}
+
+    	TouchkeyDevice* enclosing;
+    };
+
+
+    class rawDataRunLoop : public Thread {
+    public:
+    	rawDataRunLoop() : Thread("rawDataRunLoop")
+    	{
+    	}
+
+    	void startThread(TouchkeyDevice* enclosing)
+    	{
+    		this->enclosing = enclosing;
+
+    		int ret1 = pthread_create(getPthread(), NULL, (thread_function_ptr_t)&rawDataRunLoop::run, (void*) this);
+    		if (ret1) {
+    			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
+    		} else {
+    			init();
+    		}
+    	}
+
+    	void* run()
+    	{
+    		enclosing->rawDataRunLoopFunction(this);
+    		this->exit();
+    		return NULL;
+    	}
+
+    	TouchkeyDevice* enclosing;
+    };
+
+    void* ledUpdateLoopFunction(Thread* caller);
+	void* runLoopFunction(Thread* caller);
+    void* rawDataRunLoopFunction(Thread* caller);
 
     // for debugging
     void testStopLeds() { ledShouldStop_ = true; }
@@ -343,8 +433,8 @@ private:
 
 	int device_;				// File descriptor
 
-	pthread_t ioThread_;		// Thread that handles the communication from the device
-    pthread_t rawDataThread_;// Thread that handles raw data collection
+	runLoop ioThread_;		// Thread that handles the communication from the device
+    rawDataRunLoop rawDataThread_;// Thread that handles raw data collection
 	pthread_mutex_t ioMutex_ = PTHREAD_MUTEX_INITIALIZER;	// Mutex synchronizing access between internal and external threads
 	bool autoGathering_;		// Whether auto-scanning is enabled
 	volatile bool shouldStop_;	// Communication variable between threads
@@ -379,7 +469,7 @@ private:
 
     // ***** RGB LED management *****
     bool deviceHasRGBLEDs_;                 // Whether the device has RGB LEDs
-    pthread_t ledThread_;                   // Thread that handles LED updates (communication to the device)
+    ledUpdateLoop ledThread_;                   // Thread that handles LED updates (communication to the device)
     volatile bool ledShouldStop_;           // testing
     juniper::circular_buffer<RGBLEDUpdate> ledUpdateQueue_;    // Queue that holds new LED messages to be sent to device
 

@@ -28,11 +28,11 @@
 
 #include <map>
 #include <boost/bind.hpp>
-#include "../../KeyTouchFrame.h"
-#include "../../KeyPositionTracker.h"
-#include "../../PianoKeyboard.h"
+#include "../../TouchKeys/KeyTouchFrame.h"
+#include "../../TouchKeys/KeyPositionTracker.h"
+#include "../../TouchKeys/PianoKeyboard.h"
+#include "../../Utility/IIRFilter.h"
 #include "../TouchkeyBaseMapping.h"
-#include "../../IIRFilter.h"
 
 // This class handles the detection and mapping of vibrato gestures
 // based on Touchkey data. It outputs MIDI or OSC messages that
