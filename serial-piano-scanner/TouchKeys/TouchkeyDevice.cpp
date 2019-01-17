@@ -35,7 +35,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <poll.h>
-#include <libexplain/open.h>
+//#include <libexplain/open.h>
 
 const char* kKeyNames[13] = { "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ",
 		"G#", "A ", "A#", "B ", "c " };
@@ -957,7 +957,7 @@ bool TouchkeyDevice::openDevice(const char * inputDevicePath)
 
 //
 	if (device_ < 0) {
-		fprintf(stderr, "%s", explain_open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY, 0));
+//		fprintf(stderr, "%s", explain_open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY, 0));
 		return false;
 	}
 //#endif

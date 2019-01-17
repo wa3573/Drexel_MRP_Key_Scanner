@@ -29,6 +29,8 @@
 #include <stdio.h>
 
 bool programShouldStop_ = false;
+int gXenomaiInited = 0; // required by libbelaextra
+unsigned int gAuxiliaryTaskStackSize = 1 << 17; // required by libbelaextra
 
 static struct option long_options[] = {
 	{"help", no_argument, NULL, 'h'},

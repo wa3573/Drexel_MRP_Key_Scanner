@@ -607,7 +607,7 @@ void MainApplicationController::disableAllMIDIInputPorts(bool auxiliaryOnly) {
 
 // Enable a particular MIDI output port, associating it with a segment
 void MainApplicationController::enableMIDIOutputPort(int identifier, int deviceNumber) {
-//    midiOutputController_.enablePort(identifier, deviceNumber);
+    midiOutputController_.enablePort(identifier, deviceNumber);
     
     std::string zoneName = "MIDIOutputZone";
     zoneName += identifier;
@@ -617,7 +617,7 @@ void MainApplicationController::enableMIDIOutputPort(int identifier, int deviceN
 #ifndef JUCE_WINDOWS
 // Create a virtual (inter-application) MIDI output port
 void MainApplicationController::enableMIDIOutputVirtualPort(int identifier, const char *name) {
-//    midiOutputController_.enableVirtualPort(identifier, name);
+    midiOutputController_.enableVirtualPort(identifier, name);
     
     std::string zoneName = "MIDIOutputZone";
     zoneName += identifier;

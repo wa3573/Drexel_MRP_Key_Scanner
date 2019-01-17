@@ -40,6 +40,9 @@ MidiOutputController::MidiOutputController()
 vector<pair<int, string> > MidiOutputController::availableMidiDevices() {
 	vector<pair<int, string> > deviceList;
 
+	/* We manually insert known MIDI ports for now */
+	pair<int, string> p(0, string(midiPort0_));
+	deviceList.push_back(p);
 //	try {
 //        StringArray deviceStrings = MidiOutput::getDevices();
 //
@@ -52,43 +55,44 @@ vector<pair<int, string> > MidiOutputController::availableMidiDevices() {
 //		deviceList.clear();
 //	}
 //
-//	return deviceList;
+	return deviceList;
 }
 
 // Open a new MIDI output port, given an index related to the list from
 // availableMidiDevices().  Returns true on success.
 
-//bool MidiOutputController::enablePort(int identifier, int deviceNumber) {
-//	if(deviceNumber < 0)
-//		return false;
-//
-//    // Check if there is a port for this identifier, and disable it if so
-//    if(activePorts_.count(identifier) > 0)
-//        disablePort(identifier);
-//
+bool MidiOutputController::enablePort(int identifier, int deviceNumber) {
+	if(deviceNumber < 0)
+		return false;
+
+    // Check if there is a port for this identifier, and disable it if so
+    if(activePorts_.count(identifier) > 0)
+        disablePort(identifier);
+
+    const char* portName = availableMidiDevices().front().second.c_str();
+    midi_.writeTo(portName);
 //    MidiOutput *device = MidiOutput::openDevice(deviceNumber);
 //
 //    if(device == 0) {
 //        cout << "Failed to enable MIDI output port " << deviceNumber << ")\n";
 //        return false;
 //    }
-//
-//#ifdef DEBUG_MIDI_OUTPUT_CONTROLLER
-//    cout << "Enabling MIDI output port " << deviceNumber << " for ID " << identifier << "\n";
-//#endif
-//
-//    // Save the device in the set of ports
-//    MidiOutputControllerRecord record;
-//    record.portNumber = deviceNumber;
-//    record.output = device;
-//
-//    activePorts_[identifier] = record;
-//
-//	return true;
-//}
+
+#ifdef DEBUG_MIDI_OUTPUT_CONTROLLER
+    cout << "Enabling MIDI output port " << deviceNumber << " for ID " << identifier << "\n";
+#endif
+
+    // Save the device in the set of ports
+    MidiOutputControllerRecord record;
+    record.portNumber = deviceNumber;
+
+    activePorts_[identifier] = record;
+
+	return true;
+}
 //
 //#ifndef JUCE_WINDOWS
-//bool MidiOutputController::enableVirtualPort(int identifier, const char *name) {
+bool MidiOutputController::enableVirtualPort(int identifier, const char *name) {
 //    // Check if there is a port for this identifier, and disable it if so
 //    if(activePorts_.count(identifier) > 0)
 //        disablePort(identifier);
@@ -109,24 +113,25 @@ vector<pair<int, string> > MidiOutputController::availableMidiDevices() {
 //#ifdef DEBUG_MIDI_OUTPUT_CONTROLLER
 //    cout << "Enabling virtual output port " << name << endl;
 //#endif
-//
-//	return true;
-//}
-//#endif
+
+	enablePort(identifier, 0);
+
+	return true;
+}
 
 void MidiOutputController::disablePort(int identifier) {
 	if(activePorts_.count(identifier) <= 0)
 		return;
 	
-	MidiOutput *device = activePorts_[identifier].output;
+//	MidiOutput *device = activePorts_[identifier].output;
     
-    if(device == 0)
-        return;
-    
+//    if(device == 0)
+//        return;
+//
 #ifdef DEBUG_MIDI_OUTPUT_CONTROLLER
 	cout << "Disabling MIDI output " << activePorts_[identifier].portNumber << " for ID " << identifier << "\n";
 #endif
-    delete device;
+//    delete device;
     
 	activePorts_.erase(identifier);
 }
@@ -140,13 +145,13 @@ void MidiOutputController::disableAllPorts() {
     
 	it = activePorts_.begin();
 	
-	while(it != activePorts_.end()) {
-        if(it->second.output == 0)
-            continue;
-		delete it->second.output;						// free MidiInputCallback
-		it++;
-	}
-	
+//	while(it != activePorts_.end()) {
+//        if(it->second.output == 0)
+//            continue;
+//		delete it->second.output;						// free MidiInputCallback
+//		it++;
+//	}
+//
 	activePorts_.clear();
 }
 

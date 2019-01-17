@@ -24,8 +24,30 @@
 #ifndef MIDI_OUTPUT_CONTROLLER_H
 #define MIDI_OUTPUT_CONTROLLER_H
 
+#define NOT_ON_BELA
+
 #include <map>
 #include <vector>
+#include <Midi.h>
+
+#ifdef NOT_ON_BELA
+
+inline Midi::Midi()
+{
+
+}
+
+inline Midi::~Midi()
+{
+
+}
+
+inline int Midi::writeTo(const char* port)
+{
+	return 0;
+}
+
+#endif
 
 const std::string kMidiVirtualOutputName = "TouchKeys";
 
@@ -38,7 +60,7 @@ private:
     struct MidiOutputControllerRecord {
         int portNumber;
         // TODO: MidiOutput
-        MidiOutput *output;
+//        MidiOutput *output;
 //        const char* output;
     };
     
@@ -88,6 +110,10 @@ public:
 	~MidiOutputController() { disableAllPorts(); }
 	
 private:
+	/* Bela specific data members */
+	const char* midiPort0_ = "hw:1,0,0";
+	Midi midi_;
+
     std::map<int, MidiOutputControllerRecord> activePorts_;              // Destinations for MIDI data
 };
 

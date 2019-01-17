@@ -27,7 +27,7 @@
 
 
 #include <map>
-#include <boost/bind.hpp>
+//#include <boost/bind.hpp>
 #include "../../TouchKeys/KeyTouchFrame.h"
 #include "../../TouchKeys/KeyPositionTracker.h"
 #include "../../TouchKeys/PianoKeyboard.h"
