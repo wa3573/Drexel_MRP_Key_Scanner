@@ -257,8 +257,8 @@ void PianoKeyboard::clearMappings() {
 
 // Mapping factory methods: tell each registered factory about these events if it listens to this particular note
 void PianoKeyboard::tellAllMappingFactoriesTouchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                                                      juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                      juniper::Node<key_position>* positionBuffer,
+                                                      Node<KeyTouchFrame>* touchBuffer,
+                                                      Node<key_position>* positionBuffer,
                                                       KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
 //    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
@@ -269,8 +269,8 @@ void PianoKeyboard::tellAllMappingFactoriesTouchBegan(int noteNumber, bool midiN
 }
 
 void PianoKeyboard::tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                                                      juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                      juniper::Node<key_position>* positionBuffer,
+                                                      Node<KeyTouchFrame>* touchBuffer,
+                                                      Node<key_position>* positionBuffer,
                                                       KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
 //    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
@@ -281,8 +281,8 @@ void PianoKeyboard::tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiN
 }
 
 void PianoKeyboard::tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                                                           juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                           juniper::Node<key_position>* positionBuffer,
+                                                           Node<KeyTouchFrame>* touchBuffer,
+                                                           Node<key_position>* positionBuffer,
                                                            KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
 //    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
@@ -293,8 +293,8 @@ void PianoKeyboard::tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool 
 }
 
 void PianoKeyboard::tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                                                         juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                         juniper::Node<key_position>* positionBuffer,
+                                                         Node<KeyTouchFrame>* touchBuffer,
+                                                         Node<key_position>* positionBuffer,
                                                          KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
 //    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;

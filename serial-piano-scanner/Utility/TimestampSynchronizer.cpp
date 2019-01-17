@@ -125,20 +125,15 @@ timestamp_type TimestampSynchronizer::synchronizedTimestamp(int rawFrameNumber) 
 			//timestamp_diff_type currentLatency = clockTime - frameTime;
 			timestamp_diff_type maxLatency = 0, minLatency = 1000000.0;
 			
-			juniper::NodeIterator<pair<int, timestamp_type> >it;
-			juniper::NodeIterator<pair<int, timestamp_type> >it_second = history_.begin();
+			Node<pair<int, timestamp_type> >::iterator it;
 			
-			// TODO: it->second
-//			it_second++;
-//			for(it = history_.begin(); it != history_.end(); ++it) {
-//				timestamp_diff_type l = (it.timestamp() - it_second);
-//				if(l > maxLatency)
-//					maxLatency = l;
-//				if(l < minLatency)
-//					minLatency = l;
-//
-//				it_second++;
-//			}
+			for(it = history_.begin(); it != history_.end(); ++it) {
+				timestamp_diff_type l = (it.timestamp() - it->second);
+				if(l > maxLatency)
+					maxLatency = l;
+				if(l < minLatency)
+					minLatency = l;
+			}
 			
 			//cout << "frame " << rawFrameNumber << ": rate = " << currentSampleInterval_ << " clock = " << clockTime << " frame = " << frameTime << " latency = " 
 			//	<< currentLatency << " max = " << maxLatency << " min = " << minLatency << endl;

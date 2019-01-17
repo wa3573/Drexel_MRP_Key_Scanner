@@ -65,8 +65,8 @@ TouchkeyOnsetAngleMappingFactory::TouchkeyOnsetAngleMappingFactory(PianoKeyboard
 
 // MIDI note ended: see whether the mapping was suspended and if not, execute the angle calculation
 void TouchkeyOnsetAngleMappingFactory::midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                                                     juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                     juniper::Node<key_position>* positionBuffer,
+                                                     Node<KeyTouchFrame>* touchBuffer,
+                                                     Node<key_position>* positionBuffer,
                                                      KeyPositionTracker* positionTracker) {
     // Call base class method
     TouchkeyBaseMappingFactory<TouchkeyOnsetAngleMapping>::midiNoteOn(noteNumber, touchIsOn, keyMotionActive, touchBuffer, positionBuffer, positionTracker);

@@ -20,7 +20,7 @@
 #include "StatusFrame.h"
 
 struct thread_args_t {
-	juniper::circular_buffer<char>* buf;
+	boost::circular_buffer<char>* buf;
 };
 
 struct analog_callback_args_t {
@@ -67,7 +67,7 @@ void* controlThread(void* args);
 
 int main()
 {
-	juniper::circular_buffer<char> serial_buffer(SERIAL_BUFFER_SIZE);
+	boost::circular_buffer<char> serial_buffer(SERIAL_BUFFER_SIZE);
 	pthread_t serial_producer;
 	pthread_t serial_consumer;
 	pthread_t control_thread;
@@ -187,7 +187,7 @@ int requestStopScanning()
 	return TOUCHKEY_COMMAND_LENGTH;
 }
 
-void insertBufferChunk(juniper::circular_buffer<char>* buffer,
+void insertBufferChunk(boost::circular_buffer<char>* buffer,
 		char* intermediate_buffer, int len)
 {
 	int count = 0;
@@ -252,7 +252,7 @@ void* serialProducerThread(void* args)
 	return NULL;
 }
 
-char getChar(juniper::circular_buffer<char>* buffer)
+char getChar(boost::circular_buffer<char>* buffer)
 {
 //	printf("getChar(): waiting for data in the buffer\n");
 	pthread_mutex_lock(&gThreadShared.mutexGeneral);

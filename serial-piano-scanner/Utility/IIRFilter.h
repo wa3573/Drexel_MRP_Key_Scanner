@@ -18,7 +18,7 @@
   =====================================================================
 
   IIRFilter.h: template class handling an Nth-order IIR filter on data
-  in a given juniper::Node.
+  in a given Node.
 */
 
 #ifndef touchkeys_IIRFilter_h
@@ -34,7 +34,7 @@
 /*
  * IIRFilterNode
  *
- * This template class performs IIR (infinite impulse response) filtering on incoming juniper::Node data.
+ * This template class performs IIR (infinite impulse response) filtering on incoming Node data.
  * It does not take into account timestamps so assumes the data is regularly sampled. The filter
  * coefficients can be specified and changed, and the operation is selectable between always
  * filtering on each new sample or only filtering on request. In the latter case, it will go back
@@ -43,26 +43,26 @@
  */
 
 template<typename DataType>
-class IIRFilterNode : public juniper::Node<DataType> {
+class IIRFilterNode : public Node<DataType> {
 public:
-	typedef typename juniper::Node<DataType>::capacity_type capacity_type;
-	//typedef typename juniper::Node<return_type>::size_type size_type;
+	typedef typename Node<DataType>::capacity_type capacity_type;
+	//typedef typename Node<return_type>::size_type size_type;
 	
 	// ***** Constructors *****
     
-	IIRFilterNode(capacity_type capacity, juniper::Node<DataType>& input) : juniper::Node<DataType>(capacity), input_(input),
+	IIRFilterNode(capacity_type capacity, Node<DataType>& input) : Node<DataType>(capacity), input_(input),
       autoCalculate_(false), inputHistory_(0), outputHistory_(0), lastInputIndex_(0) {
 	}
     
 	// Copy constructor
-	IIRFilterNode(IIRFilterNode<DataType> const& obj) : juniper::Node<DataType>(obj), input_(obj.input_), autoCalculate_(obj.autoCalculate_),
+	IIRFilterNode(IIRFilterNode<DataType> const& obj) : Node<DataType>(obj), input_(obj.input_), autoCalculate_(obj.autoCalculate_),
      aCoefficients_(obj.aCoefficients_), bCoefficients_(obj.bCoefficients_), lastInputIndex_(obj.lastInputIndex_) {
          if(obj.inputHistory_ != 0)
-             inputHistory_ = new juniper::circular_buffer<DataType>(*obj.inputHistory_);
+             inputHistory_ = new boost::circular_buffer<DataType>(*obj.inputHistory_);
          else
              inputHistory_ = 0;
          if(obj.outputHistory_ != 0)
-             outputHistory_ = new juniper::circular_buffer<DataType>(*obj.outputHistory_);
+             outputHistory_ = new boost::circular_buffer<DataType>(*obj.outputHistory_);
          else
              outputHistory_ = 0;
          if(autoCalculate_) {
@@ -85,7 +85,7 @@ public:
 	// Override this method to clear the input sample buffer
 	
 	void clear() {
-		juniper::Node<DataType>::clear();
+		Node<DataType>::clear();
         clearInputOutputHistory();
 	}
     
@@ -117,7 +117,7 @@ public:
         bCoefficients_ = bCoeffs;
         
         if(inputHistory_ == 0) {
-            inputHistory_ = new juniper::circular_buffer<DataType>(bCoeffs.size());
+            inputHistory_ = new boost::circular_buffer<DataType>(bCoeffs.size());
             shouldClear = true;
         }
         else if(bCoeffs.size() != inputHistory_->capacity()) {
@@ -126,7 +126,7 @@ public:
         }
         
         if(outputHistory_ == 0) {
-            outputHistory_ = new juniper::circular_buffer<DataType>(aCoeffs.size());
+            outputHistory_ = new boost::circular_buffer<DataType>(aCoeffs.size());
             shouldClear = true;
         }
         else if(aCoeffs.size() != outputHistory_->capacity()) {
@@ -143,8 +143,8 @@ public:
     // the most recent output. Optional argument specifies how far back
     // to look before starting fresh (if more samples have elapsed since
     // last calculation).
-    typename juniper::Node<DataType>::return_value_type calculate(int maximumLookback = -1) {
-        typename juniper::Node<DataType>::size_type index = lastInputIndex_;
+    typename Node<DataType>::return_value_type calculate(int maximumLookback = -1) {
+        typename Node<DataType>::size_type index = lastInputIndex_;
         
         if(maximumLookback >= 0 && index < input_.endIndex() - 1 - maximumLookback) {
             //std::cout << "IIRFilterNode: clearing history at index " << index << std::endl;
@@ -192,7 +192,7 @@ private:
         if(!bCoefficients_.empty()) {
             // Always need at least one feedforward coefficient
             DataType result = bCoefficients_[0] * sample;
-            typename juniper::circular_buffer<DataType>::reverse_iterator rit = inputHistory_->rbegin();
+            typename boost::circular_buffer<DataType>::reverse_iterator rit = inputHistory_->rbegin();
             
             // Feedforward part
             for(int i = 1; i < bCoefficients_.size() && rit != inputHistory_->rend(); i++) {
@@ -234,7 +234,7 @@ private:
     
     // ***** Member Variables *****
     
-	juniper::Node<DataType>& input_;
+	Node<DataType>& input_;
 	bool autoCalculate_;        // Whether we're automatically calculating new output values
 
     // Variables below are for filter calculation. We need to hold the past input samples
@@ -242,10 +242,10 @@ private:
     // Likewise, we need to hold past output samples, even though we have our own buffer, because
     // when we clear the buffer for new calculations we don't want to lose what we've previously
     // calculated.
-    juniper::circular_buffer<DataType>* inputHistory_;
-    juniper::circular_buffer<DataType>* outputHistory_;
+    boost::circular_buffer<DataType>* inputHistory_;
+    boost::circular_buffer<DataType>* outputHistory_;
     std::vector<DataType> aCoefficients_, bCoefficients_;
-    typename juniper::Node<DataType>::size_type lastInputIndex_;              // Where in the input buffer we had the last sample
+    typename Node<DataType>::size_type lastInputIndex_;              // Where in the input buffer we had the last sample
 };
 
 // ***** Static Filter Design Methods *****

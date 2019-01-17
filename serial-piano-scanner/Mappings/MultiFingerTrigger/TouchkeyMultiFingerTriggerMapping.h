@@ -66,8 +66,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	TouchkeyMultiFingerTriggerMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                                      juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+	TouchkeyMultiFingerTriggerMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                                      Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 	
     // ***** Modifiers *****
     
@@ -137,7 +137,7 @@ private:
     
     std::set<std::pair<int, int> > otherNotesOn_; // Which other notes are on as a result of triggers?
     
-    juniper::Node<KeyTouchFrame> pastSamples_;           // Locations of touch
+    Node<KeyTouchFrame> pastSamples_;           // Locations of touch
     pthread_mutex_t sampleBufferMutex_ = PTHREAD_MUTEX_INITIALIZER;         // Mutex to protect threaded access to sample buffer
 };
 

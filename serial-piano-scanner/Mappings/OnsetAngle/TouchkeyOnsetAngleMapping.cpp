@@ -37,8 +37,8 @@ const int TouchkeyOnsetAngleMapping::kDefaultMaxLookbackSamples = 3;
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-TouchkeyOnsetAngleMapping::TouchkeyOnsetAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                         juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+TouchkeyOnsetAngleMapping::TouchkeyOnsetAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                                                         Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : TouchkeyBaseMapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker),
 pastSamples_(kDefaultFilterBufferLength), maxLookbackTime_(kDefaultMaxLookbackTime),
 startingPitchBendSemitones_(0), lastPitchBendSemitones_(0),
@@ -116,8 +116,8 @@ void TouchkeyOnsetAngleMapping::processOnset(timestamp_type timestamp) {
 #endif
     
     if(!pastSamples_.empty()) {
-        juniper::Node<KeyTouchFrame>::size_type index = pastSamples_.endIndex() - 1;
-        juniper::Node<KeyTouchFrame>::size_type mostRecentTouchPresentIndex = pastSamples_.endIndex() - 1;
+        Node<KeyTouchFrame>::size_type index = pastSamples_.endIndex() - 1;
+        Node<KeyTouchFrame>::size_type mostRecentTouchPresentIndex = pastSamples_.endIndex() - 1;
         while(index >= pastSamples_.beginIndex()) {
 #ifdef DEBUG_NOTE_ONSET_MAPPING
             std::cout << "examining sample " << index << " with " << pastSamples_[index].count << " touches and time diff " << timestamp - pastSamples_.timestampAt(index) << "\n";

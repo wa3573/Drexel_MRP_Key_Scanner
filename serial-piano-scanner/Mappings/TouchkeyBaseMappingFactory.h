@@ -279,8 +279,8 @@ public:
     
     // Touch becomes active on a key where it wasn't previously
     virtual void touchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                    juniper::Node<KeyTouchFrame>* touchBuffer,
-                    juniper::Node<key_position>* positionBuffer,
+                    Node<KeyTouchFrame>* touchBuffer,
+                    Node<key_position>* positionBuffer,
                     KeyPositionTracker* positionTracker)  {
         pthread_mutex_lock(&mappingsMutex_);
         // Add a new mapping if one doesn't exist already
@@ -296,8 +296,8 @@ public:
     
     // Touch ends on a key where it wasn't previously
     virtual void touchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                    juniper::Node<KeyTouchFrame>* touchBuffer,
-                    juniper::Node<key_position>* positionBuffer,
+                    Node<KeyTouchFrame>* touchBuffer,
+                    Node<key_position>* positionBuffer,
                     KeyPositionTracker* positionTracker) {
         pthread_mutex_lock(&mappingsMutex_);
         // If a mapping exists but the MIDI note is off, remove the mapping
@@ -313,8 +313,8 @@ public:
     
     // MIDI note on for a key
     virtual void midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                    juniper::Node<KeyTouchFrame>* touchBuffer,
-                    juniper::Node<key_position>* positionBuffer,
+                    Node<KeyTouchFrame>* touchBuffer,
+                    Node<key_position>* positionBuffer,
                     KeyPositionTracker* positionTracker)  {
         pthread_mutex_lock(&mappingsMutex_);
         // Add a new mapping if one doesn't exist already
@@ -331,8 +331,8 @@ public:
 
     // MIDI note off for a key
     virtual void midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                     juniper::Node<KeyTouchFrame>* touchBuffer,
-                     juniper::Node<key_position>* positionBuffer,
+                     Node<KeyTouchFrame>* touchBuffer,
+                     Node<key_position>* positionBuffer,
                      KeyPositionTracker* positionTracker)  {
         pthread_mutex_lock(&mappingsMutex_);
         // If a mapping exists but the touch is off, remove the mapping
@@ -351,13 +351,13 @@ public:
     
     // Key goes active from continuous key position
     virtual void keyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                         juniper::Node<KeyTouchFrame>* touchBuffer,
-                         juniper::Node<key_position>* positionBuffer,
+                         Node<KeyTouchFrame>* touchBuffer,
+                         Node<key_position>* positionBuffer,
                          KeyPositionTracker* positionTracker) {}
     // Key goes idle from continuous key position
     virtual void keyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                       juniper::Node<KeyTouchFrame>* touchBuffer,
-                       juniper::Node<key_position>* positionBuffer,
+                       Node<KeyTouchFrame>* touchBuffer,
+                       Node<key_position>* positionBuffer,
                        KeyPositionTracker* positionTracker) {}
     
     // But we do use this one to send out default values:
@@ -456,8 +456,8 @@ private:
     
     // Add a new mapping
     void addMapping(int noteNumber,
-                    juniper::Node<KeyTouchFrame>* touchBuffer,
-                    juniper::Node<key_position>* positionBuffer,
+                    Node<KeyTouchFrame>* touchBuffer,
+                    Node<key_position>* positionBuffer,
                     KeyPositionTracker* positionTracker)  {
         // TODO: mutex
         removeMapping(noteNumber);  // Free any mapping that's already present on this note

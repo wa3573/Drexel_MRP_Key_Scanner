@@ -26,8 +26,9 @@
 #define TIMESTAMP_SYNCHRONIZER_H
 
 #include <iostream>
-//#include "../JuceLibraryCode/JuceHeader.h"
+
 #include "Node.h"
+//#include "../JuceLibraryCode/JuceHeader.h"
 #include "Types.h"
 
 const int kTimestampSynchronizerHistoryLength = 100;
@@ -83,7 +84,7 @@ private:
 	// (frame number and frame timestamp, respectively) and a timestamp (clock timestamp);
 	// in other words, two different times are held within the buffer as well as the frame numbers.
 	
-	juniper::Node<pair<int, timestamp_type> > history_;
+	Node<pair<int, timestamp_type> > history_;
 	
 	// Expected and currently calculated frame intervals
 	

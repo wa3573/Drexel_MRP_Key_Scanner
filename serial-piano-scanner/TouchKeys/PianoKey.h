@@ -100,7 +100,7 @@ public:
     		
 	// ***** Access Methods *****
 	
-	juniper::Node<key_position>& buffer() { return positionBuffer_; }
+	Node<key_position>& buffer() { return positionBuffer_; }
 	
 	// ***** Control Methods *****
 	//
@@ -193,21 +193,21 @@ private:
 	int midiChannel_;					// MIDI channel currently associated with this note
     int midiOutputPort_;                // Which port MIDI output for this note goes to
 	int midiVelocity_;					// Velocity of last MIDI onset
-	juniper::Node<int> midiAftertouch_;			// Aftertouch history on this note, if any
+	Node<int> midiAftertouch_;			// Aftertouch history on this note, if any
 	
 	// Timestamps for the most recent MIDI note on and note off events
 	timestamp_type midiOnTimestamp_, midiOffTimestamp_;
 	
 	// --- Data related to continuous key position ---
 
-	juniper::Node<key_position> positionBuffer_;     // Buffer that holds the key positions
+	Node<key_position> positionBuffer_;     // Buffer that holds the key positions
 //	TODO: KeyIdleDetector: does not name a type
 	KeyIdleDetector idleDetector_;          // Detector for whether the key is still or moving
     KeyPositionTracker positionTracker_;    // Object to track the various active states of the key
     timestamp_type timeOfLastGuiUpdate_;    // How long it's been since the last key position GUI call
     timestamp_type timeOfLastDebugPrint_;   // TESTING
     
-	juniper::Node<key_state> stateBuffer_;		// State history
+	Node<key_state> stateBuffer_;		// State history
 	key_state state_;					// Current state of the key (see enum above)
 	pthread_mutex_t stateMutex_ = PTHREAD_MUTEX_INITIALIZER;///		if(after < before)
 	//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
@@ -221,7 +221,7 @@ private:
 
     bool touchSensorsArePresent_;                   // Whether touch sensitivity exists on this key
 	bool touchIsActive_;							// Whether the user is currently touching the key
-	juniper::Node<KeyTouchFrame> touchBuffer_;				// Buffer that holds touchkey frames
+	Node<KeyTouchFrame> touchBuffer_;				// Buffer that holds touchkey frames
 	std::multimap<int, KeyTouchEvent> touchEvents_;	// Mapping from touch number to event
 	bool touchIsWaiting_;							// Whether we're waiting for a touch to occur
     MidiKeyboardSegment *touchWaitingSource_;  // Who we're waiting from a touch for

@@ -39,8 +39,8 @@ const key_velocity MIDIKeyPositionMapping::kPianoKeyReleaseVelocityForMaxMIDI = 
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-MIDIKeyPositionMapping::MIDIKeyPositionMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                       juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+MIDIKeyPositionMapping::MIDIKeyPositionMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                       Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : Mapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker), noteIsOn_(false),
   midiChannel_(kDefaultMIDIChannel), lastAftertouchValue_(0), midiPercussivenessChannel_(-1)
 {

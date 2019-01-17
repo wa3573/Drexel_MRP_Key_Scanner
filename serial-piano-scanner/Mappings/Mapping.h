@@ -52,8 +52,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-    Mapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                       juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+    Mapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                       Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 	
 	// Copy constructor
     Mapping(Mapping const& obj);
@@ -117,8 +117,8 @@ protected:
     PianoKeyboard& keyboard_;                   // Reference to the main keyboard controller
     MappingFactory *factory_;                   // Factory that created this mapping
     int noteNumber_;                            // MIDI note number for this key
-    juniper::Node<KeyTouchFrame>* touchBuffer_;          // Key touch location history
-	juniper::Node<key_position>* positionBuffer_;		// Raw key position data
+    Node<KeyTouchFrame>* touchBuffer_;          // Key touch location history
+	Node<key_position>* positionBuffer_;		// Raw key position data
     KeyPositionTracker* positionTracker_;       // Object which manages states of key
     
     bool engaged_;                              // Whether we're actively mapping

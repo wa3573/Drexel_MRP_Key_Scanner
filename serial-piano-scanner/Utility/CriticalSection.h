@@ -30,7 +30,13 @@ public:
 
 	inline bool tryEnter() const noexcept
 	{
-		pthread_mutex_trylock(&mutex_);
+		int ret = pthread_mutex_trylock(&mutex_);
+
+		if (ret == 0) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	inline void exit() const noexcept
@@ -39,7 +45,7 @@ public:
 	}
 
 private:
-	pthread_mutex_t mutex_;
+	mutable pthread_mutex_t mutex_;
 };
 
 

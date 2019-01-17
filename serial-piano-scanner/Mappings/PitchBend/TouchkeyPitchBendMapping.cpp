@@ -51,8 +51,8 @@ const bool TouchkeyPitchBendMapping::kDefaultIgnoresThreeFingers = false;
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-TouchkeyPitchBendMapping::TouchkeyPitchBendMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                                               juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+TouchkeyPitchBendMapping::TouchkeyPitchBendMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                                               Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : TouchkeyBaseMapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker),
 bendIsEngaged_(false), snapIsEngaged_(false),
 thresholdSemitones_(kDefaultBendThresholdSemitones), thresholdKeyLength_(kDefaultBendThresholdKeyLength),

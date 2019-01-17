@@ -90,8 +90,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	TouchkeyVibratoMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-               juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+	TouchkeyVibratoMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+               Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 
     // ***** Destructor *****
     
@@ -160,7 +160,7 @@ private:
     float lastX_, lastY_;                       // Where the touch was at the last frame we received
     int idOfCurrentTouch_;                      // Which touch ID we're currently following
     timestamp_type lastTimestamp_;              // When the last data point arrived
-    juniper::Node<float>::size_type lastProcessedIndex_; // Index of the last filtered position sample we've handled
+    Node<float>::size_type lastProcessedIndex_; // Index of the last filtered position sample we've handled
     
     timestamp_type lastZeroCrossingTimestamp_;  // Timestamp of the last zero crossing
     timestamp_diff_type lastZeroCrossingInterval_;   // Interval between the last two zero-crossings of filtered distance
@@ -176,7 +176,7 @@ private:
     
     float lastPitchBendSemitones_;              // The last pitch bend value we sent out
     
-    juniper::Node<float> rawDistance_;                   // Distance from onset location
+    Node<float> rawDistance_;                   // Distance from onset location
     IIRFilterNode<float> filteredDistance_;     // Bandpass filtered finger motion
     pthread_mutex_t distanceAccessMutex_ = PTHREAD_MUTEX_INITIALIZER;       // Mutex that protects the access buffer from changes
 };

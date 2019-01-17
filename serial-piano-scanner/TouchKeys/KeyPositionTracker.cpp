@@ -25,14 +25,14 @@
 
 
 // Default constructor
-KeyPositionTracker::KeyPositionTracker(capacity_type capacity, juniper::Node<key_position>& keyBuffer)
-: juniper::Node<KeyPositionTrackerNotification>(capacity), keyBuffer_(keyBuffer), engaged_(false) {
+KeyPositionTracker::KeyPositionTracker(capacity_type capacity, Node<key_position>& keyBuffer)
+: Node<KeyPositionTrackerNotification>(capacity), keyBuffer_(keyBuffer), engaged_(false) {
     reset();
 }
 
 // Copy constructor
 /*KeyPositionTracker::KeyPositionTracker(KeyPositionTracker const& obj)
-: juniper::circular_buffer<int>(obj), keyBuffer_(obj.keyBuffer_), engaged_(obj.engaged_) {
+: boost::circular_buffer<int>(obj), keyBuffer_(obj.keyBuffer_), engaged_(obj.engaged_) {
     if(engaged_)
         registerForTrigger(&keyBuffer_);
 }*/
@@ -238,7 +238,7 @@ void KeyPositionTracker::disengage() {
 
 // Clear current state and reset to unknown state
 void KeyPositionTracker::reset() {
-	juniper::Node<KeyPositionTrackerNotification>::clear();
+	Node<KeyPositionTrackerNotification>::clear();
     
     currentState_ = kPositionTrackerStateUnknown;
     currentlyAvailableFeatures_ = KeyPositionTrackerNotification::kFeaturesNone;

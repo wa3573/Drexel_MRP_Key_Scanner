@@ -44,8 +44,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	TouchkeyBaseMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                        juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker, bool finishesAutomatically = true);
+	TouchkeyBaseMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                        Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker, bool finishesAutomatically = true);
     
     // ***** Destructor *****
     

@@ -73,7 +73,7 @@ private:
         bool isControllingBend;                 // True if the note in this structure
                                                 // is the one controlling bend (false if it's us)
         bool isFinished;                        // True if the bend should finish after this cycle
-        juniper::Node<key_position>* positionBuffer;     // Key position for bending key
+        Node<key_position>* positionBuffer;     // Key position for bending key
         KeyPositionTracker* positionTracker;    // Key states for bending key
     };
     
@@ -81,8 +81,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	MRPMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-              juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+	MRPMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+              Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 	
 	// Copy constructor
 	//MRPMapping(MRPMapping const& obj);
@@ -105,7 +105,7 @@ public:
     void setAftertouchSensitivity(float sensitivity);
     
     // Engage a pitch bend from a different key, based on its position and state
-    void enablePitchBend(int toNote, juniper::Node<key_position>* toPositionBuffer,
+    void enablePitchBend(int toNote, Node<key_position>* toPositionBuffer,
                          KeyPositionTracker *toPositionTracker);
     
 	// ***** Evaluators *****
@@ -138,9 +138,9 @@ private:
     bool shouldLookForPitchBends_;              // Whether to search for adjacent keys to start a pitch bend
     std::vector<PitchBend> activePitchBends_;   // Which keys are involved in a pitch bend
     
-    juniper::Node<key_velocity> rawVelocity_;            // History of key velocity measurements
+    Node<key_velocity> rawVelocity_;            // History of key velocity measurements
     IIRFilterNode<key_velocity> filteredVelocity_;  // Filtered key velocity information
-    juniper::Node<key_position>::size_type lastCalculatedVelocityIndex_; // Keep track of how many velocity samples we've calculated
+    Node<key_position>::size_type lastCalculatedVelocityIndex_; // Keep track of how many velocity samples we've calculated
     
     bool vibratoActive_;                        // Whether a vibrato gesture is currently detected
     int vibratoVelocityPeakCount_;              // Counter for tracking velocity oscillations

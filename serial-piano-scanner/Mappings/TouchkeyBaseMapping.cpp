@@ -32,8 +32,8 @@
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-TouchkeyBaseMapping::TouchkeyBaseMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                         juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker,
+TouchkeyBaseMapping::TouchkeyBaseMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                                                         Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker,
                                                          bool finishesAutomatically)
 : Mapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker),
   controlName_(""), noteIsOn_(false), finished_(true), finishRequested_(false), finishesAutomatically_(finishesAutomatically)

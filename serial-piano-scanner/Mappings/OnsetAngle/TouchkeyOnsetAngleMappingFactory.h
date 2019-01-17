@@ -55,8 +55,8 @@ public:
     
     // Override the MIDI note on method to process the onset angle
     void midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                     juniper::Node<KeyTouchFrame>* touchBuffer,
-                     juniper::Node<key_position>* positionBuffer,
+                     Node<KeyTouchFrame>* touchBuffer,
+                     Node<key_position>* positionBuffer,
                      KeyPositionTracker* positionTracker);
     
 };

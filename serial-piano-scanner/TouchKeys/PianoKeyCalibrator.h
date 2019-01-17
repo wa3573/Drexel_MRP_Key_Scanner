@@ -126,7 +126,7 @@ private:
 	int newPress_;                  // Value-in-training for press
 	
 //	boost::circular_buffer<int>* history_;  // Buffer holds history of raw values for calibrating
-	juniper::circular_buffer<int>* history_;
+	boost::circular_buffer<int>* history_;
 	
 	// Table of warping values to correct for sensor non-linearity
 	key_position* warpTable_;

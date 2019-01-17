@@ -42,8 +42,8 @@ const float TouchkeyReleaseAngleMapping::kDefaultDownMinimumAngle = 1.0;
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-TouchkeyReleaseAngleMapping::TouchkeyReleaseAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                         juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+TouchkeyReleaseAngleMapping::TouchkeyReleaseAngleMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                                                         Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : TouchkeyBaseMapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker, false),
   upEnabled_(true), downEnabled_(true), upMinimumAngle_(kDefaultUpMinimumAngle), downMinimumAngle_(kDefaultDownMinimumAngle),
   pastSamples_(kDefaultFilterBufferLength), maxLookbackTime_(kDefaultMaxLookbackTime)
@@ -164,8 +164,8 @@ void TouchkeyReleaseAngleMapping::processRelease(/*timestamp_type timestamp*/) {
     bool touchWasOn = false;
     
     if(!pastSamples_.empty()) {
-        juniper::Node<KeyTouchFrame>::size_type index = pastSamples_.endIndex() - 1;
-        juniper::Node<KeyTouchFrame>::size_type mostRecentTouchPresentIndex = pastSamples_.endIndex() - 1;
+        Node<KeyTouchFrame>::size_type index = pastSamples_.endIndex() - 1;
+        Node<KeyTouchFrame>::size_type mostRecentTouchPresentIndex = pastSamples_.endIndex() - 1;
         timestamp_type lastTimestamp = pastSamples_.timestampAt(index);
         
         while(index >= pastSamples_.beginIndex()) {

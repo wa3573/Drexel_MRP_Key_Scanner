@@ -155,8 +155,8 @@ void MappingFactorySplitter::removeAllFactories() {
 
 // Touch becomes active on a key where it wasn't previously
 void MappingFactorySplitter::touchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                juniper::Node<KeyTouchFrame>* touchBuffer,
-                juniper::Node<key_position>* positionBuffer,
+                Node<KeyTouchFrame>* touchBuffer,
+                Node<key_position>* positionBuffer,
                 KeyPositionTracker* positionTracker) {
     std::list<MappingFactory*>::iterator it;
     
@@ -168,8 +168,8 @@ void MappingFactorySplitter::touchBegan(int noteNumber, bool midiNoteIsOn, bool 
 
 // Touch ends on a key where it wasn't previously
 void MappingFactorySplitter::touchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                juniper::Node<KeyTouchFrame>* touchBuffer,
-                juniper::Node<key_position>* positionBuffer,
+                Node<KeyTouchFrame>* touchBuffer,
+                Node<key_position>* positionBuffer,
                 KeyPositionTracker* positionTracker) {
     std::list<MappingFactory*>::iterator it;
     
@@ -181,8 +181,8 @@ void MappingFactorySplitter::touchEnded(int noteNumber, bool midiNoteIsOn, bool 
 
 // MIDI note on for a key
 void MappingFactorySplitter::midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                juniper::Node<KeyTouchFrame>* touchBuffer,
-                juniper::Node<key_position>* positionBuffer,
+                Node<KeyTouchFrame>* touchBuffer,
+                Node<key_position>* positionBuffer,
                 KeyPositionTracker* positionTracker) {
     
     std::list<MappingFactory*>::iterator it;
@@ -195,8 +195,8 @@ void MappingFactorySplitter::midiNoteOn(int noteNumber, bool touchIsOn, bool key
 
 // MIDI note off for a key
 void MappingFactorySplitter::midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                 juniper::Node<KeyTouchFrame>* touchBuffer,
-                 juniper::Node<key_position>* positionBuffer,
+                 Node<KeyTouchFrame>* touchBuffer,
+                 Node<key_position>* positionBuffer,
                  KeyPositionTracker* positionTracker) {
     std::list<MappingFactory*>::iterator it;
     
@@ -208,8 +208,8 @@ void MappingFactorySplitter::midiNoteOff(int noteNumber, bool touchIsOn, bool ke
 
 // Key goes active from continuous key position
 void MappingFactorySplitter::keyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                     juniper::Node<KeyTouchFrame>* touchBuffer,
-                     juniper::Node<key_position>* positionBuffer,
+                     Node<KeyTouchFrame>* touchBuffer,
+                     Node<key_position>* positionBuffer,
                      KeyPositionTracker* positionTracker) {
     std::list<MappingFactory*>::iterator it;
     
@@ -221,8 +221,8 @@ void MappingFactorySplitter::keyMotionActive(int noteNumber, bool midiNoteIsOn, 
 
 // Key goes idle from continuous key position
 void MappingFactorySplitter::keyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                   juniper::Node<KeyTouchFrame>* touchBuffer,
-                   juniper::Node<key_position>* positionBuffer,
+                   Node<KeyTouchFrame>* touchBuffer,
+                   Node<key_position>* positionBuffer,
                    KeyPositionTracker* positionTracker) {
     std::list<MappingFactory*>::iterator it;
     

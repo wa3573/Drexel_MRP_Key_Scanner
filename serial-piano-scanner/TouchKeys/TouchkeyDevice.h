@@ -471,7 +471,7 @@ private:
     bool deviceHasRGBLEDs_;                 // Whether the device has RGB LEDs
     ledUpdateLoop ledThread_;                   // Thread that handles LED updates (communication to the device)
     volatile bool ledShouldStop_;           // testing
-    juniper::circular_buffer<RGBLEDUpdate> ledUpdateQueue_;    // Queue that holds new LED messages to be sent to device
+    boost::circular_buffer<RGBLEDUpdate> ledUpdateQueue_;    // Queue that holds new LED messages to be sent to device
 
     // ***** Calibration *****
     bool isCalibrated_;

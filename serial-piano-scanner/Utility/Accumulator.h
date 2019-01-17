@@ -18,7 +18,7 @@
   =====================================================================
 
   Accumulator.h: template class that accumulates (adds) samples coming into
-  a given juniper::Node.
+  a given Node.
 */
 
 #ifndef KEYCONTROL_ACCUMULATOR_H
@@ -42,15 +42,15 @@
  */
 
 template<typename DataType, int N>
-class Accumulator : public juniper::Node<std::pair<int, DataType> > {
+class Accumulator : public Node<std::pair<int, DataType> > {
 public:
 	typedef typename std::pair<int, DataType> return_type;
-	typedef typename juniper::Node<return_type>::capacity_type capacity_type;
-	//typedef typename juniper::Node<return_type>::size_type size_type;
+	typedef typename Node<return_type>::capacity_type capacity_type;
+	//typedef typename Node<return_type>::size_type size_type;
 	
 	// ***** Constructors *****
 		
-	Accumulator(capacity_type capacity, juniper::Node<DataType>& input) : juniper::Node<return_type>(capacity), input_(input), samples_(N+1) {
+	Accumulator(capacity_type capacity, Node<DataType>& input) : Node<return_type>(capacity), input_(input), samples_(N+1) {
 		if(capacity <= N)			// Need to have at least N points in history to accumulate
 			throw new std::bad_alloc();
 		//std::cout << "Registering Accumulator\n";
@@ -59,7 +59,7 @@ public:
 	}
 				
 	// Copy constructor
-	Accumulator(Accumulator<DataType,N> const& obj) : juniper::Node<return_type>(obj), input_(obj.input_), samples_(obj.samples_) {
+	Accumulator(Accumulator<DataType,N> const& obj) : Node<return_type>(obj), input_(obj.input_), samples_(obj.samples_) {
 		this->registerForTrigger(&input_);
 	}
 	
@@ -68,7 +68,7 @@ public:
 	// Override this method to clear the samples_ buffer
 	
 	void clear() {
-		juniper::Node<std::pair<int, DataType> >::clear();
+		Node<std::pair<int, DataType> >::clear();
 		samples_.clear();
 	}
 	
@@ -124,12 +124,12 @@ public:
 	}*/
 	
 private:
-	juniper::Node<DataType>& input_;
+	Node<DataType>& input_;
 	
 	// Buffer holding the individual samples.  We need to be able to drop the last sample out of the
 	// accumulated buffer, and including our own sample buffer means we don't need to rely on the
 	// length of the input to store old samples.
-	juniper::circular_buffer<DataType> samples_;
+	boost::circular_buffer<DataType> samples_;
 };
 
 

@@ -213,20 +213,20 @@ public:
     // Passing data to all mapping factories; these methods are not specific to a particular
     // MIDI input segment so we need to check with each factory whether it wants this data.
     void tellAllMappingFactoriesTouchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                                           juniper::Node<KeyTouchFrame>* touchBuffer,
-                                           juniper::Node<key_position>* positionBuffer,
+                                           Node<KeyTouchFrame>* touchBuffer,
+                                           Node<key_position>* positionBuffer,
                                            KeyPositionTracker* positionTracker);
     void tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                                           juniper::Node<KeyTouchFrame>* touchBuffer,
-                                           juniper::Node<key_position>* positionBuffer,
+                                           Node<KeyTouchFrame>* touchBuffer,
+                                           Node<key_position>* positionBuffer,
                                            KeyPositionTracker* positionTracker);
     void tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                                                juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                juniper::Node<key_position>* positionBuffer,
+                                                Node<KeyTouchFrame>* touchBuffer,
+                                                Node<key_position>* positionBuffer,
                                                 KeyPositionTracker* positionTracker);
     void tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                                              juniper::Node<KeyTouchFrame>* touchBuffer,
-                                              juniper::Node<key_position>* positionBuffer,
+                                              Node<KeyTouchFrame>* touchBuffer,
+                                              Node<key_position>* positionBuffer,
                                               KeyPositionTracker* positionTracker);
     
     MappingScheduler& mappingScheduler() { return *mappingScheduler_; }

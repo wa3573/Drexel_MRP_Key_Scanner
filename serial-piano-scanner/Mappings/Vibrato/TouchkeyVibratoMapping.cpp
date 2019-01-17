@@ -56,8 +56,8 @@ const float TouchkeyVibratoMapping::kWhiteKeySingleAxisThreshold = (7.0 / 19.0);
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
 
-TouchkeyVibratoMapping::TouchkeyVibratoMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                                               juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+TouchkeyVibratoMapping::TouchkeyVibratoMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                                               Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : TouchkeyBaseMapping(keyboard, factory, noteNumber, touchBuffer, positionBuffer, positionTracker),
 vibratoState_(kStateInactive),
 rampBeginTime_(missing_value<timestamp_type>::missing()),

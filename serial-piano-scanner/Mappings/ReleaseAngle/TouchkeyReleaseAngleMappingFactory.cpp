@@ -262,8 +262,8 @@ MappingEditorComponent* TouchkeyReleaseAngleMappingFactory::createExtendedEditor
 
 // MIDI note ended: see whether the mapping was suspended and if not, execute the angle calculation
 /*void TouchkeyReleaseAngleMappingFactory::midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                                                     juniper::Node<KeyTouchFrame>* touchBuffer,
-                                                     juniper::Node<key_position>* positionBuffer,
+                                                     Node<KeyTouchFrame>* touchBuffer,
+                                                     Node<key_position>* positionBuffer,
                                                      KeyPositionTracker* positionTracker) {
     if(mappings_.count(noteNumber) != 0) {
         mappings_[noteNumber]->processRelease(keyboard_.schedulerCurrentTimestamp());

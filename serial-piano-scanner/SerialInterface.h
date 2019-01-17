@@ -27,7 +27,7 @@ public:
 	void set_mincount(int fd, int mcount);
 	int initSerial(const char *portname, int speed);
 
-//	int serialRead(juniper::circular_buffer<char>& buf, int timeoutMs);
+//	int serialRead(boost::circular_buffer<char>& buf, int timeoutMs);
 	int serialRead(char* buf, size_t len, int timeoutMs);
 	int serialWrite(const char* buf, size_t len);
 	void serialCleanup();

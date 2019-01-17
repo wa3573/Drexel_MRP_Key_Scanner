@@ -37,8 +37,8 @@ const timestamp_diff_type Mapping::kDefaultUpdateInterval = microseconds_to_time
 // position. The PianoKeyboard object is strictly required as it gives access to
 // Scheduler and OSC methods. The others are optional since any given system may
 // contain only one of continuous key position or touch sensitivity
-Mapping::Mapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                       juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
+Mapping::Mapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                       Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker)
 : keyboard_(keyboard), factory_(factory), noteNumber_(noteNumber), touchBuffer_(touchBuffer),
 positionBuffer_(positionBuffer), positionTracker_(positionTracker), engaged_(false),
 suspended_(false), updateInterval_(kDefaultUpdateInterval),

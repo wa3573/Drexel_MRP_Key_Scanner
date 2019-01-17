@@ -69,8 +69,8 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	TouchkeyPitchBendMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, juniper::Node<KeyTouchFrame>* touchBuffer,
-                           juniper::Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
+	TouchkeyPitchBendMapping(PianoKeyboard &keyboard, MappingFactory *factory, int noteNumber, Node<KeyTouchFrame>* touchBuffer,
+                           Node<key_position>* positionBuffer, KeyPositionTracker* positionTracker);
 	
 	// Copy constructor
 	//TouchkeyPitchBendMapping(TouchkeyPitchBendMapping const& obj);
@@ -140,7 +140,7 @@ private:
     float lastX_, lastY_;                       // Where the touch was at the last frame we received
     int idOfCurrentTouch_;                      // Which touch ID we're currently following
     timestamp_type lastTimestamp_;              // When the last data point arrived
-    juniper::Node<float>::size_type lastProcessedIndex_; // Index of the last filtered position sample we've handled
+    Node<float>::size_type lastProcessedIndex_; // Index of the last filtered position sample we've handled
     
     float bendScalerPositive_, bendScalerNegative_; // Translation between position and semitones for upward and downward motions
     
@@ -149,7 +149,7 @@ private:
     float bendRangeSemitones_;                  // Amount of pitch bend in one direction at maximum
     float lastPitchBendSemitones_;              // The last pitch bend value we sent out
     
-    juniper::Node<float> rawDistance_;                   // Distance from onset location
+    Node<float> rawDistance_;                   // Distance from onset location
     pthread_mutex_t distanceAccessMutex_ = PTHREAD_MUTEX_INITIALIZER;       // Mutex protecting access to the distance buffer
 };
 

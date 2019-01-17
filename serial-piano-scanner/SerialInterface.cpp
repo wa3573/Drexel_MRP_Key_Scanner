@@ -114,7 +114,7 @@ int SerialInterface::initSerial(const char *portname, int speed)
 	return 0;
 }
 //
-//int SerialInterface::serialRead(juniper::circular_buffer<char>& buf, int timeoutMs)
+//int SerialInterface::serialRead(boost::circular_buffer<char>& buf, int timeoutMs)
 //{
 //	char intermediate_buf[1000];
 //	struct pollfd pfd[1];

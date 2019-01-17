@@ -103,8 +103,8 @@ public:
     
     // Override the MIDI note off method to process the release angle
     /*void midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                     juniper::Node<KeyTouchFrame>* touchBuffer,
-                     juniper::Node<key_position>* positionBuffer,
+                     Node<KeyTouchFrame>* touchBuffer,
+                     Node<key_position>* positionBuffer,
                      KeyPositionTracker* positionTracker);*/
     
     //void midiNoteOffReceived(int channel);

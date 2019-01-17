@@ -27,10 +27,10 @@
 
 #include <set>
 
+#include "../Utility/Node.h"
 #include "PianoTypes.h"
 //#include "../../Utility/Node.h"
 //#include "../../Utility/Accumulator.h"
-#include "../Utility/Node.h"
 
 typedef size_t capacity_type;
 
@@ -107,9 +107,9 @@ public:
 // This class is triggered by new data points in the key position buffer. Its output is
 // a series of state changes which indicate what the key is doing.
 
-class KeyPositionTracker : public juniper::Node<KeyPositionTrackerNotification> {
+class KeyPositionTracker : public Node<KeyPositionTrackerNotification> {
 public:
-    typedef juniper::Node<key_position>::size_type key_buffer_index;
+    typedef Node<key_position>::size_type key_buffer_index;
     //typedef void (*KeyActionFunction)(KeyPositionTracker *object, void *userData);
     
     // Simple class to hold index/position/timestamp triads
@@ -150,7 +150,7 @@ public:
 	// ***** Constructors *****
 	
 	// Default constructor, passing the buffer on which to trigger
-	KeyPositionTracker(capacity_type capacity, juniper::Node<key_position>& keyBuffer);
+	KeyPositionTracker(capacity_type capacity, Node<key_position>& keyBuffer);
 	
 	// Copy constructor
 	//KeyPositionTracker(KeyPositionTracker const& obj);
@@ -255,7 +255,7 @@ private:
     
 	// ***** Member Variables *****
 	
-	juniper::Node<key_position>& keyBuffer_;		// Raw key position data
+	Node<key_position>& keyBuffer_;		// Raw key position data
     bool engaged_;                      // Whether we're actively listening to incoming updates
     int currentState_;                  // Our current state
     int currentlyAvailableFeatures_;    // Which features can be calculated for the current press

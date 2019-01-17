@@ -52,7 +52,7 @@ enum {
  *
  */
 
-class KeyIdleDetector : public juniper::Node<int> {
+class KeyIdleDetector : public Node<int> {
 public:
 	// ***** Constructors *****
 	

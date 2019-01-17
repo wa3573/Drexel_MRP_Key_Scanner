@@ -95,33 +95,33 @@ public:
     
     // Touch becomes active on a key where it wasn't previously
     virtual void touchBegan(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                            juniper::Node<KeyTouchFrame>* touchBuffer,
-                            juniper::Node<key_position>* positionBuffer,
+                            Node<KeyTouchFrame>* touchBuffer,
+                            Node<key_position>* positionBuffer,
                             KeyPositionTracker* positionTracker) = 0;
     // Touch ends on a key where it wasn't previously
     virtual void touchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
-                            juniper::Node<KeyTouchFrame>* touchBuffer,
-                            juniper::Node<key_position>* positionBuffer,
+                            Node<KeyTouchFrame>* touchBuffer,
+                            Node<key_position>* positionBuffer,
                             KeyPositionTracker* positionTracker) = 0;
     // MIDI note on for a key
     virtual void midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                            juniper::Node<KeyTouchFrame>* touchBuffer,
-                            juniper::Node<key_position>* positionBuffer,
+                            Node<KeyTouchFrame>* touchBuffer,
+                            Node<key_position>* positionBuffer,
                             KeyPositionTracker* positionTracker) = 0;
     // MIDI note off for a key
     virtual void midiNoteOff(int noteNumber, bool touchIsOn, bool keyMotionActive,
-                             juniper::Node<KeyTouchFrame>* touchBuffer,
-                             juniper::Node<key_position>* positionBuffer,
+                             Node<KeyTouchFrame>* touchBuffer,
+                             Node<key_position>* positionBuffer,
                              KeyPositionTracker* positionTracker) = 0;
     // Key goes active from continuous key position
     virtual void keyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                                 juniper::Node<KeyTouchFrame>* touchBuffer,
-                                 juniper::Node<key_position>* positionBuffer,
+                                 Node<KeyTouchFrame>* touchBuffer,
+                                 Node<key_position>* positionBuffer,
                                  KeyPositionTracker* positionTracker) = 0;
     // Key goes idle from continuous key position
     virtual void keyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
-                               juniper::Node<KeyTouchFrame>* touchBuffer,
-                               juniper::Node<key_position>* positionBuffer,
+                               Node<KeyTouchFrame>* touchBuffer,
+                               Node<key_position>* positionBuffer,
                                KeyPositionTracker* positionTracker) = 0;
     
     // Notification from key that a note is about to be sent out
