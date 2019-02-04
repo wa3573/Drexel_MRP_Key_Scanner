@@ -27,12 +27,12 @@
 #include <iostream>
 #include <pthread.h>
 
-#include "PianoKeyboard.h"
 #include "PianoTypes.h"
 //#include <boost/circular_buffer.hpp>
 //#include "circular_buffer.h"
 //#include "../JuceLibraryCode/JuceHeader.h"
 #include "../Utility/Types.h"
+#include "PianoKeyboard.h"
 
 // Calibration status of the Piano Bar.  This compensates for variations in mechanical position, light level, etc.
 enum {

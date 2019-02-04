@@ -23,7 +23,6 @@
 
 #include "KeyPositionTracker.h"
 
-
 // Default constructor
 KeyPositionTracker::KeyPositionTracker(capacity_type capacity, Node<key_position>& keyBuffer)
 : Node<KeyPositionTrackerNotification>(capacity), keyBuffer_(keyBuffer), engaged_(false) {
@@ -32,7 +31,7 @@ KeyPositionTracker::KeyPositionTracker(capacity_type capacity, Node<key_position
 
 // Copy constructor
 /*KeyPositionTracker::KeyPositionTracker(KeyPositionTracker const& obj)
-: boost::circular_buffer<int>(obj), keyBuffer_(obj.keyBuffer_), engaged_(obj.engaged_) {
+: Node<int>(obj), keyBuffer_(obj.keyBuffer_), engaged_(obj.engaged_) {
     if(engaged_)
         registerForTrigger(&keyBuffer_);
 }*/
@@ -217,8 +216,7 @@ KeyPositionTracker::PercussivenessFeatures KeyPositionTracker::pressPercussivene
     return features;
 }
 
-/* TODO: engage() and disengage() */
-//// Register to receive messages from the key buffer on each new sample
+// Register to receive messages from the key buffer on each new sample
 void KeyPositionTracker::engage() {
     if(engaged_)
         return;
@@ -226,12 +224,12 @@ void KeyPositionTracker::engage() {
     registerForTrigger(&keyBuffer_);
     engaged_ = true;
 }
-//
-//// Unregister from receiving message on new samples
+
+// Unregister from receiving message on new samples
 void KeyPositionTracker::disengage() {
     if(!engaged_)
         return;
-
+    
     unregisterForTrigger(&keyBuffer_);
     engaged_ = false;
 }
@@ -257,10 +255,10 @@ void KeyPositionTracker::reset() {
 }
 
 // Evaluator function. Update the current state
-void KeyPositionTracker::triggerReceived(/*TriggerSource* who, */ timestamp_type timestamp) {
+void KeyPositionTracker::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
 
-//	if(who != &keyBuffer_)
-//		return;
+	if(who != &keyBuffer_)
+		return;
     
     // Always start in the partial press state after a reset, retroactively locating
     // the start position for this key press

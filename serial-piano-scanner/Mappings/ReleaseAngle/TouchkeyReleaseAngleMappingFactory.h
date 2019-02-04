@@ -96,8 +96,8 @@ public:
 #endif
     
     // TODO: ****** Preset Save/Load ******
-//    XmlElement* getPreset();
-//    bool loadPreset(XmlElement const* preset);
+    XmlElement* getPreset();
+    bool loadPreset(XmlElement const* preset);
     
     // ***** State Updaters *****
     

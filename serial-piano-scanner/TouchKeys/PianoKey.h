@@ -29,16 +29,15 @@
 #include <set>
 #include <map>
 #include <list>
-
+#include "../Utility/CriticalSection.h"
+#include "../Utility/Node.h"
+#include "PianoTypes.h"
 #include "KeyIdleDetector.h"
 #include "KeyPositionTracker.h"
 #include "KeyTouchFrame.h"
-#include "PianoTypes.h"
-//#include "../JuceLibraryCode/JuceHeader.h"
-#include "../Utility/Node.h"
+//#include "MidiKeyboardSegment.h"
 #include "../Utility/Scheduler.h"
-#include "../Utility/Trigger.h"
-//#include "../../Utility/IIRFilter.h"
+#include "../Utility/IIRFilter.h"
 
 const unsigned int kPianoKeyStateBufferLength = 20;	// How many previous states to save
 const unsigned int kPianoKeyIdleBufferLength = 10;  // How many idle/active transitions to save
@@ -132,7 +131,7 @@ public:
 	void midiNoteOn(MidiKeyboardSegment *who, int velocity, int channel, timestamp_type timestamp);
 	void midiNoteOff(MidiKeyboardSegment *who, timestamp_type timestamp);
 	void midiAftertouch(MidiKeyboardSegment *who, int value, timestamp_type timestamp);
-	
+
 	bool midiNoteIsOn() { return midiNoteIsOn_; }
 	int midiVelocity() { return midiVelocity_; }
 	int midiChannel() { return midiChannel_; }
@@ -176,7 +175,8 @@ private:
 	// key position data.
 	
 	void changeState(key_state newState);
-	void changeState(key_state newState, timestamp_type timestamp);
+	void changeState(key_state newState, timestamp_type timestamp);	
+	
 	void terminateActivity();
 	
 	// ***** Member Variables *****
@@ -201,7 +201,6 @@ private:
 	// --- Data related to continuous key position ---
 
 	Node<key_position> positionBuffer_;     // Buffer that holds the key positions
-//	TODO: KeyIdleDetector: does not name a type
 	KeyIdleDetector idleDetector_;          // Detector for whether the key is still or moving
     KeyPositionTracker positionTracker_;    // Object to track the various active states of the key
     timestamp_type timeOfLastGuiUpdate_;    // How long it's been since the last key position GUI call
@@ -209,11 +208,7 @@ private:
     
 	Node<key_state> stateBuffer_;		// State history
 	key_state state_;					// Current state of the key (see enum above)
-	pthread_mutex_t stateMutex_ = PTHREAD_MUTEX_INITIALIZER;///		if(after < before)
-	//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
-	//		return (size_type)(--it - timestamps_->begin()) + this->firstSampleIndex_;/		if(after < before)
-	//			return (size_type)(it - timestamps_->begin()) + this->firstSampleIndex_;
-	//		return (size_type)(--it - timestamps_->begin()) + this->firstSampleIndex_;		// Use this to synchronize changes of state
+	CriticalSection stateMutex_;		// Use this to synchronize changes of state
     
     //IIRFilterNode<key_position> testFilter_;    // Filter the raw key position data, for testing
 	

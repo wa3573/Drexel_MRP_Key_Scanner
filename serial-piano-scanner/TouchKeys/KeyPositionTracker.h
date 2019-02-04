@@ -26,13 +26,9 @@
 #define __touchkeys__KeyPositionTracker__
 
 #include <set>
-
 #include "../Utility/Node.h"
+#include "../Utility/Accumulator.h"
 #include "PianoTypes.h"
-//#include "../../Utility/Node.h"
-//#include "../../Utility/Accumulator.h"
-
-typedef size_t capacity_type;
 
 // Three states of idle detector
 enum {
@@ -232,7 +228,7 @@ public:
 	
     // This method receives triggers whenever a new sample enters the buffer. It updates
     // the state depending on the profile of the key position.
-	void triggerReceived(/* TriggerSource* who, */ timestamp_type timestamp);
+	void triggerReceived(TriggerSource* who, timestamp_type timestamp);
 	
 private:
     // ***** Internal Helper Methods *****

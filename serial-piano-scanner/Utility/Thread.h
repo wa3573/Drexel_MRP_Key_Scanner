@@ -24,7 +24,10 @@ class Thread {
 public:
 	typedef void * (*thread_function_ptr_t)(void *);
 
-	Thread(std::string threadName);
+	inline Thread(std::string threadName) : name_(threadName)
+	{
+
+	}
 
 	virtual void* run()
 	{

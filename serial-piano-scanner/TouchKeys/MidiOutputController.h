@@ -24,44 +24,23 @@
 #ifndef MIDI_OUTPUT_CONTROLLER_H
 #define MIDI_OUTPUT_CONTROLLER_H
 
-#define NOT_ON_BELA
-
 #include <map>
 #include <vector>
-#include <Midi.h>
+#include "MidiInternal.h"
+#include <iostream>
+//#include "MidiInputController.h"
 
-#ifdef NOT_ON_BELA
-
-inline Midi::Midi()
-{
-
-}
-
-inline Midi::~Midi()
-{
-
-}
-
-inline int Midi::writeTo(const char* port)
-{
-	return 0;
-}
-
-#endif
-
-const std::string kMidiVirtualOutputName = "TouchKeys";
+//const juce::String kMidiVirtualOutputName = "TouchKeys";
 
 using namespace std;
 
-class MidiOutputController {
-	typedef char MidiOutput;
 
+
+class MidiOutputController {
 private:
     struct MidiOutputControllerRecord {
         int portNumber;
-        // TODO: MidiOutput
-//        MidiOutput *output;
-//        const char* output;
+        MidiOutput output;
     };
     
 public:
@@ -74,7 +53,7 @@ public:
 	MidiOutputController();
 	
 	// Query available devices
-	std::vector<pair<int, string> > availableMidiDevices();
+	vector<pair<int, string> > availableMidiDevices();
 	
 	// Methods to connect/disconnect from a target port
     bool enablePort(int identifier, int deviceNumber);
@@ -103,17 +82,13 @@ public:
 	void sendPitchWheel(int port, unsigned char channel, unsigned int value);
 	void sendReset(int port);
 	
-	// TODO: Generic pre-formed messages
-//	void sendMessage(int port, const MidiMessage& message);
+	// Generic pre-formed messages
+	void sendMessage(int port, const MidiMessage& message);
 	
 	// Destructor
 	~MidiOutputController() { disableAllPorts(); }
 	
 private:
-	/* Bela specific data members */
-	const char* midiPort0_ = "hw:1,0,0";
-	Midi midi_;
-
     std::map<int, MidiOutputControllerRecord> activePorts_;              // Destinations for MIDI data
 };
 

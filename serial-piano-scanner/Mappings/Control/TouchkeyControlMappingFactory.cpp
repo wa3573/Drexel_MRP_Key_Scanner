@@ -381,68 +381,68 @@ OscMessage* TouchkeyControlMappingFactory::oscControlMethod(const char *path, co
 
 
 // TODO: ****** Preset Save/Load ******
-//XmlElement* TouchkeyControlMappingFactory::getPreset() {
-//    PropertySet properties;
-//
-//    storeCommonProperties(properties);
-//    properties.setValue("inputParameter", inputParameter_);
-//    properties.setValue("inputType", inputType_);
-//    properties.setValue("outputRangeMin", outputRangeMin_);
-//    properties.setValue("outputRangeMax", outputRangeMax_);
-//    properties.setValue("outputDefault", outputDefault_);
-//    properties.setValue("threshold", threshold_);
-//    properties.setValue("ignoresTwoFingers", ignoresTwoFingers_);
-//    properties.setValue("ignoresThreeFingers", ignoresThreeFingers_);
-//    properties.setValue("direction", direction_);
-//    properties.setValue("use14Bit", use14BitControl_);
-//
-//    XmlElement* preset = properties.createXml("MappingFactory");
-//    preset->setAttribute("type", "Control");
-//
-//    return preset;
-//}
-//
-//bool TouchkeyControlMappingFactory::loadPreset(XmlElement const* preset) {
-//    if(preset == 0)
-//        return false;
-//
-//    PropertySet properties;
-//    properties.restoreFromXml(*preset);
-//
-//    if(!loadCommonProperties(properties))
-//        return false;
-//    if(!properties.containsKey("inputParameter") ||
-//       !properties.containsKey("inputType") ||
-//       !properties.containsKey("outputRangeMin") ||
-//       !properties.containsKey("outputRangeMax") ||
-//       !properties.containsKey("outputDefault") ||
-//       !properties.containsKey("threshold") ||
-//       !properties.containsKey("ignoresTwoFingers") ||
-//       !properties.containsKey("ignoresThreeFingers") ||
-//       !properties.containsKey("direction"))
-//        return false;
-//
-//    inputParameter_ = properties.getIntValue("inputParameter");
-//    inputType_ = properties.getIntValue("inputType");
-//    outputRangeMin_ = properties.getDoubleValue("outputRangeMin");
-//    outputRangeMax_ = properties.getDoubleValue("outputRangeMax");
-//    outputDefault_ = properties.getDoubleValue("outputDefault");
-//    threshold_ = properties.getDoubleValue("threshold");
-//    ignoresTwoFingers_ = properties.getBoolValue("ignoresTwoFingers");
-//    ignoresThreeFingers_ = properties.getBoolValue("ignoresThreeFingers");
-//    direction_ = properties.getIntValue("direction");
-//
-//    // These values added to later versions of the presets so check
-//    // whether they actually exist or not
-//    if(properties.containsKey("use14Bit"))
-//        use14BitControl_ = properties.getBoolValue("use14Bit");
-//
-//    // Update MIDI information; this doesn't actually change the controller
-//    // (which is already set) but it adds a listener and updates the ranges
-//    setController(midiControllerNumber_);
-//
-//    return true;
-//}
+XmlElement* TouchkeyControlMappingFactory::getPreset() {
+    PropertySet properties;
+
+    storeCommonProperties(properties);
+    properties.setValue("inputParameter", inputParameter_);
+    properties.setValue("inputType", inputType_);
+    properties.setValue("outputRangeMin", outputRangeMin_);
+    properties.setValue("outputRangeMax", outputRangeMax_);
+    properties.setValue("outputDefault", outputDefault_);
+    properties.setValue("threshold", threshold_);
+    properties.setValue("ignoresTwoFingers", ignoresTwoFingers_);
+    properties.setValue("ignoresThreeFingers", ignoresThreeFingers_);
+    properties.setValue("direction", direction_);
+    properties.setValue("use14Bit", use14BitControl_);
+
+    XmlElement* preset = properties.createXml("MappingFactory");
+    preset->setAttribute("type", "Control");
+
+    return preset;
+}
+
+bool TouchkeyControlMappingFactory::loadPreset(XmlElement const* preset) {
+    if(preset == 0)
+        return false;
+
+    PropertySet properties;
+    properties.restoreFromXml(*preset);
+
+    if(!loadCommonProperties(properties))
+        return false;
+    if(!properties.containsKey("inputParameter") ||
+       !properties.containsKey("inputType") ||
+       !properties.containsKey("outputRangeMin") ||
+       !properties.containsKey("outputRangeMax") ||
+       !properties.containsKey("outputDefault") ||
+       !properties.containsKey("threshold") ||
+       !properties.containsKey("ignoresTwoFingers") ||
+       !properties.containsKey("ignoresThreeFingers") ||
+       !properties.containsKey("direction"))
+        return false;
+
+    inputParameter_ = properties.getIntValue("inputParameter");
+    inputType_ = properties.getIntValue("inputType");
+    outputRangeMin_ = properties.getDoubleValue("outputRangeMin");
+    outputRangeMax_ = properties.getDoubleValue("outputRangeMax");
+    outputDefault_ = properties.getDoubleValue("outputDefault");
+    threshold_ = properties.getDoubleValue("threshold");
+    ignoresTwoFingers_ = properties.getBoolValue("ignoresTwoFingers");
+    ignoresThreeFingers_ = properties.getBoolValue("ignoresThreeFingers");
+    direction_ = properties.getIntValue("direction");
+
+    // These values added to later versions of the presets so check
+    // whether they actually exist or not
+    if(properties.containsKey("use14Bit"))
+        use14BitControl_ = properties.getBoolValue("use14Bit");
+
+    // Update MIDI information; this doesn't actually change the controller
+    // (which is already set) but it adds a listener and updates the ranges
+    setController(midiControllerNumber_);
+
+    return true;
+}
 
 // ***** Private Methods *****
 

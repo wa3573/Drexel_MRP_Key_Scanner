@@ -29,13 +29,15 @@
 #include <iostream>
 #include <fstream>
 #include <map>
-
-#include "Osc.h"
-#include "PianoKey.h"
-#include "PianoTypes.h"
-#include "../Utility/Node.h"
-#include "../Utility/Scheduler.h"
 #include "../Utility/Types.h"
+#include "../Utility/Node.h"
+#include "PianoKey.h"
+//#include "PianoPedal.h"
+//#include "../Display/KeyboardDisplay.h"
+//#include "../Display/KeyPositionGraphDisplay.h"
+#include "Osc.h"
+#include "../Utility/Scheduler.h"
+#include "../Utility/CriticalSection.h"
 //#include "../JuceLibraryCode/JuceHeader.h"
 
 #define NUM_KEYS 88
@@ -107,12 +109,12 @@ public:
 	MidiOutputController* midiOutputController() { return midiOutputController_; }
 	void setMidiOutputController(MidiOutputController* ct) { midiOutputController_ = ct; }
     
-//	// Set reference to GUI displays
+	// Set reference to GUI displays
 //	KeyboardDisplay* gui() { return gui_; }
 //	void setGUI(KeyboardDisplay* gui);
 //    KeyPositionGraphDisplay *graphGUI() { return graphGui_; }
 //    void setGraphGUI(KeyPositionGraphDisplay* newGui) { graphGui_ = newGui; }
-//
+	
 	// OSC transmitter handles the mechanics of sending messages to one or more targets
 	void setOscTransmitter(OscTransmitter* trans) { oscTransmitter_ = trans; }
     
@@ -135,10 +137,10 @@ public:
 	void unscheduleEvent(void *who, timestamp_type timestamp) {
 		futureEventScheduler_.unschedule(who, timestamp);
 	}
-
+	
 	// Return the current timestamp associated with the scheduler
 	timestamp_type schedulerCurrentTimestamp() { return futureEventScheduler_.currentTimestamp(); }
-
+	
 	// ***** Individual Key/Pedal Methods *****
 	
 	// Access to individual keys and pedals
@@ -186,28 +188,22 @@ public:
     
     // Managing the mapping factories
     MappingFactory *mappingFactory(MidiKeyboardSegment* segment) {
-    	pthread_mutex_lock(&mappingFactoriesMutex_);
 //        ScopedReadLock sl(mappingFactoriesMutex_);
-        if(mappingFactories_.count(segment) == 0) {
-        	pthread_mutex_unlock(&mappingFactoriesMutex_);
+    	ScopedLock sl(mappingFactoriesMutex_);
+        if(mappingFactories_.count(segment) == 0)
             return 0;
-        }
-        pthread_mutex_unlock(&mappingFactoriesMutex_);
         return mappingFactories_[segment];
     }
     void setMappingFactory(MidiKeyboardSegment* segment, MappingFactory *factory) {
 //        ScopedWriteLock sl(mappingFactoriesMutex_);
-    	pthread_mutex_lock(&mappingFactoriesMutex_);
+    	ScopedLock sl(mappingFactoriesMutex_);
         mappingFactories_[segment] = factory;
-        pthread_mutex_unlock(&mappingFactoriesMutex_);
     }
     void removeMappingFactory(MidiKeyboardSegment* segment) {
 //        ScopedWriteLock sl(mappingFactoriesMutex_);
-    	pthread_mutex_lock(&mappingFactoriesMutex_);
+    	ScopedLock sl(mappingFactoriesMutex_);
         if(mappingFactories_.count(segment) > 0)
             mappingFactories_.erase(segment);
-
-        pthread_mutex_unlock(&mappingFactoriesMutex_);
     }
     
     // Passing data to all mapping factories; these methods are not specific to a particular
@@ -237,14 +233,14 @@ public:
     // data (MIDI or touch). By synchronizing access once centrally, we
     // can avoid many other lock scenarios in individual objects. The object
     // is declared public so it can be used in ScopedLocks.
-    pthread_mutex_t performanceDataMutex_ = PTHREAD_MUTEX_INITIALIZER;
+    CriticalSection performanceDataMutex_;
     
 private:
 	// Individual key and pedal data structures
 	std::vector<PianoKey*> keys_;
 //	std::vector<PianoPedal*> pedals_;
-	
-	// Reference to GUI display (if present)
+//
+//	// Reference to GUI display (if present)
 //	KeyboardDisplay* gui_;
 //    KeyPositionGraphDisplay *graphGui_;
     
@@ -283,10 +279,12 @@ private:
     // Collection of mapping factories organised by segment of the keyboard. Different
     // segments may have different mappings
     std::map<MidiKeyboardSegment*, MappingFactory*> mappingFactories_;
-    pthread_mutex_t mappingFactoriesMutex_ = PTHREAD_MUTEX_INITIALIZER;
+//    ReadWriteLock mappingFactoriesMutex_;
+    CriticalSection mappingFactoriesMutex_;
     
     // Scheduler specifically used for coordinating mappings
     MappingScheduler *mappingScheduler_;
+
 };
 
 #endif /* KEYCONTROL_PIANOKEYBOARD_H */

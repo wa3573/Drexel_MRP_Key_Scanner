@@ -61,6 +61,8 @@ class KeyboardTesterDisplay;
 const char kDefaultOscTransmitHost[] = "127.0.0.1";
 const char kDefaultOscTransmitPort[] = "8000";
 const int kDefaultOscReceivePort = 8001;
+const int kCalibrationTimeSeconds = 5;
+
 
 class MainApplicationOSCController;
 
@@ -102,6 +104,9 @@ public:
     // Check for device present
     bool touchkeyDeviceCheckForPresence(int waitMilliseconds = 250, int tries = 10);
     
+    void startCalibration(int secondsToCalibrate);
+    void finishCalibration();
+
     // Start/stop the TouchKeys data collection
     bool startTouchkeyDevice();
     void stopTouchkeyDevice();

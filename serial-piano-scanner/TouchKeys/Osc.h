@@ -34,7 +34,8 @@
 #include <vector>
 #include <set>
 #include "lo/lo.h"
-//#include "../JuceLibraryCode/JuceHeader.h"
+#include "lo/lo_cpp.h"
+#include "../Utility/CriticalSection.h"
 
 using namespace std;
 
@@ -84,8 +85,8 @@ protected:
     void updateListeners();                                         // Propagate changes to the listeners to the main object
     
 	//ReadWriteLock oscListenerMutex_;                // This mutex protects the OSC listener table from being modified mid-message
-	pthread_mutex_t oscListenerMutex_ = PTHREAD_MUTEX_INITIALIZER;                // This mutex protects the OSC listener table from being modified mid-message
-    pthread_mutex_t oscUpdaterMutex_ = PTHREAD_MUTEX_INITIALIZER;                 // This mutex controls the insertion of objects in add/removeListener
+	CriticalSection oscListenerMutex_;                // This mutex protects the OSC listener table from being modified mid-message
+    CriticalSection oscUpdaterMutex_;                 // This mutex controls the insertion of objects in add/removeListener
     
 	multimap<string, OscHandler*> noteListeners_;	// Map from OSC path name to handler (possibly multiple handlers per object)
     multimap<string, OscHandler*> noteListenersToAdd_;    // Collection of listeners to add on the next cycle
@@ -111,12 +112,11 @@ public:
             snprintf(portStr, 16, "%d", port);
 #endif
 
-            // TODO: liblo
-//            oscServerThread_ = lo_server_thread_new(portStr, staticErrorHandler);
-//            if(oscServerThread_ != 0) {
-//                lo_server_thread_add_method(oscServerThread_, NULL, NULL, OscReceiver::staticHandler, (void *)this);
-//                lo_server_thread_start(oscServerThread_);
-//            }
+            oscServerThread_ = lo_server_thread_new(portStr, staticErrorHandler);
+            if(oscServerThread_ != 0) {
+                lo_server_thread_add_method(oscServerThread_, NULL, NULL, OscReceiver::staticHandler, (void *)this);
+                lo_server_thread_start(oscServerThread_);
+            }
         }
         else
             oscServerThread_ = 0;
@@ -154,10 +154,9 @@ public:
 	
 	~OscReceiver() {
         if(oscServerThread_ != 0) {
-        	// TODO: liblo
-//            lo_server_thread_del_method(oscServerThread_, NULL, NULL);
-//            lo_server_thread_stop(oscServerThread_);
-//            lo_server_thread_free(oscServerThread_);
+            lo_server_thread_del_method(oscServerThread_, NULL, NULL);
+            lo_server_thread_stop(oscServerThread_);
+            lo_server_thread_free(oscServerThread_);
         }
 	}
 	

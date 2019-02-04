@@ -47,9 +47,9 @@ public:
     
     virtual const std::string factoryTypeName() { return "Onset\nAngle"; }
     
-//    // TODO: ****** Preset Save/Load ******
-//    XmlElement* getPreset();
-//    bool loadPreset(XmlElement const* preset);
+    // ****** Preset Save/Load ******
+    XmlElement* getPreset();
+    bool loadPreset(XmlElement const* preset);
     
     // ***** State Updaters *****
     

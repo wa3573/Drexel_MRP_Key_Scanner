@@ -44,13 +44,14 @@ const char* kKeyNames[13] = { "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ",
 
 TouchkeyDevice::TouchkeyDevice(PianoKeyboard& keyboard) :
 		keyboard_(keyboard), device_(-1), autoGathering_(false), shouldStop_(
-				false), sendRawOscMessages_(false), verbose_(10), numOctaves_(0), lowestMidiNote_(
+				false), sendRawOscMessages_(false), verbose_(2), numOctaves_(0), lowestMidiNote_(
 				48), lowestKeyPresentMidiNote_(48), updatedLowestMidiNote_(48), lowestNotePerOctave_(
 				0), deviceSoftwareVersion_(-1), deviceHardwareVersion_(-1), expectedLengthWhite_(
 				kTransmissionLengthWhiteNewHardware), expectedLengthBlack_(
 				kTransmissionLengthBlackNewHardware), deviceHasRGBLEDs_(false), isCalibrated_(
 				false), calibrationInProgress_(false), keyCalibrators_(0), keyCalibratorsLength_(
-				0), ioThread_(runLoop()), rawDataThread_(rawDataRunLoop()), ledThread_(ledUpdateLoop())
+				0), ioThread_(runLoop()), rawDataThread_(rawDataRunLoop()), ledThread_(
+				ledUpdateLoop())
 {
 	// Tell the piano keyboard class how to call us back
 	keyboard_.setTouchkeyDevice(this);
@@ -58,7 +59,8 @@ TouchkeyDevice::TouchkeyDevice(PianoKeyboard& keyboard) :
 	// Initialize the frame -> timestamp synchronization.  Frame interval is nominally 1ms,
 	// but this class helps us find the actual rate which might drift slightly, and it keeps
 	// the time stamps of each data point in sync with other streams.
-	timestampSynchronizer_.initialize(Time::getMillisecondCounterHiRes(), keyboard_.schedulerCurrentTimestamp());
+	timestampSynchronizer_.initialize(Time::getMillisecondCounterHiRes(),
+			keyboard_.schedulerCurrentTimestamp());
 	timestampSynchronizer_.setNominalSampleInterval(.001);
 	timestampSynchronizer_.setFrameModulus(65536);
 
@@ -69,54 +71,53 @@ TouchkeyDevice::TouchkeyDevice(PianoKeyboard& keyboard) :
 	loggingActive_ = false;
 }
 
-bool TouchkeyDevice::checkIfDevicePresent(int millisecondsToWait) {
+bool TouchkeyDevice::checkIfDevicePresent(int millisecondsToWait)
+{
 	//struct timeval startTime, currentTime;
-    double startTime, currentTime;
+	double startTime, currentTime;
 	unsigned char ch;
 	bool controlSeq = false, startingFrame = false;
 
-	if(!isOpen())
+	if (!isOpen())
 		return false;
-    deviceFlush(false);
+	deviceFlush(false);
 
-	if(deviceWrite((char*)kCommandStatus, 5) < 0) {	// Write status command
-        if(verbose_ >= 1)
-            cout << "ERROR: unable to write status command.  errno = " << errno << endl;
+	if (deviceWrite((char*) kCommandStatus, 5) < 0) {	// Write status command
+		if (verbose_ >= 1)
+			cout << "ERROR: unable to write status command.  errno = " << errno
+					<< endl;
 		return false;
 	}
 
-
 	// Wait the specified amount of time for a response before giving up
-    startTime = Time::getMillisecondCounterHiRes();
-    currentTime = startTime;
+	startTime = Time::getMillisecondCounterHiRes();
+	currentTime = startTime;
 
-	while(currentTime - startTime < (double)millisecondsToWait) {
-        long count = deviceRead((char *)&ch, 1);
+	while (currentTime - startTime < (double) millisecondsToWait) {
+		long count = deviceRead((char *) &ch, 1);
 
-		if(count < 0) {				// Check if an error occurred on read
-			if(errno != EAGAIN) {
-                if(verbose_ >= 1)
-                    cout << "Unable to read from device (error " << errno << ").  Aborting.\n";
+		if (count < 0) {				// Check if an error occurred on read
+			if (errno != EAGAIN) {
+				if (verbose_ >= 1)
+					cout << "Unable to read from device (error " << errno
+							<< ").  Aborting.\n";
 				return false;
 			}
-		}
-		else if(count > 0) {		// Data received
+		} else if (count > 0) {		// Data received
 			// Wait for a frame back that is of type status.  We don't even care what the
 			// status is at this point, just that we got something.
 
-			if(controlSeq) {
+			if (controlSeq) {
 				controlSeq = false;
-				if(ch == kControlCharacterFrameBegin)
+				if (ch == kControlCharacterFrameBegin)
 					startingFrame = true;
-                else
-                    startingFrame = false;
-			}
-			else {
-				if(ch == ESCAPE_CHARACTER) {
+				else
+					startingFrame = false;
+			} else {
+				if (ch == ESCAPE_CHARACTER) {
 					controlSeq = true;
-                }
-				else if(startingFrame) {
-					if(ch == kFrameTypeStatus) {
+				} else if (startingFrame) {
+					if (ch == kFrameTypeStatus) {
 						ControllerStatus status;
 						unsigned char statusBuf[TOUCHKEY_MAX_FRAME_LENGTH];
 						int statusBufLength = 0;
@@ -124,45 +125,49 @@ bool TouchkeyDevice::checkIfDevicePresent(int millisecondsToWait) {
 
 						// Gather and parse the status frame
 
-						while(currentTime - startTime < millisecondsToWait) {
-							count = deviceRead((char *)&ch, 1);
+						while (currentTime - startTime < millisecondsToWait) {
+							count = deviceRead((char *) &ch, 1);
 
-							if(count == 0)
+							if (count == 0)
 								continue;
-							if(count < 0) {
-								if(errno != EAGAIN && verbose_ >= 1) {	// EAGAIN just means no data was available
-                                    if(verbose_ >= 1)
-                                        cout << "Unable to read from device (error " << errno << ").  Aborting.\n";
+							if (count < 0) {
+								if (errno != EAGAIN && verbose_ >= 1) {	// EAGAIN just means no data was available
+									if (verbose_ >= 1)
+										cout
+												<< "Unable to read from device (error "
+												<< errno << ").  Aborting.\n";
 									return false;
 								}
 
 								continue;
 							}
 
-							if(controlSeq) {
+							if (controlSeq) {
 								controlSeq = false;
-								if(ch == kControlCharacterFrameEnd)	{		// frame finished?
+								if (ch == kControlCharacterFrameEnd) {// frame finished?
 									break;
-                                }
-								else if(ch == kControlCharacterFrameError)	// device telling us about an internal comm error
+								} else if (ch == kControlCharacterFrameError)// device telling us about an internal comm error
 									frameError = true;
-								else if(ch == ESCAPE_CHARACTER) {			// double-escape means a literal escape character
-									statusBuf[statusBufLength++] = (unsigned char)ch;
-									if(statusBufLength >= TOUCHKEY_MAX_FRAME_LENGTH) {
+								else if (ch == ESCAPE_CHARACTER) {// double-escape means a literal escape character
+									statusBuf[statusBufLength++] =
+											(unsigned char) ch;
+									if (statusBufLength
+											>= TOUCHKEY_MAX_FRAME_LENGTH) {
 										frameError = true;
 										break;
 									}
-								}
-								else if(ch == kControlCharacterNak && verbose_ >= 1) {
+								} else if (ch == kControlCharacterNak
+										&& verbose_ >= 1) {
 									cout << "Warning: received NAK\n";
 								}
-							}
-							else {
-								if(ch == ESCAPE_CHARACTER)
+							} else {
+								if (ch == ESCAPE_CHARACTER)
 									controlSeq = true;
 								else {
-									statusBuf[statusBufLength++] = (unsigned char)ch;
-									if(statusBufLength >= TOUCHKEY_MAX_FRAME_LENGTH) {
+									statusBuf[statusBufLength++] =
+											(unsigned char) ch;
+									if (statusBufLength
+											>= TOUCHKEY_MAX_FRAME_LENGTH) {
 										frameError = true;
 										break;
 									}
@@ -172,98 +177,122 @@ bool TouchkeyDevice::checkIfDevicePresent(int millisecondsToWait) {
 							currentTime = Time::getMillisecondCounterHiRes();
 						}
 
-						if(frameError) {
-                            if(verbose_ >= 1)
-                                cout << "Warning: device present, but frame error received trying to get status.\n";
-						}
-						else if(processStatusFrame(statusBuf, statusBufLength, &status)) {
+						if (frameError) {
+							if (verbose_ >= 1)
+								cout
+										<< "Warning: device present, but frame error received trying to get status.\n";
+						} else if (processStatusFrame(statusBuf,
+								statusBufLength, &status)) {
+							std::cout << "Status frame captured:" << std::endl;
+
+							printStatusFrame(&status);
+
 							// Clear keys present in preparation to read new list of keys
 							keysPresent_.clear();
 
 							numOctaves_ = status.octaves;
-                            deviceSoftwareVersion_ = status.softwareVersionMajor;
-                            deviceHardwareVersion_ = status.hardwareVersion;
-                            deviceHasRGBLEDs_ = status.hasRGBLEDs;
-                            lowestKeyPresentMidiNote_ = 127;
+							deviceSoftwareVersion_ =
+									status.softwareVersionMajor;
+							deviceHardwareVersion_ = status.hardwareVersion;
+							deviceHasRGBLEDs_ = status.hasRGBLEDs;
+							lowestKeyPresentMidiNote_ = 127;
 
-							if(verbose_ >= 1) {
-								cout << endl << "Found Device: Hardware Version " << status.hardwareVersion;
-								cout << " Software Version " << status.softwareVersionMajor << "." << status.softwareVersionMinor;
-								cout << endl << "  " << status.octaves << " octaves connected" << endl;
+							if (verbose_ >= 1) {
+								cout << endl
+										<< "Found Device: Hardware Version "
+										<< status.hardwareVersion;
+								cout << " Software Version "
+										<< status.softwareVersionMajor << "."
+										<< status.softwareVersionMinor;
+								cout << endl << "  " << status.octaves
+										<< " octaves connected" << endl;
 							}
 
-							for(int i = 0; i < status.octaves; i++) {
+							for (int i = 0; i < status.octaves; i++) {
 								bool foundKey = false;
 
-								if(verbose_ >= 1) cout << "  Octave " << i << ": ";
-								for(int j = 0; j < 13; j++) {
-									if(status.connectedKeys[i] & (1<<j)) {
-										if(verbose_ >= 1) cout << kKeyNames[j] << " ";
-										keysPresent_.insert(octaveNoteToIndex(i, j));
+								if (verbose_ >= 1)
+									cout << "  Octave " << i << ": ";
+								for (int j = 0; j < 13; j++) {
+									if (status.connectedKeys[i] & (1 << j)) {
+										if (verbose_ >= 1)
+											cout << kKeyNames[j] << " ";
+										keysPresent_.insert(
+												octaveNoteToIndex(i, j));
 										foundKey = true;
-                                        if(octaveKeyToMidi(i, j) < lowestKeyPresentMidiNote_)
-                                            lowestKeyPresentMidiNote_ = octaveKeyToMidi(i, j);
-									}
-									else {
-										if(verbose_ >= 1) cout << "-  ";
+										if (octaveKeyToMidi(i, j)
+												< lowestKeyPresentMidiNote_)
+											lowestKeyPresentMidiNote_ =
+													octaveKeyToMidi(i, j);
+									} else {
+										if (verbose_ >= 1)
+											cout << "-  ";
 									}
 
 								}
 
-								if(verbose_ >= 1) cout << endl;
+								if (verbose_ >= 1)
+									cout << endl;
 							}
 
-                            // Hardware version determines whether all keys have XY or not
-                            if(status.hardwareVersion >= 2) {
-                                expectedLengthWhite_ = kTransmissionLengthWhiteNewHardware;
-                                expectedLengthBlack_ = kTransmissionLengthBlackNewHardware;
-                                whiteMaxX_ = kWhiteMaxXValueNewHardware;
-                                whiteMaxY_ = kWhiteMaxYValueNewHardware;
-                                blackMaxX_ = kBlackMaxXValueNewHardware;
-                                blackMaxY_ = kBlackMaxYValueNewHardware;
-                            }
-                            else {
-                                expectedLengthWhite_ = kTransmissionLengthWhiteOldHardware;
-                                expectedLengthBlack_ = kTransmissionLengthBlackOldHardware;
-                                whiteMaxX_ = kWhiteMaxXValueOldHardware;
-                                whiteMaxY_ = kWhiteMaxYValueOldHardware;
-                                blackMaxX_ = 1.0; // irrelevant -- no X data
-                                blackMaxY_ = kBlackMaxYValueOldHardware;
-                            }
+							// Hardware version determines whether all keys have XY or not
+							if (status.hardwareVersion >= 2) {
+								expectedLengthWhite_ =
+										kTransmissionLengthWhiteNewHardware;
+								expectedLengthBlack_ =
+										kTransmissionLengthBlackNewHardware;
+								whiteMaxX_ = kWhiteMaxXValueNewHardware;
+								whiteMaxY_ = kWhiteMaxYValueNewHardware;
+								blackMaxX_ = kBlackMaxXValueNewHardware;
+								blackMaxY_ = kBlackMaxYValueNewHardware;
+							} else {
+								expectedLengthWhite_ =
+										kTransmissionLengthWhiteOldHardware;
+								expectedLengthBlack_ =
+										kTransmissionLengthBlackOldHardware;
+								whiteMaxX_ = kWhiteMaxXValueOldHardware;
+								whiteMaxY_ = kWhiteMaxYValueOldHardware;
+								blackMaxX_ = 1.0; // irrelevant -- no X data
+								blackMaxY_ = kBlackMaxYValueOldHardware;
+							}
 
-                            // Software version indicates what information is available. On version
-                            // 2 and greater, can indicate which is lowest sensor available. Might
-                            // be different from lowest connected key.
-                            if(status.softwareVersionMajor >= 2) {
-                                lowestKeyPresentMidiNote_ = octaveKeyToMidi(0, status.lowestHardwareNote);
+							// Software version indicates what information is available. On version
+							// 2 and greater, can indicate which is lowest sensor available. Might
+							// be different from lowest connected key.
+							if (status.softwareVersionMajor >= 2) {
+								lowestKeyPresentMidiNote_ = octaveKeyToMidi(0,
+										status.lowestHardwareNote);
 
-                                if(status.softwareVersionMinor == 1) {
-                                    // Version 2.1 uses the lowest MIDI note to handle keyboards which don't
-                                    // begin and end at C, e.g. E-E or F-F keyboards.
-                                    lowestNotePerOctave_ = status.lowestHardwareNote;
-                                }
-                                else {
-                                    lowestNotePerOctave_ = 0;
-                                }
-                            }
-                            else if(lowestKeyPresentMidiNote_ == 127) // No keys found and old device software
-                                lowestKeyPresentMidiNote_ = lowestMidiNote_;
+								if (status.softwareVersionMinor == 1) {
+									// Version 2.1 uses the lowest MIDI note to handle keyboards which don't
+									// begin and end at C, e.g. E-E or F-F keyboards.
+									lowestNotePerOctave_ =
+											status.lowestHardwareNote;
+								} else {
+									lowestNotePerOctave_ = 0;
+								}
+							} else if (lowestKeyPresentMidiNote_ == 127) // No keys found and old device software
+								lowestKeyPresentMidiNote_ = lowestMidiNote_;
 
-                            keyboard_.setKeyboardGUIRange(lowestKeyPresentMidiNote_, lowestMidiNote_ + 12*numOctaves_ + lowestNotePerOctave_);
-                            calibrationInit(12*numOctaves_ + 1); // One more for the top C
+							keyboard_.setKeyboardGUIRange(
+									lowestKeyPresentMidiNote_,
+									lowestMidiNote_ + 12 * numOctaves_
+											+ lowestNotePerOctave_);
+							calibrationInit(12 * numOctaves_ + 1); // One more for the top C
+						} else {
+							if (verbose_ >= 1)
+								cout
+										<< "Warning: device present, but received invalid status frame.\n";
+							deviceFlush(true);
+							return false;			// Yes... found the device
 						}
-						else {
-							if(verbose_ >= 1) cout << "Warning: device present, but received invalid status frame.\n";
-                            deviceFlush(true);
-							return false;					// Yes... found the device
-						}
 
-                        deviceFlush(true);
-						return true;					// Yes... found the device
+						deviceFlush(true);
+						return true;				// Yes... found the device
 					}
 				}
 
-                startingFrame = false;
+				startingFrame = false;
 			}
 		}
 
@@ -350,27 +379,28 @@ void TouchkeyDevice::rgbledAllOff()
 
 bool TouchkeyDevice::startAutoGathering()
 {
-    // Can only start if the device is open
-	if(!isOpen())
+	// Can only start if the device is open
+	if (!isOpen())
 		return false;
-    // Already running?
-	if(autoGathering_)
+	// Already running?
+	if (autoGathering_)
 		return true;
 	shouldStop_ = false;
-    ledShouldStop_ = false;
+	ledShouldStop_ = false;
 
-	if(verbose_ >= 1)
+	if (verbose_ >= 1)
 		cout << "Starting auto centroid collection\n";
 
-    // TODO: Start the data input and LED threads. Test Adapter!
-    ioThread_.startThread(this);
-    ledThread_.startThread(this);
+	// TODO: Start the data input and LED threads. Test Adapter!
+	ioThread_.startThread(this);
+	ledThread_.startThread(this);
 	autoGathering_ = true;
 
-    // Tell the device to start scanning for new data
-	if(deviceWrite((char*)kCommandStartScanning, 5) < 0) {
-        if(verbose_ >= 1)
-            cout << "ERROR: unable to write startAutoGather command.  errno = " << errno << endl;
+	// Tell the device to start scanning for new data
+	if (deviceWrite((char*) kCommandStartScanning, 5) < 0) {
+		if (verbose_ >= 1)
+			cout << "ERROR: unable to write startAutoGather command.  errno = "
+					<< errno << endl;
 	}
 
 	keyboard_.sendMessage("/allnotesoff", "", LO_ARGS_END);
@@ -390,48 +420,50 @@ bool TouchkeyDevice::startAutoGathering()
 // Stop the run loop if applicable
 void TouchkeyDevice::stopAutoGathering(bool writeStopCommandToDevice)
 {
-    // Check if actually running
-	if(!autoGathering_ || !isOpen())
+	// Check if actually running
+	if (!autoGathering_ || !isOpen())
 		return;
-    // Stop any calibration in progress
-    calibrationAbort();
+	// Stop any calibration in progress
+	calibrationAbort();
 
-    if(writeStopCommandToDevice) {
-        // Tell device to stop scanning
-        if(deviceWrite((char*)kCommandStopScanning, 5) < 0) {
-            if(verbose_ >= 1)
-                cout << "ERROR: unable to write stopAutoGather command.  errno = " << errno << endl;
-        }
-    }
+	if (writeStopCommandToDevice) {
+		// Tell device to stop scanning
+		if (deviceWrite((char*) kCommandStopScanning, 5) < 0) {
+			if (verbose_ >= 1)
+				cout
+						<< "ERROR: unable to write stopAutoGather command.  errno = "
+						<< errno << endl;
+		}
+	}
 
-    // Setting this to true tells the run loop to exit what it's doing
+	// Setting this to true tells the run loop to exit what it's doing
 	shouldStop_ = true;
-    ledShouldStop_ = true;
+	ledShouldStop_ = true;
 
-	if(verbose_ >= 1)
+	if (verbose_ >= 1)
 		cout << "Stopping auto centroid collection\n";
 
-    // TODO: Wait for run loop thread to finish. Set a timeout in case there's
-    // some sort of device hangup
-    if(ioThread_.getThreadId() != juniper::getCurrentThreadId())
-        if(ioThread_.isThreadRunning())
-            ioThread_.stopThread(3000);
-    if(ledThread_.getThreadId() != juniper::getCurrentThreadId())
-        if(ledThread_.isThreadRunning())
-            ledThread_.stopThread(3000);
-    if(rawDataThread_.getThreadId() != juniper::getCurrentThreadId())
-        if(rawDataThread_.isThreadRunning())
-            rawDataThread_.stopThread(3000);
+	// TODO: Wait for run loop thread to finish. Set a timeout in case there's
+	// some sort of device hangup
+	if (ioThread_.getThreadId() != juniper::getCurrentThreadId())
+		if (ioThread_.isThreadRunning())
+			ioThread_.stopThread(3000);
+	if (ledThread_.getThreadId() != juniper::getCurrentThreadId())
+		if (ledThread_.isThreadRunning())
+			ledThread_.stopThread(3000);
+	if (rawDataThread_.getThreadId() != juniper::getCurrentThreadId())
+		if (rawDataThread_.isThreadRunning())
+			rawDataThread_.stopThread(3000);
 
-    // Stop any currently playing notes
+	// Stop any currently playing notes
 	keyboard_.sendMessage("/allnotesoff", "", LO_ARGS_END);
 
 	// Clear touch for all keys
 	//std::pair<int, int> keyboardRange = keyboard_.keyboardRange();
 	//for(int i = keyboardRange.first; i <= keyboardRange.second; i++)
-    for(int i = 0; i <= 127; i++)
-        if(keyboard_.key(i) != 0)
-            keyboard_.key(i)->touchOff(lastTimestamp_);
+	for (int i = 0; i <= 127; i++)
+		if (keyboard_.key(i) != 0)
+			keyboard_.key(i)->touchOff(lastTimestamp_);
 
 //	if(keyboard_.gui() != 0) {
 //		// Update display: touch sensing disabled
@@ -440,7 +472,7 @@ void TouchkeyDevice::stopAutoGathering(bool writeStopCommandToDevice)
 //        keyboard_.gui()->clearAnalogData();
 //	}
 
-	if(verbose_ >= 2)
+	if (verbose_ >= 2)
 		cout << "...done.\n";
 
 	autoGathering_ = false;
@@ -634,6 +666,8 @@ void TouchkeyDevice::calibrationFinish()
 
 	calibrationInProgress_ = false;
 	isCalibrated_ = calibratedAtLeastOneKey;
+	std::cout << "calibratedAtLeastOneKey = " << calibratedAtLeastOneKey
+			<< std::endl;
 }
 
 // Abort a calibration in progress, without saving its results. Pass it on to all Calibrators.
@@ -865,7 +899,6 @@ struct runLoopThreadArgs_t {
 struct rawDataThreadArgs_t {
 	bool threadShouldExit = false;
 };
-
 
 //
 //// Loop for sending LED updates to the device, which must happen
@@ -1116,10 +1149,8 @@ void* TouchkeyDevice::runLoopFunction(Thread* thread)
 		}
 	}
 
-
 	return NULL;
 }
-
 
 //// Main run loop for gathering raw data from a particular key, used for debugging
 //// and testing purposes
@@ -1571,8 +1602,8 @@ int TouchkeyDevice::processKeyCentroid(int frame, int octave, int key,
 	}
 
 	// From here on out, grab the performance data mutex so no MIDI events can show up in the middle
-	pthread_mutex_lock(&keyboard_.performanceDataMutex_);
-//    ScopedLock ksl(keyboard_.performanceDataMutex_);
+//	pthread_mutex_lock(&keyboard_.performanceDataMutex_);
+    ScopedLock ksl(keyboard_.performanceDataMutex_);
 
 	// Turn off touch activity on this key if there's no active touches
 	if (touchCount == 0) {
@@ -1598,14 +1629,13 @@ int TouchkeyDevice::processKeyCentroid(int frame, int octave, int key,
 
 			// Send raw OSC message if enabled
 			if (sendRawOscMessages_) {
-				keyboard_.sendMessage("/raw-off", "iii", octave, key,
-						frame,
-						LO_ARGS_END);
+				keyboard_.sendMessage("/raw-off", "iii", octave, key, frame,
+				LO_ARGS_END);
 			}
 
 		}
 
-		pthread_mutex_unlock(&keyboard_.performanceDataMutex_);
+//		pthread_mutex_unlock(&keyboard_.performanceDataMutex_);
 		return bytesParsed;
 	}
 
@@ -1635,8 +1665,8 @@ int TouchkeyDevice::processKeyCentroid(int frame, int octave, int key,
 
 	// Send raw OSC message if enabled
 	if (sendRawOscMessages_) {
-		keyboard_.sendMessage("/raw", "iiifffffff", octave, key,
-				frame, sliderPosition[0], sliderSize[0], sliderPosition[1],
+		keyboard_.sendMessage("/raw", "iiifffffff", octave, key, frame,
+				sliderPosition[0], sliderSize[0], sliderPosition[1],
 				sliderSize[1], sliderPosition[2], sliderSize[2],
 				sliderPositionH,
 				LO_ARGS_END);
@@ -1710,15 +1740,18 @@ void TouchkeyDevice::processAnalogFrame(unsigned char * const buffer,
 		analogLastFrame_[board] = frame;
 
 		// TESTING
-		/*if(verbose_ >= 3 || (frame % 500 == 0))
-		 cout << "Analog frame octave " << octave << " timestamp " << frame << endl;
-		 if(verbose_ >= 4 || (frame % 500 == 0)) {
-		 cout << "Values: ";
-		 for(int i = 0; i < 25; i++) {
-		 cout << std::setw(5) << (((signed char)buffer[i*2 + 6])*256 + buffer[i*2 + 5]) << " ";
-		 }
-		 cout << endl;
-		 }*/
+		if (verbose_ >= 3 || (frame % 500 == 0))
+			cout << "Analog frame octave " << octave << " timestamp " << frame
+					<< endl;
+		if (verbose_ >= 4 || (frame % 500 == 0)) {
+			cout << "Values: ";
+			for (int i = 0; i < 25; i++) {
+				cout << std::setw(5)
+						<< (((signed char) buffer[i * 2 + 6]) * 256
+								+ buffer[i * 2 + 5]) << " ";
+			}
+			cout << endl;
+		}
 
 		// Process key values individually and add them to the keyboard data structure
 		for (int key = 0; key < 25; key++) {
@@ -1748,6 +1781,17 @@ void TouchkeyDevice::processAnalogFrame(unsigned char * const buffer,
 						timestampSynchronizer_.synchronizedTimestamp(frame);
 				keyboard_.key(midiNote)->insertSample(calibratedPosition,
 						timestamp);
+			} else {
+				keyboard_.key(midiNote)->insertSample((float) value / 4096.0,
+						timestampSynchronizer_.synchronizedTimestamp(frame));
+
+				if (keyCalibrators_[octave * 12 + key]->calibrationStatus()
+						== kPianoKeyCalibrated) {
+					if (verbose_ >= 1)
+						cout << "key " << midiNote
+								<< " calibrated but missing (raw value "
+								<< value << ")\n";
+				}
 			}
 //            else if(keyboard_.gui() != 0){
 //
@@ -1778,32 +1822,33 @@ void TouchkeyDevice::processAnalogFrame(unsigned char * const buffer,
 void TouchkeyDevice::processErrorMessageFrame(unsigned char * const buffer,
 		const int bufferLength)
 {
-    char msg[256];
-    int len = bufferLength - 5;
+	char msg[256];
+	int len = bufferLength - 5;
 
-    // Error on error message frame!
-    if(bufferLength < 5) {
-        if(verbose_ >= 1)
-            cout << "Warning: received error message frame of " << bufferLength << " bytes, less than minimum 5\n";
-        return;
-    }
+	// Error on error message frame!
+	if (bufferLength < 5) {
+		if (verbose_ >= 1)
+			cout << "Warning: received error message frame of " << bufferLength
+					<< " bytes, less than minimum 5\n";
+		return;
+	}
 
-    // Limit length of string for safety reasons
-    if(len > 256)
-        len = 256;
-    memcpy(msg, &buffer[5], len * sizeof(char));
-    msg[len - 1] = '\0';
+	// Limit length of string for safety reasons
+	if (len > 256)
+		len = 256;
+	memcpy(msg, &buffer[5], len * sizeof(char));
+	msg[len - 1] = '\0';
 
-    // Print the error
-    if(verbose_ >= 1)
-        cout << "Error frame received: " << msg << endl;
+	// Print the error
+	if (verbose_ >= 1)
+		cout << "Error frame received: " << msg << endl;
 
-    // Dump the buffer containing error coding information
-    if(verbose_ >= 2) {
-        cout << "Contents: ";
-        hexDump(cout, buffer, 5);
-        cout << endl;
-    }
+	// Dump the buffer containing error coding information
+	if (verbose_ >= 2) {
+		cout << "Contents: ";
+		hexDump(cout, buffer, 5);
+		cout << endl;
+	}
 }
 
 // Process a frame containing a response to an I2C command. We can use this to gather
@@ -1870,6 +1915,27 @@ void TouchkeyDevice::processI2CResponseFrame(unsigned char * const buffer,
 //	lo_blob_free(b);
 }
 
+void TouchkeyDevice::printStatusFrame(TouchkeyDevice::ControllerStatus* status)
+{
+	std::cout << "hardwareVersion = " << status->hardwareVersion << std::endl;
+	std::cout << "softwareVersionMajor = " << status->softwareVersionMajor
+			<< std::endl;
+	std::cout << "softwareVersionMinor = " << status->softwareVersionMinor
+			<< std::endl;
+	std::cout << "running = " << status->running << std::endl;
+	std::cout << "octaves = " << status->octaves << std::endl;
+	for (int i = 0; i < status->octaves; ++i) {
+		std::cout << "connectedKeys[" << i << "] = " << status->connectedKeys[i]
+				<< std::endl;
+	}
+
+	std::cout << "lowestHardwareNote = " << status->lowestHardwareNote
+			<< std::endl;
+	std::cout << "hasTouchSensors = " << status->hasTouchSensors << std::endl;
+	std::cout << "hasAnalogSensors = " << status->hasAnalogSensors << std::endl;
+	std::cout << "hasRGBLEDs = " << status->hasRGBLEDs << std::endl;
+}
+
 // Parse raw data from a status request.  Buffer should start immediately after the
 // frame type byte, and processing will finish either at the end of the expected buffer,
 // or at the given length, whichever comes first.  Returns true if a status buffer was
@@ -1910,6 +1976,8 @@ bool TouchkeyDevice::processStatusFrame(unsigned char * buffer, int maxLength,
 	}
 
 	while (i + 1 < maxLength) {
+		std::cout << "buffer[" << i << "] = " << buffer[i] << ", buffer["
+				<< i + 1 << "] = " << buffer[i + 1] << std::endl;
 		status->connectedKeys[oct] = 256 * buffer[i] + buffer[i + 1];
 		i += 2;
 		oct++;
@@ -2065,10 +2133,10 @@ int TouchkeyDevice::deviceWrite(char *buffer, unsigned int count)
 //// Flush (discard) the TouchKeys device input
 void TouchkeyDevice::deviceFlush(bool bothDirections)
 {
-    if(bothDirections)
-        tcflush(device_, TCIOFLUSH);
-    else
-        tcflush(device_, TCIFLUSH);							// Flush device input
+	if (bothDirections)
+		tcflush(device_, TCIOFLUSH);
+	else
+		tcflush(device_, TCIFLUSH);						// Flush device input
 }
 
 //// Flush the TouchKeys device output
@@ -2077,7 +2145,7 @@ void TouchkeyDevice::deviceDrainOutput()
 //#ifdef _MSC_VER
 //    FlushFileBuffers(serialHandle_);
 //#else
-    tcdrain(device_);
+	tcdrain(device_);
 //#endif
 }
 

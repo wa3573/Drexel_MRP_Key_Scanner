@@ -23,7 +23,6 @@
 */
 
 #include "PianoKey.h"
-
 #include "../Mappings/MappingFactory.h"
 #include "PianoKeyboard.h"
 
@@ -58,7 +57,7 @@ PianoKey::~PianoKey() {
 // Disable the key from sending events.  Do this by removing anything that
 // listens to its status.
 void PianoKey::disable() {
-	pthread_mutex_lock(&stateMutex_);
+	ScopedLock sl(stateMutex_);
     
 	if(state_ == kKeyStateDisabled) {
 		return;
@@ -69,31 +68,28 @@ void PianoKey::disable() {
 	
 	terminateActivity();
 	changeState(kKeyStateDisabled);	
-	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Start listening for key activity.  This will allow the state to transition to
 // idle, and then to active as appropriate.
 void PianoKey::enable() {
-	pthread_mutex_lock(&stateMutex_);
+	ScopedLock sl(stateMutex_);
     
 	if(state_ != kKeyStateDisabled) {
 		return;
 	}
 	changeState(kKeyStateUnknown);	
-	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Reset the key to its default state
 void PianoKey::reset() {
-	pthread_mutex_lock(&stateMutex_);
+	ScopedLock sl(stateMutex_);
 	
 	terminateActivity();		// Stop any current activity
 	positionBuffer_.clear();	// Clear all history
 	stateBuffer_.clear();
 	idleDetector_.clear();
 	changeState(kKeyStateUnknown);	// Reinitialize with unknown state
-	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Insert a new sample in the key buffer
@@ -142,21 +138,19 @@ void PianoKey::insertSample(key_position pos, timestamp_type ts) {
 
 // If a key is active, force it to become idle, stopping any processes that it has created
 void PianoKey::forceIdle() {
-	pthread_mutex_lock(&stateMutex_);
+	ScopedLock sl(stateMutex_);
     
 	if(state_ == kKeyStateDisabled || state_ == kKeyStateIdle) {
 		return;
 	}
 	terminateActivity();
 	changeState(kKeyStateIdle);
-
-	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Handle triggers sent when specific conditions are met (called by various objects)
 
 void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
-	pthread_mutex_lock(&stateMutex_);
+	ScopedLock sl(stateMutex_);
 	
 	if(who == &idleDetector_) {
 		//std::cout << "Key " << noteNumber_ << ": IdleDetector says: " << idleDetector_.latest() << std::endl;
@@ -274,8 +268,6 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
             }
         }
     }
-
-	pthread_mutex_unlock(&stateMutex_);
 }
 
 // Update the current state
@@ -335,8 +327,8 @@ void PianoKey::midiNoteOn(MidiKeyboardSegment *who, int velocity, int channel, t
         touchWaitingSource_ = who;
 		touchIsWaiting_ = true;
 		touchWaitingTimestamp_ = keyboard_.schedulerCurrentTimestamp() + touchTimeoutInterval_;
-//		TODO: midiNoteOn() schedule event
-//		keyboard_.scheduleEvent(this,
+		// TODO: schedule timeout
+		//		keyboard_.scheduleEvent(this,
 //								boost::bind(&PianoKey::touchTimedOut, this),
 //								touchWaitingTimestamp_);
 	}
@@ -362,7 +354,7 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 		// current number of touches.  The target (either MidiInputController or external)
 		// may use this to change its behavior independently of later changes in touch.
 		
-		keyboard_.sendMessage("/preonset", "iiiiiiffiffifff",
+		keyboard_.sendMessage("/touchkeys/preonset", "iiiiiiffiffifff",
 							  noteNumber_, midiChannel_, midiVelocity_,	// MIDI data
 							  frame.count, indexOfFirstTouch,	// General information: how many touches, which was first?
 							  frame.ids[0], frame.locs[0], frame.sizes[0], // Specific touch information
@@ -378,9 +370,9 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 #ifdef TOUCHKEYS_LEGACY_OSC
 		// Send move and resize gestures for each active touch
 		for(int i = 0; i < frame.count; i++) {
-			keyboard_.sendMessage("/move", "iiff", noteNumber_, frame.ids[i],
+			keyboard_.sendMessage("/touchkeys/move", "iiff", noteNumber_, frame.ids[i],
 								  frame.locs[i], frame.horizontal(i), LO_ARGS_END);
-			keyboard_.sendMessage("/resize", "iif", noteNumber_, frame.ids[i],
+			keyboard_.sendMessage("/touchkeys/resize", "iif", noteNumber_, frame.ids[i],
 								  frame.sizes[i], LO_ARGS_END);										
 		}
 		
@@ -390,18 +382,18 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 			float newCentroid = (frame.locs[0] + frame.locs[1]) / 2.0;
 			float newWidth = frame.locs[1] - frame.locs[0];	
 			
-			keyboard_.sendMessage("/twofinger/pinch", "iiif",
+			keyboard_.sendMessage("/touchkeys/twofinger/pinch", "iiif",
 								  noteNumber_, frame.ids[0], frame.ids[1], newWidth, LO_ARGS_END);
-			keyboard_.sendMessage("/twofinger/slide", "iiif",
+			keyboard_.sendMessage("/touchkeys/twofinger/slide", "iiif",
 								  noteNumber_, frame.ids[0], frame.ids[1], newCentroid, LO_ARGS_END);			
 		}
 		else if(frame.count == 3) {
 			float newCentroid = (frame.locs[0] + frame.locs[1] + frame.locs[2]) / 3.0;
 			float newWidth = frame.locs[2] - frame.locs[0];
 			
-			keyboard_.sendMessage("/threefinger/pinch", "iiiif",
+			keyboard_.sendMessage("/touchkeys/threefinger/pinch", "iiiif",
 								  noteNumber_, frame.ids[0], frame.ids[1], frame.ids[2], newWidth, LO_ARGS_END);
-			keyboard_.sendMessage("/threefinger/slide", "iiiif",
+			keyboard_.sendMessage("/touchkeys/threefinger/slide", "iiiif",
 								  noteNumber_, frame.ids[0], frame.ids[1], frame.ids[2], newCentroid, LO_ARGS_END);			
 		}
 #endif
@@ -413,7 +405,7 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 	
 	keyboard_.sendMessage("/midi/noteon", "iii", noteNumber_, midiChannel_, midiVelocity_, LO_ARGS_END);
     
-    // Update GUI if it is available. TODO: fix the ordering problem for real!
+//    // Update GUI if it is available. TODO: fix the ordering problem for real!
 //	if(keyboard_.gui() != 0 && midiNoteIsOn_) {
 //		keyboard_.gui()->setMidiActive(noteNumber_, true);
 //	}
@@ -425,7 +417,8 @@ void PianoKey::midiNoteOff(MidiKeyboardSegment *who, timestamp_type timestamp) {
 	midiOffTimestamp_ = timestamp;
     
     if(keyboard_.mappingFactory(who) != 0)
-        keyboard_.mappingFactory(who)->midiNoteOff(noteNumber_, touchIsActive_, (idleDetector_.idleState() == kIdleDetectorActive), &touchBuffer_, &positionBuffer_, &positionTracker_);
+        keyboard_.mappingFactory(who)->midiNoteOff(noteNumber_, touchIsActive_, (idleDetector_.idleState() == kIdleDetectorActive),
+                                               &touchBuffer_, &positionBuffer_, &positionTracker_);
     
 	keyboard_.sendMessage("/midi/noteoff", "ii", noteNumber_, midiChannel_, LO_ARGS_END);
     
@@ -433,7 +426,7 @@ void PianoKey::midiNoteOff(MidiKeyboardSegment *who, timestamp_type timestamp) {
 	midiChannel_ = -1;
 	midiAftertouch_.clear();
     
-    // Update GUI if it is available
+//    // Update GUI if it is available
 //	if(keyboard_.gui() != 0) {
 //		keyboard_.gui()->setMidiActive(noteNumber_, false);
 //	}
@@ -461,7 +454,7 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 	// First check if the key was previously inactive.  If so, send a message
 	// that the touch has begun
 	if(!touchIsActive_) {
-		keyboard_.sendMessage("/on", "i", noteNumber_, LO_ARGS_END);
+		keyboard_.sendMessage("/touchkeys/on", "i", noteNumber_, LO_ARGS_END);
         keyboard_.tellAllMappingFactoriesTouchBegan(noteNumber_, midiNoteIsOn_, (idleDetector_.idleState() == kIdleDetectorActive),
                                                     &touchBuffer_, &positionBuffer_, &positionTracker_);
     }
@@ -512,10 +505,10 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 #ifdef TOUCHKEYS_LEGACY_OSC
 					// Send "move" messages for the points that have moved
                     if(fabsf(newFrame.locs[*it] - lastFrame.locs[counter]) > 0 /*moveThreshold_*/)
-						keyboard_.sendMessage("/move", "iiff", noteNumber_, newFrame.ids[*it],
+						keyboard_.sendMessage("/touchkeys/move", "iiff", noteNumber_, newFrame.ids[*it],
 													 newFrame.locs[*it], newFrame.horizontal(*it), LO_ARGS_END);
 					if(fabsf(newFrame.sizes[*it] - lastFrame.sizes[counter]) > 0 /*resizeThreshold_*/)
-						keyboard_.sendMessage("/resize", "iif", noteNumber_, newFrame.ids[*it],
+						keyboard_.sendMessage("/touchkeys/resize", "iif", noteNumber_, newFrame.ids[*it],
 													 newFrame.sizes[*it], LO_ARGS_END);
 #endif
 				}
@@ -549,10 +542,10 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 #ifdef TOUCHKEYS_LEGACY_OSC
 					// Send "move" messages for the points that have moved
 					if(fabsf(newFrame.locs[*it] - lastFrame.locs[counter]) > 0 /*moveThreshold_*/)
-						keyboard_.sendMessage("/move", "iiff", noteNumber_, newFrame.ids[*it],
+						keyboard_.sendMessage("/touchkeys/move", "iiff", noteNumber_, newFrame.ids[*it],
 													 newFrame.locs[*it], newFrame.horizontal(*it), LO_ARGS_END);
 					if(fabsf(newFrame.sizes[*it] - lastFrame.sizes[counter]) > 0 /*resizeThreshold_*/)
-						keyboard_.sendMessage("/resize", "iif", noteNumber_, newFrame.ids[*it],
+						keyboard_.sendMessage("/touchkeys/resize", "iif", noteNumber_, newFrame.ids[*it],
 													 newFrame.sizes[*it], LO_ARGS_END);
 #endif
 				}
@@ -574,10 +567,10 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 #ifdef TOUCHKEYS_LEGACY_OSC
 				// Send "move" messages for the points that have moved
 				if(fabsf(newFrame.locs[i] - lastFrame.locs[i]) > 0 /*moveThreshold_*/)
-					keyboard_.sendMessage("/move", "iiff", noteNumber_, newFrame.ids[i],
+					keyboard_.sendMessage("/touchkeys/move", "iiff", noteNumber_, newFrame.ids[i],
 												 newFrame.locs[i], newFrame.horizontal(i), LO_ARGS_END);
 				if(fabsf(newFrame.sizes[i] - lastFrame.sizes[i]) > 0 /*resizeThreshold_*/)
-					keyboard_.sendMessage("/resize", "iif", noteNumber_, newFrame.ids[i],
+					keyboard_.sendMessage("/touchkeys/resize", "iif", noteNumber_, newFrame.ids[i],
 												 newFrame.sizes[i], LO_ARGS_END);
 #endif
 			}
@@ -610,7 +603,7 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 		midiNoteOnHelper(touchWaitingSource_);
 	}
 	
-//	// Update GUI if it is available
+	// Update GUI if it is available
 //	if(keyboard_.gui() != 0) {
 //		keyboard_.gui()->setTouchForKey(noteNumber_, newFrame);
 //	}
@@ -643,8 +636,8 @@ void PianoKey::touchOff(timestamp_type timestamp) {
 	// Send a message that the touch has ended
 	touchIsActive_ = false;
 	touchBuffer_.clear();
-    keyboard_.sendMessage("/off", "i", noteNumber_, LO_ARGS_END);
-//	// Update GUI if it is available
+    keyboard_.sendMessage("/touchkeys/off", "i", noteNumber_, LO_ARGS_END);
+	// Update GUI if it is available
 //	if(keyboard_.gui() != 0) {
 //		keyboard_.gui()->clearTouchForKey(noteNumber_);
 //	}
@@ -745,7 +738,7 @@ void PianoKey::touchAdd(const KeyTouchFrame& frame, int index, timestamp_type ti
 	KeyTouchEvent event = { kTouchEventAdd, timestamp, frame };
 	touchEvents_.insert(std::pair<int, KeyTouchEvent>(frame.ids[index], event));
 #ifdef TOUCHKEYS_LEGACY_OSC
-	keyboard_.sendMessage("/add", "iiifff", noteNumber_, frame.ids[index], frame.count,
+	keyboard_.sendMessage("/touchkeys/add", "iiifff", noteNumber_, frame.ids[index], frame.count,
 						  frame.locs[index], frame.sizes[index], frame.horizontal(index),
 						  LO_ARGS_END);
 #endif
@@ -758,7 +751,7 @@ void PianoKey::touchRemove(const KeyTouchFrame& frame, int idRemoved, int remain
 	KeyTouchEvent event = { kTouchEventRemove, timestamp, frame };
 	touchEvents_.insert(std::pair<int, KeyTouchEvent>(idRemoved, event));
 #ifdef TOUCHKEYS_LEGACY_OSC
-	keyboard_.sendMessage("/remove", "iii", noteNumber_, idRemoved,
+	keyboard_.sendMessage("/touchkeys/remove", "iii", noteNumber_, idRemoved,
 						  remainingCount, LO_ARGS_END);
 #endif
 }
@@ -774,11 +767,11 @@ void PianoKey::touchMultiFingerGestures(const KeyTouchFrame& lastFrame, const Ke
 		float newWidth = newFrame.locs[1] - newFrame.locs[0];
 		
 		if(fabsf(newWidth - previousWidth) >= 0 /*pinchThreshold_*/) {
-			keyboard_.sendMessage("/twofinger/pinch", "iiif",
+			keyboard_.sendMessage("/touchkeys/twofinger/pinch", "iiif",
 									noteNumber_, newFrame.ids[0], newFrame.ids[1], newWidth, LO_ARGS_END);
 		}
 		if(fabsf(newCentroid - previousCentroid) >= 0 /*slideThreshold_*/) {
-			keyboard_.sendMessage("/twofinger/slide", "iiif",
+			keyboard_.sendMessage("/touchkeys/twofinger/slide", "iiif",
 									noteNumber_, newFrame.ids[0], newFrame.ids[1], newCentroid, LO_ARGS_END);
 		}
 	}
@@ -789,11 +782,11 @@ void PianoKey::touchMultiFingerGestures(const KeyTouchFrame& lastFrame, const Ke
 		float newWidth = newFrame.locs[2] - newFrame.locs[0];
 		
 		if(fabsf(newWidth - previousWidth) >= 0 /*pinchThreshold_*/) {
-			keyboard_.sendMessage("/threefinger/pinch", "iiiif",
+			keyboard_.sendMessage("/touchkeys/threefinger/pinch", "iiiif",
 								  noteNumber_, newFrame.ids[0], newFrame.ids[1], newFrame.ids[2], newWidth, LO_ARGS_END);
 		}
 		if(fabsf(newCentroid - previousCentroid) >= 0 /*slideThreshold_*/) {
-			keyboard_.sendMessage("/threefinger/slide", "iiiif",
+			keyboard_.sendMessage("/touchkeys/threefinger/slide", "iiiif",
 								  noteNumber_, newFrame.ids[0], newFrame.ids[1], newFrame.ids[2], newCentroid, LO_ARGS_END);
 		}
 	}

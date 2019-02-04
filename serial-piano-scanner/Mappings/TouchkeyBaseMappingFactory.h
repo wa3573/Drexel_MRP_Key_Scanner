@@ -250,26 +250,26 @@ public:
     
     // These generate XML settings files and reload settings from them
     
-//    virtual XmlElement* getPreset() {
-//        PropertySet properties;
-//        storeCommonProperties(properties);
-//
-//        XmlElement* presetElement = properties.createXml("MappingFactory");
-//        presetElement->setAttribute("type", "Unknown");
-//        return presetElement;
-//    }
-//
-//    virtual bool loadPreset(XmlElement const* preset) {
-//        if(preset == 0)
-//            return false;
-//
-//        PropertySet properties;
-//        properties.restoreFromXml(*preset);
-//
-//        if(!loadCommonProperties(properties))
-//            return false;
-//        return true;
-//    }
+    virtual XmlElement* getPreset() {
+        PropertySet properties;
+        storeCommonProperties(properties);
+
+        XmlElement* presetElement = properties.createXml("MappingFactory");
+        presetElement->setAttribute("type", "Unknown");
+        return presetElement;
+    }
+
+    virtual bool loadPreset(XmlElement const* preset) {
+        if(preset == 0)
+            return false;
+
+        PropertySet properties;
+        properties.restoreFromXml(*preset);
+
+        if(!loadCommonProperties(properties))
+            return false;
+        return true;
+    }
     
     // ***** State Updaters *****
     
@@ -408,48 +408,48 @@ protected:
     // a new mapping.
     virtual void initializeMappingParameters(int noteNumber, MappingType *mapping) {}
     
-//    // TODO: This method adds the common mapping properties to the given PropertySet
-//    void storeCommonProperties(PropertySet& properties) {
-//        properties.setValue("controlName", String(controlName_));
-//        properties.setValue("inputRangeMin", inputRangeMin_);
-//        properties.setValue("inputRangeMax", inputRangeMax_);
-//        properties.setValue("inputRangeCenter", inputRangeCenter_);
-//        properties.setValue("outOfRangeBehavior", outOfRangeBehavior_);
-//        properties.setValue("midiControllerNumber", midiControllerNumber_);
-//        properties.setValue("bypassed", bypassed_);
-//        properties.setValue("activeNotes", (int)activeNotes_);
-//    }
-//
-//    // TODO: This method loads the common mapping properties from the given PropertySet
-//    bool loadCommonProperties(PropertySet const& properties) {
-//        if(!properties.containsKey("controlName") ||
-//           !properties.containsKey("inputRangeMin") ||
-//           !properties.containsKey("inputRangeMax") ||
-//           !properties.containsKey("inputRangeCenter") ||
-//           !properties.containsKey("outOfRangeBehavior") ||
-//           !properties.containsKey("midiControllerNumber") ||
-//           !properties.containsKey("bypassed") ||
-//           !properties.containsKey("activeNotes")) {
-//            return false;
-//        }
-//
-//        // Setting the MIDI controller number needs to be done with
-//        // the setMidiParameters() method which will update midiControllerNumber_
-//        int tempMidiController = 1;
-//
-//        controlName_ = properties.getValue("controlName").toUTF8();
-//        inputRangeMin_ = properties.getDoubleValue("inputRangeMin");
-//        inputRangeMax_ = properties.getDoubleValue("inputRangeMax");
-//        inputRangeCenter_ = properties.getDoubleValue("inputRangeCenter");
-//        outOfRangeBehavior_ = properties.getIntValue("outOfRangeBehavior");
-//        tempMidiController = properties.getIntValue("midiControllerNumber");
-//        bypassed_ = properties.getBoolValue("bypassed");
-//        activeNotes_ = properties.getIntValue("activeNotes");
-//
-//        setMidiParameters(tempMidiController, inputRangeMin_, inputRangeMax_, inputRangeCenter_);
-//
-//        return true;
-//    }
+    // TODO: This method adds the common mapping properties to the given PropertySet
+    void storeCommonProperties(PropertySet& properties) {
+        properties.setValue("controlName", std::string(controlName_));
+        properties.setValue("inputRangeMin", inputRangeMin_);
+        properties.setValue("inputRangeMax", inputRangeMax_);
+        properties.setValue("inputRangeCenter", inputRangeCenter_);
+        properties.setValue("outOfRangeBehavior", outOfRangeBehavior_);
+        properties.setValue("midiControllerNumber", midiControllerNumber_);
+        properties.setValue("bypassed", bypassed_);
+        properties.setValue("activeNotes", (int)activeNotes_);
+    }
+
+    // TODO: This method loads the common mapping properties from the given PropertySet
+    bool loadCommonProperties(PropertySet const& properties) {
+        if(!properties.containsKey("controlName") ||
+           !properties.containsKey("inputRangeMin") ||
+           !properties.containsKey("inputRangeMax") ||
+           !properties.containsKey("inputRangeCenter") ||
+           !properties.containsKey("outOfRangeBehavior") ||
+           !properties.containsKey("midiControllerNumber") ||
+           !properties.containsKey("bypassed") ||
+           !properties.containsKey("activeNotes")) {
+            return false;
+        }
+
+        // Setting the MIDI controller number needs to be done with
+        // the setMidiParameters() method which will update midiControllerNumber_
+        int tempMidiController = 1;
+
+        controlName_ = properties.getValue("controlName");
+        inputRangeMin_ = properties.getDoubleValue("inputRangeMin");
+        inputRangeMax_ = properties.getDoubleValue("inputRangeMax");
+        inputRangeCenter_ = properties.getDoubleValue("inputRangeCenter");
+        outOfRangeBehavior_ = properties.getIntValue("outOfRangeBehavior");
+        tempMidiController = properties.getIntValue("midiControllerNumber");
+        bypassed_ = properties.getBoolValue("bypassed");
+        activeNotes_ = properties.getIntValue("activeNotes");
+
+        setMidiParameters(tempMidiController, inputRangeMin_, inputRangeMax_, inputRangeCenter_);
+
+        return true;
+    }
 //
 private:
     // ***** Private Methods *****

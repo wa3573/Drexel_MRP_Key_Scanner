@@ -191,6 +191,11 @@ bool MainApplicationController::touchkeyDeviceStartupSequence(const char * path)
     }
 #endif
     
+
+    // Step 3.5: do calibration for a set period of time
+    startCalibration(kCalibrationTimeSeconds);
+    finishCalibration();
+
     // Step 4: start data collection from the device
     if(!startTouchkeyDevice()) {
         touchkeyErrorMessage_ = "Failed to start";
@@ -343,6 +348,22 @@ bool MainApplicationController::touchkeyDeviceCheckForPresence(int waitMilliseco
     }
     
     return true;
+}
+
+void MainApplicationController::startCalibration(int secondsToCalibrate)
+{
+
+	std::cout << "Running calibration for " << secondsToCalibrate << " seconds..." << std::endl;
+	touchkeyController_.calibrationStart(0);
+
+	usleep(secondsToCalibrate * 1E6);
+}
+
+void MainApplicationController::finishCalibration()
+{
+	touchkeyController_.calibrationFinish();
+
+	std::cout << "Calibration finished" << std::endl;
 }
 
 // Start/stop the TouchKeys data collection

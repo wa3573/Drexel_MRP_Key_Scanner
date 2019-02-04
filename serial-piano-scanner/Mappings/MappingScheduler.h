@@ -37,6 +37,8 @@
 #include <list>
 //#include "../JuceLibraryCode/JuceHeader.h"
 #include "Mapping.h"
+#include "../Utility/CriticalSection.h"
+#include "../Utility/Thread.h"
 
 /*
  * LockFreeQueue
@@ -108,7 +110,7 @@ private:
  * ones.
  */
 
-class MappingScheduler {
+class MappingScheduler : public Thread {
 private:
     static const timestamp_diff_type kAllowableAdvanceExecutionTime;
 	
@@ -152,8 +154,19 @@ public:
 	bool isRunning() { return isRunning_; }
 	
     // The main Juce::Thread run loop
-	void run();
+	void* run();
     
+	void startThread()
+	{
+		int ret1 = pthread_create(getPthread(), NULL,
+				(thread_function_ptr_t) &MappingScheduler::run, (void*) this);
+		if (ret1) {
+			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
+		} else {
+			init();
+		}
+	}
+
 	// ***** Event Management Methods *****
 	//
 	// This interface provides the ability to schedule and unschedule events for
@@ -177,10 +190,10 @@ private:
     PianoKeyboard& keyboard_;
     
 	// These variables keep track of the status of the separate thread running the events
-    pthread_mutex_t actionsInsertionMutex_ = PTHREAD_MUTEX_INITIALIZER;
-    pthread_mutex_t actionsLaterMutex_ = PTHREAD_MUTEX_INITIALIZER;
+    CriticalSection actionsInsertionMutex_;
+    CriticalSection actionsLaterMutex_;
     
-//    WaitableEvent waitableEvent_;
+    WaitableEvent waitableEvent_;
 	bool isRunning_;
     
     // This counter keeps track of the sequence of insertions and executions

@@ -38,9 +38,8 @@ const timestamp_diff_type MappingScheduler::kAllowableAdvanceExecutionTime = mil
 
 // Constructor
 MappingScheduler::MappingScheduler(PianoKeyboard& keyboard, std::string threadName)
-//: Thread(threadName), keyboard_(keyboard),
-//  waitableEvent_(true), isRunning_(false), counter_(0)
-: keyboard_(keyboard), isRunning_(false), counter_(0)
+: Thread(threadName), keyboard_(keyboard),
+  waitableEvent_(true), isRunning_(false), counter_(0)
 #ifdef DEBUG_MAPPING_SCHEDULER_STATISTICS
   ,lastDebugStatisticsTimestamp_(0)
 #endif
@@ -80,9 +79,9 @@ MappingScheduler::~MappingScheduler() {
 
 // Start the thread handling the scheduling.
 void MappingScheduler::start() {
-//	if(isRunning_)
-//		return;
-//    startThread();
+	if(isRunning_)
+		return;
+    startThread();
 }
 
 // Stop the scheduler thread if it is currently running.
@@ -91,216 +90,216 @@ void MappingScheduler::stop() {
 		return;
 
 //    // Tell the thread to quit and signal the event it waits on
-//    signalThreadShouldExit();
-//    waitableEvent_.signal();
-//    stopThread(-1);
+    signalThreadShouldExit();
+    waitableEvent_.signal();
+    stopThread(-1);
 
 	isRunning_ = false;
 }
 
 // Register a mapping to be called by the scheduler
 void MappingScheduler::registerMapping(Mapping *who) {
-//    // Lock the mutex for insertions to ensure that only a single
-//    // thread can act as producer at any given time.
-//    ScopedLock sl(actionsInsertionMutex_);
-//
-//    actionsNow_.Produce(MappingAction(who, counter_, kActionRegister));
-//
-//    // Increment the counter so each insertion gets a unique label
-//    counter_++;
-//
-//    // Wake up the consumer thread
-//    waitableEvent_.signal();
+    // Lock the mutex for insertions to ensure that only a single
+    // thread can act as producer at any given time.
+    ScopedLock sl(actionsInsertionMutex_);
+
+    actionsNow_.Produce(MappingAction(who, counter_, kActionRegister));
+
+    // Increment the counter so each insertion gets a unique label
+    counter_++;
+
+    // Wake up the consumer thread
+    waitableEvent_.signal();
 }
 
 // Schedule a mapping action to happen as soon as possible
 void MappingScheduler::scheduleNow(Mapping *who) {
-//    // Lock the mutex for insertions to ensure that only a single
-//    // thread can act as producer at any given time.
-//    ScopedLock sl(actionsInsertionMutex_);
-//
-//    actionsNow_.Produce(MappingAction(who, counter_, kActionPerformMapping));
-//
-//    // Increment the counter so each insertion gets a unique label
-//    counter_++;
-//
-//    // Wake up the consumer thread
-//    waitableEvent_.signal();
+    // Lock the mutex for insertions to ensure that only a single
+    // thread can act as producer at any given time.
+    ScopedLock sl(actionsInsertionMutex_);
+
+    actionsNow_.Produce(MappingAction(who, counter_, kActionPerformMapping));
+
+    // Increment the counter so each insertion gets a unique label
+    counter_++;
+
+    // Wake up the consumer thread
+    waitableEvent_.signal();
 }
 
 // Schedule a mapping action to happen in the future at a specified timestamp
 void MappingScheduler::scheduleLater(Mapping *who, timestamp_type timestamp) {
-//    ScopedLock sl(actionsLaterMutex_);
-//    ScopedLock sl2(actionsInsertionMutex_);
-//
-//    bool newActionWillComeFirst = false;
-//    if(actionsLater_.empty())
-//        newActionWillComeFirst = true;
-//    else if(timestamp < actionsLater_.begin()->first)
-//        newActionWillComeFirst = true;
-//
-//    actionsLater_.insert(std::pair<timestamp_type, MappingAction>(timestamp,
-//                                                                  MappingAction(who,
-//                                                                                counter_,
-//                                                                                kActionPerformMapping)));
-//
-//    // Increment the counter so each insertion gets a unique label
-//    counter_++;
-//
-//    // Wake up the consumer thread if what we inserted is the next
-//    // upcoming event
-//    if(newActionWillComeFirst)
-//        waitableEvent_.signal();
+    ScopedLock sl(actionsLaterMutex_);
+    ScopedLock sl2(actionsInsertionMutex_);
+
+    bool newActionWillComeFirst = false;
+    if(actionsLater_.empty())
+        newActionWillComeFirst = true;
+    else if(timestamp < actionsLater_.begin()->first)
+        newActionWillComeFirst = true;
+
+    actionsLater_.insert(std::pair<timestamp_type, MappingAction>(timestamp,
+                                                                  MappingAction(who,
+                                                                                counter_,
+                                                                                kActionPerformMapping)));
+
+    // Increment the counter so each insertion gets a unique label
+    counter_++;
+
+    // Wake up the consumer thread if what we inserted is the next
+    // upcoming event
+    if(newActionWillComeFirst)
+        waitableEvent_.signal();
 }
 
 // Unschedule any further mappings from this object. Immediate mappings
 // already in the queue may still be executed.
 void MappingScheduler::unschedule(Mapping *who) {
-    // Unscheduling works by inserting an action in the "now" queue
-//    // which preempts any further actions by this object.
-//    ScopedLock sl(actionsInsertionMutex_);
-//
-//    actionsNow_.Produce(MappingAction(who, counter_, kActionUnschedule));
-//
-//    // Increment the counter to indicate we're at another cycle
-//    counter_++;
-//
-//    // Wake up the consumer thread
-//    waitableEvent_.signal();
+	//     Unscheduling works by inserting an action in the "now" queue
+    // which preempts any further actions by this object.
+    ScopedLock sl(actionsInsertionMutex_);
+
+    actionsNow_.Produce(MappingAction(who, counter_, kActionUnschedule));
+
+    // Increment the counter to indicate we're at another cycle
+    counter_++;
+
+    // Wake up the consumer thread
+    waitableEvent_.signal();
 }
 
 // Unregister a mapping which prevents it from being called by future events
 void MappingScheduler::unregisterMapping(Mapping *who) {
     // Lock the mutex for insertions to ensure that only a single
-//    // thread can act as producer at any given time.
-//    ScopedLock sl(actionsInsertionMutex_);
-//
-//    actionsNow_.Produce(MappingAction(who, counter_, kActionUnregister));
-//
-//    // Increment the counter so each insertion gets a unique label
-//    counter_++;
-//
-//    // Wake up the consumer thread
-//    waitableEvent_.signal();
+    // thread can act as producer at any given time.
+    ScopedLock sl(actionsInsertionMutex_);
+
+    actionsNow_.Produce(MappingAction(who, counter_, kActionUnregister));
+
+    // Increment the counter so each insertion gets a unique label
+    counter_++;
+
+    // Wake up the consumer thread
+    waitableEvent_.signal();
 }
 
 
 // Unschedule any further mappings from this object. Once any currently
 // scheduled "now" mappings have been executed, delete the object in question.
 void MappingScheduler::unregisterAndDelete(Mapping *who) {
-//    // Unscheduling works by inserting an action in the "now" queue
-//    // which preempts any further actions by this object. Deletion
-//    // will be handled by the consumer thread.
-//    ScopedLock sl(actionsInsertionMutex_);
-//
-//    actionsNow_.Produce(MappingAction(who, counter_, kActionUnregisterAndDelete));
-//
-//    // Increment the counter to indicate we're at another cycle
-//    counter_++;
-//
-//    // Wake up the consumer thread
-//    waitableEvent_.signal();
+    // Unscheduling works by inserting an action in the "now" queue
+    // which preempts any further actions by this object. Deletion
+    // will be handled by the consumer thread.
+    ScopedLock sl(actionsInsertionMutex_);
+
+    actionsNow_.Produce(MappingAction(who, counter_, kActionUnregisterAndDelete));
+
+    // Increment the counter to indicate we're at another cycle
+    counter_++;
+
+    // Wake up the consumer thread
+    waitableEvent_.signal();
 }
 
 // This function runs in its own thread (from the Juce::Thread parent class). Every time
 // it is signaled, it executes all the Mapping actions in the actionsNow_ category and then
 // looks for the next delayed action.
 
-void MappingScheduler::run() {
-//	isRunning_ = true;
-//
-//    // This will run until the thread is interrupted (in the stop() method)
-//    while(!threadShouldExit()) {
-//        MappingAction nextAction;
-//
-//        // Go through the accumulated actions in the "now" queue
-//        while(actionsNow_.Consume(nextAction)) {
-//            if(nextAction.who != 0) {
-//#ifdef DEBUG_MAPPING_SCHEDULER
-//                std::cout << "Performing immediate mapping\n";
-//#endif
-//                performAction(nextAction);
-//            }
-//
-//#ifdef DEBUG_MAPPING_SCHEDULER_STATISTICS
-//            printDebugStatistics();
-//#endif
-//        }
-//
-//        // Next, grab the first upcoming action in the later category
-//        bool foundAction = true;
-//        timestamp_diff_type timeToNextAction = 0;
-//
-//        while(foundAction && !threadShouldExit()) {
-//            // Lock the future actions mutex to examine the contents
-//            // of the future actions collection
-//            pthread_mutex_lock(&actionsLaterMutex_);
-//            foundAction = false;
-//
-//            if(!actionsLater_.empty()) {
-//                std::multimap<timestamp_type, MappingAction>::iterator it = actionsLater_.begin();
-//                timestamp_type t = it->first;
-//
-//                timeToNextAction = t - keyboard_.schedulerCurrentTimestamp();
-//                if(timeToNextAction <= 0) {
-//                    // If we get here, we have a non-empty collection fo future actions, the first
-//                    // of which should happen by now. Copy the action, erase it from the collection
-//                    // and unlock the mutex before proceeding.
-//                    nextAction = it->second;
-//                    actionsLater_.erase(it);
-//                    foundAction = true;
-//                }
-//            }
-//            else
-//                timeToNextAction = 0;
-//
-//            pthread_mutex_unlock(&actionsLaterMutex_);
-//
-//            if(foundAction) {
-//                // If this is set, we found a future action which is supposed to happen by now.
-//                // Execute it and check the next one.
-//#ifdef DEBUG_MAPPING_SCHEDULER
-//                std::cout << "Performing delayed mapping\n";
-//#endif
-//                performAction(nextAction);
-//            }
-//            else {
-//#ifdef DEBUG_MAPPING_SCHEDULER
-//                std::cout << "Found no further actions\n";
-//#endif
-//            }
-//#ifdef DEBUG_MAPPING_SCHEDULER_STATISTICS
-//            printDebugStatistics();
-//#endif
-//        }
-//
-//        if(timeToNextAction > 0) {
-//            // If we complete the above loop with timeToNextAction set greater than 0, it means
-//            // we found an action that's supposed to happen in the future, but isn't ready yet.
-//            // The alternative is that there were no further actions, in which case the loop will
-//            // terminate with timeToNextAction set to 0.
-//
-//#ifdef DEBUG_MAPPING_SCHEDULER
-//            std::cout << "Waiting for next action in " << timestamp_to_milliseconds(timeToNextAction) << "ms\n";
-//#elif defined(DEBUG_MAPPING_SCHEDULER_STATISTICS)
-//            if(timestamp_to_milliseconds(timeToNextAction) > 100)
-//                std::cout << "Waiting for next action in " << timestamp_to_milliseconds(timeToNextAction) << "ms\n";
-//#endif
-//
-//            // Wait for the next action to arrive (unless signaled)
-//            waitableEvent_.wait(timestamp_to_milliseconds(timeToNextAction));
-//        }
-//        else {
-//            // No future actions found; wait for a signal
-//
-//#if defined(DEBUG_MAPPING_SCHEDULER) || defined(DEBUG_MAPPING_SCHEDULER_STATISTICS)
-//            std::cout << "Waiting for next action\n";
-//#endif
-//            waitableEvent_.wait();
-//        }
-//
-//        waitableEvent_.reset();             // Clear the signal
-//    }
+void* MappingScheduler::run() {
+	isRunning_ = true;
+
+    // This will run until the thread is interrupted (in the stop() method)
+    while(!threadShouldExit()) {
+        MappingAction nextAction;
+
+        // Go through the accumulated actions in the "now" queue
+        while(actionsNow_.Consume(nextAction)) {
+            if(nextAction.who != 0) {
+#ifdef DEBUG_MAPPING_SCHEDULER
+                std::cout << "Performing immediate mapping\n";
+#endif
+                performAction(nextAction);
+            }
+
+#ifdef DEBUG_MAPPING_SCHEDULER_STATISTICS
+            printDebugStatistics();
+#endif
+        }
+
+        // Next, grab the first upcoming action in the later category
+        bool foundAction = true;
+        timestamp_diff_type timeToNextAction = 0;
+
+        while(foundAction && !threadShouldExit()) {
+            // Lock the future actions mutex to examine the contents
+            // of the future actions collection
+            actionsLaterMutex_.enter();
+            foundAction = false;
+
+            if(!actionsLater_.empty()) {
+                std::multimap<timestamp_type, MappingAction>::iterator it = actionsLater_.begin();
+                timestamp_type t = it->first;
+
+                timeToNextAction = t - keyboard_.schedulerCurrentTimestamp();
+                if(timeToNextAction <= 0) {
+                    // If we get here, we have a non-empty collection fo future actions, the first
+                    // of which should happen by now. Copy the action, erase it from the collection
+                    // and unlock the mutex before proceeding.
+                    nextAction = it->second;
+                    actionsLater_.erase(it);
+                    foundAction = true;
+                }
+            }
+            else
+                timeToNextAction = 0;
+
+            actionsLaterMutex_.exit();
+
+            if(foundAction) {
+                // If this is set, we found a future action which is supposed to happen by now.
+                // Execute it and check the next one.
+#ifdef DEBUG_MAPPING_SCHEDULER
+                std::cout << "Performing delayed mapping\n";
+#endif
+                performAction(nextAction);
+            }
+            else {
+#ifdef DEBUG_MAPPING_SCHEDULER
+                std::cout << "Found no further actions\n";
+#endif
+            }
+#ifdef DEBUG_MAPPING_SCHEDULER_STATISTICS
+            printDebugStatistics();
+#endif
+        }
+
+        if(timeToNextAction > 0) {
+            // If we complete the above loop with timeToNextAction set greater than 0, it means
+            // we found an action that's supposed to happen in the future, but isn't ready yet.
+            // The alternative is that there were no further actions, in which case the loop will
+            // terminate with timeToNextAction set to 0.
+
+#ifdef DEBUG_MAPPING_SCHEDULER
+            std::cout << "Waiting for next action in " << timestamp_to_milliseconds(timeToNextAction) << "ms\n";
+#elif defined(DEBUG_MAPPING_SCHEDULER_STATISTICS)
+            if(timestamp_to_milliseconds(timeToNextAction) > 100)
+                std::cout << "Waiting for next action in " << timestamp_to_milliseconds(timeToNextAction) << "ms\n";
+#endif
+
+            // Wait for the next action to arrive (unless signaled)
+            waitableEvent_.wait(timestamp_to_milliseconds(timeToNextAction));
+        }
+        else {
+            // No future actions found; wait for a signal
+
+#if defined(DEBUG_MAPPING_SCHEDULER) || defined(DEBUG_MAPPING_SCHEDULER_STATISTICS)
+            std::cout << "Waiting for next action\n";
+#endif
+            waitableEvent_.wait();
+        }
+
+        waitableEvent_.reset();             // Clear the signal
+    }
 }
 
 // Perform a mapping action: either execute the mapping or unschedule it,

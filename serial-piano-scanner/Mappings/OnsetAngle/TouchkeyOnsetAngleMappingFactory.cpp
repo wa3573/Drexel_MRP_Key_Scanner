@@ -35,33 +35,33 @@ TouchkeyOnsetAngleMappingFactory::TouchkeyOnsetAngleMappingFactory(PianoKeyboard
 }
 
 // TODO: ****** Preset Save/Load ******
-//XmlElement* TouchkeyOnsetAngleMappingFactory::getPreset() {
-//    PropertySet properties;
-//
-//    storeCommonProperties(properties);
-//
-//    // No properties for now
-//
-//    XmlElement* preset = properties.createXml("MappingFactory");
-//    preset->setAttribute("type", "OnsetAngle");
-//
-//    return preset;
-//}
-//
-//bool TouchkeyOnsetAngleMappingFactory::loadPreset(XmlElement const* preset) {
-//    if(preset == 0)
-//        return false;
-//
-//    PropertySet properties;
-//    properties.restoreFromXml(*preset);
-//
-//    if(!loadCommonProperties(properties))
-//        return false;
-//
-//    // Nothing specific to do for now
-//
-//    return true;
-//}
+XmlElement* TouchkeyOnsetAngleMappingFactory::getPreset() {
+    PropertySet properties;
+
+    storeCommonProperties(properties);
+
+    // No properties for now
+
+    XmlElement* preset = properties.createXml("MappingFactory");
+    preset->setAttribute("type", "OnsetAngle");
+
+    return preset;
+}
+
+bool TouchkeyOnsetAngleMappingFactory::loadPreset(XmlElement const* preset) {
+    if(preset == 0)
+        return false;
+
+    PropertySet properties;
+    properties.restoreFromXml(*preset);
+
+    if(!loadCommonProperties(properties))
+        return false;
+
+    // Nothing specific to do for now
+
+    return true;
+}
 
 // MIDI note ended: see whether the mapping was suspended and if not, execute the angle calculation
 void TouchkeyOnsetAngleMappingFactory::midiNoteOn(int noteNumber, bool touchIsOn, bool keyMotionActive,

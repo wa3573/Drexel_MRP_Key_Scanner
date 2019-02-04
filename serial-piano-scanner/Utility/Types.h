@@ -1,7 +1,6 @@
 /*
   TouchKeys: multi-touch musical keyboard control software
   Copyright (c) 2013 Andrew McPherson
-
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
@@ -11,7 +10,6 @@
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
@@ -78,24 +76,12 @@ template<> struct missing_value<unsigned long long> {
 	static const bool isMissing(unsigned long long val) { return (val == missing()); }
 };
 template<> struct missing_value<float> { 
-	static const float missing() { return std::numeric_limits<float>::quiet_NaN(); } 
-	static const bool isMissing(float val) { 
-#ifdef _MSC_VER
-		return (_isnan(val) != 0);
-#else
-		return std::isnan(val); 
-#endif
-	}
+	static const float missing() { return std::numeric_limits<float>::infinity(); }
+	static const bool isMissing(float val) { return val == missing(); }
 };
 template<> struct missing_value<double> { 
-	static const double missing() { return std::numeric_limits<double>::quiet_NaN(); } 
-	static const bool isMissing(double val) {
-#ifdef _MSC_VER
-		return (_isnan(val) != 0);
-#else
-		return std::isnan(val);  
-#endif
-	}
+	static const double missing() { return std::numeric_limits<double>::infinity(); }
+	static const bool isMissing(double val) { return val == missing(); }
 };
 template<typename T1, typename T2>
 struct missing_value<std::pair<T1,T2> > {

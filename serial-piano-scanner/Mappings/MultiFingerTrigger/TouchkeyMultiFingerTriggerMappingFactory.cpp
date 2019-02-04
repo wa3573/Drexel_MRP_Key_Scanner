@@ -118,65 +118,65 @@ OscMessage* TouchkeyMultiFingerTriggerMappingFactory::oscControlMethod(const cha
 }
 
 // TODO: ****** Preset Save/Load ******
-//XmlElement* TouchkeyMultiFingerTriggerMappingFactory::getPreset() {
-//    PropertySet properties;
-//
-//    storeCommonProperties(properties);
-//
-//    properties.setValue("numTouchesForTrigger", numTouchesForTrigger_);
-//    properties.setValue("numFramesForTrigger", numFramesForTrigger_);
-//    properties.setValue("numConsecutiveTapsForTrigger", numConsecutiveTapsForTrigger_);
-//    properties.setValue("maxTapSpacing", maxTapSpacing_);
-//    properties.setValue("needsMidiNoteOn", needsMidiNoteOn_);
-//    properties.setValue("triggerOnAction", triggerOnAction_);
-//    properties.setValue("triggerOffAction", triggerOffAction_);
-//    properties.setValue("triggerOnNoteNum", triggerOnNoteNum_);
-//    properties.setValue("triggerOffNoteNum", triggerOffNoteNum_);
-//    properties.setValue("triggerOnNoteVel", triggerOnNoteVel_);
-//    properties.setValue("triggerOffNoteVel", triggerOffNoteVel_);
-//
-//    XmlElement* preset = properties.createXml("MappingFactory");
-//    preset->setAttribute("type", "MultiFingerTrigger");
-//
-//    return preset;
-//}
-//
-//bool TouchkeyMultiFingerTriggerMappingFactory::loadPreset(XmlElement const* preset) {
-//    if(preset == 0)
-//        return false;
-//
-//    PropertySet properties;
-//    properties.restoreFromXml(*preset);
-//
-//    if(!loadCommonProperties(properties))
-//        return false;
-//
-//    // Load specific properties
-//    if(properties.containsKey("numTouchesForTrigger"))
-//        numTouchesForTrigger_ = properties.getIntValue("numTouchesForTrigger");
-//    if(properties.containsKey("numFramesForTrigger"))
-//        numFramesForTrigger_ = properties.getIntValue("numFramesForTrigger");
-//    if(properties.containsKey("numConsecutiveTapsForTrigger"))
-//        numConsecutiveTapsForTrigger_ = properties.getIntValue("numConsecutiveTapsForTrigger");
-//    if(properties.containsKey("maxTapSpacing"))
-//        maxTapSpacing_ = properties.getDoubleValue("maxTapSpacing");
-//    if(properties.containsKey("needsMidiNoteOn"))
-//        needsMidiNoteOn_ = properties.getBoolValue("needsMidiNoteOn");
-//    if(properties.containsKey("triggerOnAction"))
-//        triggerOnAction_ = properties.getBoolValue("triggerOnAction");
-//    if(properties.containsKey("triggerOffAction"))
-//        triggerOffAction_ = properties.getBoolValue("triggerOffAction");
-//    if(properties.containsKey("triggerOnNoteNum"))
-//        triggerOnNoteNum_ = properties.getBoolValue("triggerOnNoteNum");
-//    if(properties.containsKey("triggerOffNoteNum"))
-//        triggerOffNoteNum_ = properties.getBoolValue("triggerOffNoteNum");
-//    if(properties.containsKey("triggerOnNoteVel"))
-//        triggerOnNoteVel_ = properties.getBoolValue("triggerOnNoteVel");
-//    if(properties.containsKey("triggerOffNoteVel"))
-//        triggerOffNoteVel_ = properties.getBoolValue("triggerOffNoteVel");
-//
-//    return true;
-//}
+XmlElement* TouchkeyMultiFingerTriggerMappingFactory::getPreset() {
+    PropertySet properties;
+
+    storeCommonProperties(properties);
+
+    properties.setValue("numTouchesForTrigger", numTouchesForTrigger_);
+    properties.setValue("numFramesForTrigger", numFramesForTrigger_);
+    properties.setValue("numConsecutiveTapsForTrigger", numConsecutiveTapsForTrigger_);
+    properties.setValue("maxTapSpacing", maxTapSpacing_);
+    properties.setValue("needsMidiNoteOn", needsMidiNoteOn_);
+    properties.setValue("triggerOnAction", triggerOnAction_);
+    properties.setValue("triggerOffAction", triggerOffAction_);
+    properties.setValue("triggerOnNoteNum", triggerOnNoteNum_);
+    properties.setValue("triggerOffNoteNum", triggerOffNoteNum_);
+    properties.setValue("triggerOnNoteVel", triggerOnNoteVel_);
+    properties.setValue("triggerOffNoteVel", triggerOffNoteVel_);
+
+    XmlElement* preset = properties.createXml("MappingFactory");
+    preset->setAttribute("type", "MultiFingerTrigger");
+
+    return preset;
+}
+
+bool TouchkeyMultiFingerTriggerMappingFactory::loadPreset(XmlElement const* preset) {
+    if(preset == 0)
+        return false;
+
+    PropertySet properties;
+    properties.restoreFromXml(*preset);
+
+    if(!loadCommonProperties(properties))
+        return false;
+
+    // Load specific properties
+    if(properties.containsKey("numTouchesForTrigger"))
+        numTouchesForTrigger_ = properties.getIntValue("numTouchesForTrigger");
+    if(properties.containsKey("numFramesForTrigger"))
+        numFramesForTrigger_ = properties.getIntValue("numFramesForTrigger");
+    if(properties.containsKey("numConsecutiveTapsForTrigger"))
+        numConsecutiveTapsForTrigger_ = properties.getIntValue("numConsecutiveTapsForTrigger");
+    if(properties.containsKey("maxTapSpacing"))
+        maxTapSpacing_ = properties.getDoubleValue("maxTapSpacing");
+    if(properties.containsKey("needsMidiNoteOn"))
+        needsMidiNoteOn_ = properties.getBoolValue("needsMidiNoteOn");
+    if(properties.containsKey("triggerOnAction"))
+        triggerOnAction_ = properties.getBoolValue("triggerOnAction");
+    if(properties.containsKey("triggerOffAction"))
+        triggerOffAction_ = properties.getBoolValue("triggerOffAction");
+    if(properties.containsKey("triggerOnNoteNum"))
+        triggerOnNoteNum_ = properties.getBoolValue("triggerOnNoteNum");
+    if(properties.containsKey("triggerOffNoteNum"))
+        triggerOffNoteNum_ = properties.getBoolValue("triggerOffNoteNum");
+    if(properties.containsKey("triggerOnNoteVel"))
+        triggerOnNoteVel_ = properties.getBoolValue("triggerOnNoteVel");
+    if(properties.containsKey("triggerOffNoteVel"))
+        triggerOffNoteVel_ = properties.getBoolValue("triggerOffNoteVel");
+
+    return true;
+}
 
 // ***** Private Methods *****
 

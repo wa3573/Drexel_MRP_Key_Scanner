@@ -24,13 +24,12 @@
 */
 
 #include "PianoKeyboard.h"
-
-#include "MidiOutputController.h"
 #include "TouchkeyDevice.h"
-#include "../Utility/Time.h"
-//#include "../../Mappings/Mapping.h"
-//#include "../../Mappings/MappingFactory.h"
-//#include "../../Mappings/MappingScheduler.h"
+#include "../Mappings/Mapping.h"
+#include "MidiKeyboardSegment.h"
+#include "MidiOutputController.h"
+#include "../Mappings/MappingFactory.h"
+#include "../Mappings/MappingScheduler.h"
 
 // Constructor
 PianoKeyboard::PianoKeyboard() 
@@ -40,14 +39,14 @@ PianoKeyboard::PianoKeyboard()
   isInitialized_(false), isRunning_(false), isCalibrated_(false), calibrationInProgress_(false)
 {
 	  // Start a thread by which we can schedule future events
-//	  futureEventScheduler_.start(0);
+	  futureEventScheduler_.start(0);
       
       // Build the key list
       for(int i = 0; i <= 127; i++)
           keys_.push_back(new PianoKey(*this, i, kDefaultKeyHistoryLength));
       
-//      mappingScheduler_ = new MappingScheduler(*this);
-//      mappingScheduler_->start();
+      mappingScheduler_ = new MappingScheduler(*this);
+      mappingScheduler_->start();
 }
 
 // Reset all keys and pedals to their default state.
@@ -116,19 +115,18 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 	va_list v;
 	va_start(v, type);	
 	
-	// TODO: Make a new OSC message which we will use both internally and externally
-//	lo_message msg = lo_message_new();
-//	lo_message_add_varargs(msg, type, v);
-//	int argc = lo_message_get_argc(msg);
-//	lo_arg **argv = lo_message_get_argv(msg);
+	// Make a new OSC message which we will use both internally and externally
+	lo_message msg = lo_message_new();
+	lo_message_add_varargs(msg, type, v);
+	int argc = lo_message_get_argc(msg);
+	lo_arg **argv = lo_message_get_argv(msg);
 	
 	// Internal handler lookup first
 	// Lock the mutex so the list of listeners doesn't change midway through
 
     updateListeners();
     
-    pthread_mutex_lock(&oscListenerMutex_);
-//	oscListenerMutex_.enter();
+	oscListenerMutex_.enter();
     //oscListenerMutex_.enterRead();
 
 	// Now remove the global prefix and compare the rest of the message to the registered handlers.
@@ -136,31 +134,28 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 	std::pair<std::multimap<std::string, OscHandler*>::iterator,std::multimap<std::string, OscHandler*>::iterator> ret;
 	ret = noteListeners_.equal_range((std::string)path);
 	
-//    double timeInHandlers = 0;
-	long int timeInHandlers = 0;
+    double timeInHandlers = 0;
     int numHandlers = 0; // DEBUG
 	it = ret.first;
 	while(it != ret.second) {
 		OscHandler *object = (*it++).second;
 
         double before = Time::getMillisecondCounterHiRes();
-//		object->oscHandlerMethod(path, type, argc, argv, 0);
-
+		object->oscHandlerMethod(path, type, argc, argv, 0);
         timeInHandlers += Time::getMillisecondCounterHiRes() - before;
         numHandlers++; // DEBUG
 	}
     //oscListenerMutex_.exitRead();
-	pthread_mutex_unlock(&oscListenerMutex_);
+    oscListenerMutex_.exit();
 	
     //if(timeInHandlers > 1.0)
     //    cout << "sendMessage(): timeInHandlers = " << timeInHandlers << " for " << numHandlers << " handlers (msg " << path << ")\n";
 
 	// Now send this message to any external OSC sources	
-//	if(oscTransmitter_ != 0)
-//		oscTransmitter_->sendMessage(path, type, msg);
+	if(oscTransmitter_ != 0)
+		oscTransmitter_->sendMessage(path, type, msg);
 	
-
-//	lo_message_free(msg);
+	lo_message_free(msg);	
 	va_end(v);
 
 
@@ -168,14 +163,14 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 
 // Change number of pedals
 
-//void PianoKeyboard::setNumberOfPedals(int number) {
-//	numberOfPedals_ = number;
-//	if(numberOfPedals_ < 0)
-//		numberOfPedals_ = 0;
-//	if(numberOfPedals_ > 127)
-//		numberOfPedals_ = 127;
-//
-//	// Free the existing PianoPedal objects
+void PianoKeyboard::setNumberOfPedals(int number) {
+	numberOfPedals_ = number;
+	if(numberOfPedals_ < 0)
+		numberOfPedals_ = 0;
+	if(numberOfPedals_ > 127)
+		numberOfPedals_ = 127;
+	
+	// Free the existing PianoPedal objects
 //	for(std::vector<PianoPedal*>::iterator it = pedals_.begin(); it != pedals_.end(); ++it)
 //		delete (*it);
 //	pedals_.clear();
@@ -183,26 +178,26 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 //	// Rebuild the list of pedals
 //	for(int i = 0; i < numberOfPedals_; i++)
 //		pedals_.push_back(new PianoPedal(kDefaultPedalHistoryLength));
-//}
+}
 
 // Set color of RGB LED for a given key. note indicates the MIDI
 // note number of the key, and color can be specified in one of two
 // formats.
 void PianoKeyboard::setKeyLEDColorRGB(const int note, const float red, const float green, const float blue) {
     if(touchkeyDevice_ != 0) {
-    	touchkeyDevice_->rgbledSetColor(note, red, green, blue);
+        touchkeyDevice_->rgbledSetColor(note, red, green, blue);
     }
 }
 
 void PianoKeyboard::setKeyLEDColorHSV(const int note, const float hue, const float saturation, const float value) {
     if(touchkeyDevice_ != 0) {
-    	touchkeyDevice_->rgbledSetColorHSV(note, hue, saturation, value);
+        touchkeyDevice_->rgbledSetColorHSV(note, hue, saturation, value);
     }
 }
 
 void PianoKeyboard::setAllKeyLEDsOff() {
     if(touchkeyDevice_ != 0) {
-    	touchkeyDevice_->rgbledAllOff();
+        touchkeyDevice_->rgbledAllOff();
     }
 }
 
@@ -261,11 +256,12 @@ void PianoKeyboard::tellAllMappingFactoriesTouchBegan(int noteNumber, bool midiN
                                                       Node<key_position>* positionBuffer,
                                                       KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
-//    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
-//    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
-//        if(it->first->respondsToNote(noteNumber))
-//            it->second->touchBegan(noteNumber, midiNoteIsOn, keyMotionActive, touchBuffer, positionBuffer, positionTracker);
-//    }
+	ScopedLock sl(mappingFactoriesMutex_);
+    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
+    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
+        if(it->first->respondsToNote(noteNumber))
+            it->second->touchBegan(noteNumber, midiNoteIsOn, keyMotionActive, touchBuffer, positionBuffer, positionTracker);
+    }
 }
 
 void PianoKeyboard::tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiNoteIsOn, bool keyMotionActive,
@@ -273,11 +269,12 @@ void PianoKeyboard::tellAllMappingFactoriesTouchEnded(int noteNumber, bool midiN
                                                       Node<key_position>* positionBuffer,
                                                       KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
-//    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
-//    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
-//        if(it->first->respondsToNote(noteNumber))
-//            it->second->touchEnded(noteNumber, midiNoteIsOn, keyMotionActive, touchBuffer, positionBuffer, positionTracker);
-//    }
+	ScopedLock sl(mappingFactoriesMutex_);
+    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
+    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
+        if(it->first->respondsToNote(noteNumber))
+            it->second->touchEnded(noteNumber, midiNoteIsOn, keyMotionActive, touchBuffer, positionBuffer, positionTracker);
+    }
 }
 
 void PianoKeyboard::tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
@@ -285,11 +282,12 @@ void PianoKeyboard::tellAllMappingFactoriesKeyMotionActive(int noteNumber, bool 
                                                            Node<key_position>* positionBuffer,
                                                            KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
-//    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
-//    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
-//        if(it->first->respondsToNote(noteNumber))
-//            it->second->keyMotionActive(noteNumber, midiNoteIsOn, touchIsOn, touchBuffer, positionBuffer, positionTracker);
-//    }
+	ScopedLock sl(mappingFactoriesMutex_);
+    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
+    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
+        if(it->first->respondsToNote(noteNumber))
+            it->second->keyMotionActive(noteNumber, midiNoteIsOn, touchIsOn, touchBuffer, positionBuffer, positionTracker);
+    }
 }
 
 void PianoKeyboard::tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool midiNoteIsOn, bool touchIsOn,
@@ -297,11 +295,12 @@ void PianoKeyboard::tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool mi
                                                          Node<key_position>* positionBuffer,
                                                          KeyPositionTracker* positionTracker) {
 //    ScopedReadLock sl(mappingFactoriesMutex_);
-//    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
-//    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
-//        if(it->first->respondsToNote(noteNumber))
-//            it->second->keyMotionIdle(noteNumber, midiNoteIsOn, touchIsOn, touchBuffer, positionBuffer, positionTracker);
-//    }
+	ScopedLock sl(mappingFactoriesMutex_);
+    std::map<MidiKeyboardSegment*, MappingFactory*>::iterator it;
+    for(it = mappingFactories_.begin(); it != mappingFactories_.end(); it++) {
+        if(it->first->respondsToNote(noteNumber))
+            it->second->keyMotionIdle(noteNumber, midiNoteIsOn, touchIsOn, touchBuffer, positionBuffer, positionTracker);
+    }
 }
 
 // Destructor
@@ -315,6 +314,6 @@ PianoKeyboard::~PianoKeyboard() {
 		delete (*it);
 //	for(std::vector<PianoPedal*>::iterator it = pedals_.begin(); it != pedals_.end(); ++it)
 //		delete (*it);
-//    mappingScheduler_->stop();
-//    delete mappingScheduler_;
+    mappingScheduler_->stop();
+    delete mappingScheduler_;
 }

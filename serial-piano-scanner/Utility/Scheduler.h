@@ -26,8 +26,11 @@
 
 #include <iostream>
 #include <map>
-//#include <boost/bind.hpp>
-//#include <boost/function.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include "Thread.h"
+#include "CriticalSection.h"
+#include "Time.h"
 //#include "../JuceLibraryCode/JuceHeader.h"
 
 #include "Types.h"
@@ -41,7 +44,7 @@
  * it from the list, and goes back to sleep.
  */
 
-class Scheduler {
+class Scheduler : public Thread {
 public:	
 	typedef timestamp_type* action;
     
@@ -53,7 +56,7 @@ public:
 	//
 	// Note: This class is not copy-constructable.
 	
-	Scheduler(std::string threadName = "Scheduler") : isRunning_(false) {}
+    Scheduler(std::string threadName = "Scheduler") : Thread(threadName), waitableEvent_(true), isRunning_(false) {}
 	
 	// ***** Destructor *****
 	
@@ -81,12 +84,23 @@ public:
 	//static void staticRunLoop(Scheduler* sch, timestamp_type starting_timestamp) { sch->runLoop(starting_timestamp); }
 	
     // The main Thread run loop
-	void run();
+	void* run();
+
+	void startThread()
+	{
+		int ret1 = pthread_create(getPthread(), NULL,
+				(thread_function_ptr_t) &Scheduler::run, (void*) this);
+		if (ret1) {
+			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
+		} else {
+			init();
+		}
+	}
 
 private:    
 	// These variables keep track of the status of the separate thread running the events
-    pthread_mutex_t eventMutex_ = PTHREAD_MUTEX_INITIALIZER;
-//    WaitableEvent waitableEvent_;
+	CriticalSection eventMutex_;
+    WaitableEvent waitableEvent_;
     timestamp_type startingTimestamp_;
 	bool isRunning_;
 	

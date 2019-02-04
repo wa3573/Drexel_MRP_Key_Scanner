@@ -102,8 +102,8 @@ public:
                                  int numValues, lo_arg **values, void *data);
     
     // TODO: ****** Preset Save/Load ******
-//    XmlElement* getPreset();
-//    bool loadPreset(XmlElement const* preset);
+    XmlElement* getPreset();
+    bool loadPreset(XmlElement const* preset);
     
 private:
     // ***** Private Methods *****

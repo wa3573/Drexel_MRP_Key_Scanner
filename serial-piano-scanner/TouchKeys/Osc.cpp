@@ -22,6 +22,7 @@
 */
 
 #include "Osc.h"
+#include <stdarg.h>
 
 #undef DEBUG_OSC
 
@@ -102,7 +103,7 @@ bool OscMessageSource::addListener(const string& path, OscHandler *object, bool 
 	noteListeners_.insert(pair<string, OscHandler*>(path, object));
 	oscListenerMutex_.exitWrite();
 #else
-    pthread_mutex_lock(&oscUpdaterMutex_);
+    ScopedLock sl(oscUpdaterMutex_);
     
     // Add this object to the insertion list
     noteListenersToAdd_.insert(std::pair<string, OscHandler*>(path, object));
@@ -112,7 +113,6 @@ bool OscMessageSource::addListener(const string& path, OscHandler *object, bool 
 	cout << "Added OSC listener to path '" << path << "'\n";
 #endif
 	
-	pthread_mutex_unlock(&oscUpdaterMutex_);
 	return true;
 }
 
@@ -152,7 +152,7 @@ bool OscMessageSource::removeListener(const string& path, OscHandler *object)
 	
 	oscListenerMutex_.exitWrite();
 #else
-    pthread_mutex_lock(&oscUpdaterMutex_);
+    ScopedLock sl(oscUpdaterMutex_);
     
     // Add this object to the removal list
     noteListenersToRemove_.insert(std::pair<string, OscHandler*>(path, object));
@@ -183,7 +183,6 @@ bool OscMessageSource::removeListener(const string& path, OscHandler *object)
 		cout << "Removal failed to find OSC listener on path '" << path << "'\n";
 #endif
 	
-	pthread_mutex_unlock(&oscUpdaterMutex_);
 	return removedAny;
 }
 
@@ -220,7 +219,7 @@ bool OscMessageSource::removeListener(OscHandler *object)
 	
 	oscListenerMutex_.exitWrite();
 #else
-    pthread_mutex_lock(&oscUpdaterMutex_);
+    ScopedLock sl(oscUpdaterMutex_);
     
     // Add this object to the removal list
     noteListenersForBlanketRemoval_.insert(object);
@@ -247,7 +246,6 @@ bool OscMessageSource::removeListener(OscHandler *object)
 		cout << "Removal failed to find OSC listener on any path\n";
 #endif
 	
-	pthread_mutex_unlock(&oscUpdaterMutex_);
 	return removedAny;
 }
 
@@ -255,8 +253,8 @@ bool OscMessageSource::removeListener(OscHandler *object)
 
 void OscMessageSource::updateListeners()
 {
-    pthread_mutex_lock(&oscListenerMutex_);
-    pthread_mutex_lock(&oscUpdaterMutex_);
+    ScopedLock sl2(oscListenerMutex_);    
+    ScopedLock sl(oscUpdaterMutex_);
 	multimap<string, OscHandler*>::iterator it;
     
     // Step 1: remove any objects that need complete removal from all paths
@@ -305,9 +303,6 @@ void OscMessageSource::updateListeners()
     noteListenersForBlanketRemoval_.clear();
     noteListenersToRemove_.clear();
     noteListenersToAdd_.clear();
-
-    pthread_mutex_unlock(&oscUpdaterMutex_);
-    pthread_mutex_unlock(&oscUpdaterMutex_);
 }
 
 #pragma mark OscReceiver
@@ -327,9 +322,8 @@ int OscReceiver::handler(const char *path, const char *types, lo_arg **argv, int
 	{
 		// Rebroadcast any matching messages
 		
-//		if(!pathString.compare(0, thruPrefix_.length(), thruPrefix_))
-			// TODO: liblo lo_send_message()
-//			lo_send_message(thruAddress_, path, msg);
+		if(!pathString.compare(0, thruPrefix_.length(), thruPrefix_))
+			lo_send_message(thruAddress_, path, msg);
 	}
 	
 	// Check if the incoming message matches the global prefix for this program.  If not, discard it.
@@ -345,7 +339,7 @@ int OscReceiver::handler(const char *path, const char *types, lo_arg **argv, int
     updateListeners();
     
 	// Lock the mutex so the list of listeners doesn't change midway through
-    pthread_mutex_lock(&oscListenerMutex_);
+    oscListenerMutex_.enter();
 	
 	// Now remove the global prefix and compare the rest of the message to the registered handlers.
 	multimap<string, OscHandler*>::iterator it;
@@ -383,7 +377,7 @@ int OscReceiver::handler(const char *path, const char *types, lo_arg **argv, int
         matched = true;
     }
 	
-    pthread_mutex_unlock(&oscListenerMutex_);
+    oscListenerMutex_.exit();
     
 	if(matched)		// This message has been handled
 		return 0;
@@ -407,10 +401,9 @@ bool OscReceiver::setPort(const int port)
 {
     // Stop existing server if running
     if(oscServerThread_ != 0) {
-    	// TODO: liblo lo_server_thread_*
-//        lo_server_thread_del_method(oscServerThread_, NULL, NULL);
-//        lo_server_thread_stop(oscServerThread_);
-//        lo_server_thread_free(oscServerThread_);
+        lo_server_thread_del_method(oscServerThread_, NULL, NULL);
+        lo_server_thread_stop(oscServerThread_);
+        lo_server_thread_free(oscServerThread_);
         oscServerThread_ = 0;
     }
     
@@ -427,13 +420,12 @@ bool OscReceiver::setPort(const int port)
     snprintf(portStr, 16, "%d", port);
 #endif
 
-    // TODO: liblo
-//    oscServerThread_ = lo_server_thread_new(portStr, staticErrorHandler);
-//    if(oscServerThread_ != 0) {
-//        lo_server_thread_add_method(oscServerThread_, NULL, NULL, OscReceiver::staticHandler, (void *)this);
-//        lo_server_thread_start(oscServerThread_);
-//        return true;
-//    }
+    oscServerThread_ = lo_server_thread_new(portStr, staticErrorHandler);
+    if(oscServerThread_ != 0) {
+        lo_server_thread_add_method(oscServerThread_, NULL, NULL, OscReceiver::staticHandler, (void *)this);
+        lo_server_thread_start(oscServerThread_);
+        return true;
+    }
     
     return false;
 }
@@ -444,15 +436,13 @@ bool OscReceiver::setPort(const int port)
 
 int OscTransmitter::addAddress(const char * host, const char * port, int proto)
 {
-	// TODO: liblo
-//	lo_address addr = lo_address_new_with_proto(proto, host, port);
-//
-//	if(addr == 0)
-//		return -1;
-//	addresses_.push_back(addr);
-//
-//	return (int)addresses_.size() - 1;
-	return 0;
+	lo_address addr = lo_address_new_with_proto(proto, host, port);
+	
+	if(addr == 0)
+		return -1;
+	addresses_.push_back(addr);
+	
+	return (int)addresses_.size() - 1;
 }
 
 // Delete a current transmit address
@@ -471,8 +461,7 @@ void OscTransmitter::clearAddresses()
 	vector<lo_address>::iterator it = addresses_.begin();
 	
 	while(it != addresses_.end()) {
-		// TODO: liblo
-//		lo_address_free(*it++);
+		lo_address_free(*it++);
 	}
 	
 	addresses_.clear();
@@ -486,9 +475,8 @@ void OscTransmitter::sendMessage(const char * path, const char * type, ...)
 	va_list v;
 	
 	va_start(v, type);
-	// TODO: liblo
-//	lo_message msg = lo_message_new();
-//	lo_message_add_varargs(msg, type, v);
+	lo_message msg = lo_message_new();
+	lo_message_add_varargs(msg, type, v);
 
 	/*if(debugMessages_) {
 		cout << path << " " << type << ": ";
@@ -512,62 +500,60 @@ void OscTransmitter::sendMessage(const char * path, const char * type, ...)
 		//lo_message_pp(msg);
 	}*/
 	
-//	sendMessage(path, type, msg);
+	sendMessage(path, type, msg);
 
-	// TODO: liblo
-//	lo_message_free(msg);
+	lo_message_free(msg);
 	va_end(v);
 }
 
-// TODO: liblo
 void OscTransmitter::sendMessage(const char * path, const char * type, const lo_message& message)
 {
     if(!enabled_)
         return;
-//
-//    if(debugMessages_) {
-//        cout << path << " " << type << " ";
-//
-//        int argc = lo_message_get_argc(message);
-//        lo_arg **argv = lo_message_get_argv(message);
-//        for (int i=0; i<argc; i++) {
-//            lo_arg_pp((lo_type)type[i], argv[i]);
-//            cout << " ";
-//        }
-//        cout << endl;
-//    }
-//
-//	// Send message to everyone who's currently listening
-//	for(vector<lo_address>::iterator it = addresses_.begin(); it != addresses_.end(); it++) {
-//		lo_send_message(*it, path, message);
-//	}
+    
+    if(debugMessages_) {
+        cout << path << " " << type << " ";
+
+        int argc = lo_message_get_argc(message);
+        lo_arg **argv = lo_message_get_argv(message);
+        for (int i=0; i<argc; i++) {
+            lo_arg_pp((lo_type)type[i], argv[i]);
+            cout << " ";
+        }
+        cout << endl;
+    }
+    
+	// Send message to everyone who's currently listening
+	for(vector<lo_address>::iterator it = addresses_.begin(); it != addresses_.end(); it++) {
+		lo_send_message(*it, path, message);
+	}
 }
 
 // Send an array of bytes as an OSC message.  Bytes will be sent as a blob.
-// TODO: liblo
+
 void OscTransmitter::sendByteArray(const char * path, const unsigned char * data, int length)
 {
-//    if(!enabled_)
-//        return;
-//	if(length == 0)
-//		return;
-//
-//	lo_blob b = lo_blob_new(length, data);
-//
-//	lo_message msg = lo_message_new();
-//	lo_message_add_blob(msg, b);
-//
-//	if(debugMessages_) {
-//		cout << path << " ";
-//		lo_message_pp(msg);
-//	}
-//
-//	// Send message to everyone who's currently listening
-//	for(vector<lo_address>::iterator it = addresses_.begin(); it != addresses_.end(); it++) {
-//		lo_send_message(*it, path, msg);
-//	}
-//
-//	lo_blob_free(b);
+    if(!enabled_)
+        return;
+	if(length == 0)
+		return;
+	
+	lo_blob b = lo_blob_new(length, data);
+	
+	lo_message msg = lo_message_new();
+	lo_message_add_blob(msg, b);
+	
+	if(debugMessages_) {
+		cout << path << " ";
+		lo_message_pp(msg);
+	}
+	
+	// Send message to everyone who's currently listening
+	for(vector<lo_address>::iterator it = addresses_.begin(); it != addresses_.end(); it++) {
+		lo_send_message(*it, path, msg);
+	}	
+	
+	lo_blob_free(b);
 }
 
 OscTransmitter::~OscTransmitter()
@@ -575,15 +561,14 @@ OscTransmitter::~OscTransmitter()
 	clearAddresses();
 }
 
-// TODO: liblo
 OscMessage* OscTransmitter::createMessage(const char * path, const char * type, ...)
 {
-//    va_list v;
-//
-//    va_start(v, type);
-//    lo_message msg = lo_message_new();
-//    lo_message_add_varargs(msg, type, v);
-//    va_end(v);
-//
-//    return new OscMessage(path, type, msg);
+    va_list v;
+    
+    va_start(v, type);
+    lo_message msg = lo_message_new();
+    lo_message_add_varargs(msg, type, v);
+    va_end(v);
+    
+    return new OscMessage(path, type, msg);
 }

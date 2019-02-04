@@ -22,11 +22,14 @@
 #define TOUCHKEY_DEVICE_H
 
 #include "Osc.h"
-#include "PianoKeyboard.h"
 #include "PianoKeyCalibrator.h"
 #include "PianoKeyCalibrator.h"
 #include "../Utility/Thread.h"
 #include "../Utility/TimestampSynchronizer.h"
+#include "../Utility/Thread.h"
+#include <boost/function.hpp>
+#include <boost/circular_buffer.hpp>
+#include "PianoKeyboard.h"
 
 #define TOUCHKEY_MAX_FRAME_LENGTH 256	// Maximum data length in a single frame
 #define ESCAPE_CHARACTER 0xFE			// Indicates control sequence
@@ -136,22 +139,26 @@ const float kTouchkeyAnalogValueMax = 4095.0; // Maximum value any analog sample
 
 class TouchkeyDevice /*: public OscHandler*/
 {
-    // ***** Class to implement the Juce thread *****
+
 private:
-//    class DeviceThread : public Thread {
-//    public:
-//        DeviceThread(boost::function<void (DeviceThread*)> action, String name = "DeviceThread")
-//        : Thread(name), actionFunction_(action) {}
-//
-//        ~DeviceThread() {}
-//
-//        void run() {
-//            actionFunction_(this);
-//        }
-//
-//    private:
-//        boost::function<void (DeviceThread*)> actionFunction_;
-//    };
+    class DeviceThread : public Thread {
+    public:
+        DeviceThread(boost::function<void (DeviceThread*)> action, std::string name = "DeviceThread")
+        : Thread(name), actionFunction_(action) {}
+
+        ~DeviceThread() {}
+
+
+
+        void* run() {
+            actionFunction_(this);
+
+            return NULL;
+        }
+
+    private:
+        boost::function<void (DeviceThread*)> actionFunction_;
+    };
 
 public:
 	class ControllerStatus {
@@ -385,6 +392,7 @@ private:
 	// Read and parse new data from the device, splitting out by frame type
 	void processFrame(unsigned char * const frame, int length);
 
+	void printStatusFrame(TouchkeyDevice::ControllerStatus* status);
 	// Specific data type parsing
 	void processCentroidFrame(unsigned char * const buffer, const int bufferLength);
 	int processKeyCentroid(int frame,int octave, int key, timestamp_type timestamp, unsigned char * buffer, int maxLength);

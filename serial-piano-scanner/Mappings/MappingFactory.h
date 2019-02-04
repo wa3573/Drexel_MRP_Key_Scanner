@@ -31,6 +31,7 @@
 #include <map>
 #include <boost/bind.hpp>
 #include "Mapping.h"
+#include "../Utility/Xml.h"
 //#include "../GUI/MappingEditorComponent.h"
 
 // This virtual base class defines a singular factory object from which individual
@@ -152,8 +153,8 @@ public:
     // These methods generate XML settings files and reload values from them
     // The specific implementation is up to the subclass
     
-//    virtual XmlElement* getPreset() = 0;
-//    virtual bool loadPreset(XmlElement const* preset) = 0;
+    virtual XmlElement* getPreset() = 0;
+    virtual bool loadPreset(XmlElement const* preset) = 0;
     
 protected:
 	// ***** Member Variables *****

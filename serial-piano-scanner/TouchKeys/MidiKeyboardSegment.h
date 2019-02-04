@@ -32,10 +32,12 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <Midi.h>
+#include "MidiInternal.h"
 //#include "../JuceLibraryCode/JuceHeader.h"
 #include "../Mappings/MappingFactorySplitter.h"
 #include "PianoKeyboard.h"
+#include "../Utility/Xml.h"
+#include "../Utility/Property.h"
 
 class OscMidiConverter;
 
@@ -47,8 +49,6 @@ class OscMidiConverter;
 // or note number might determine which segment takes ownership of a particular note.
 
 class MidiKeyboardSegment : public OscHandler {
-	typedef const char MidiInput;
-	typedef MidiChannelMessage MidiMessage;
 
 private:
     static const int kMidiControllerDamperPedal;
@@ -97,7 +97,7 @@ public:
 	void setMidiOutputController(MidiOutputController* ct) { midiOutputController_ = ct; }
 	
     // Check whether this MIDI message is for this segment
-    bool respondsToMessage(MidiChannelMessage& message);
+    bool respondsToMessage(const MidiMessage& message);
     bool respondsToNote(int noteNumber);
     
     // Set which channels we listen to
@@ -269,11 +269,11 @@ public:
     
     // **** Preset methods ****
     
-//    // Get an XML element describing current settings (for saving presets)
-//    XmlElement* getPreset();
-//
-//    // Load settings from an XML element
-//    bool loadPreset(XmlElement const* preset);
+    // Get an XML element describing current settings (for saving presets)
+    XmlElement* getPreset();
+
+    // Load settings from an XML element
+    bool loadPreset(XmlElement const* preset);
 
 private:
 	// Mode-specific MIDI input handlers

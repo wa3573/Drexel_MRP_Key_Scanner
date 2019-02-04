@@ -8,11 +8,6 @@
 #include "Thread.h"
 #include <unistd.h>
 
-Thread::Thread(std::string threadName)
-{
-	name_ = threadName;
-}
-
 //void Thread::startThread()
 //{
 //	int ret1 = pthread_create(getPthread(), NULL, (thread_function_ptr_t)&Thread::run, (void*) this);

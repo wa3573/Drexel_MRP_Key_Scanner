@@ -27,10 +27,15 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+//#include "TouchKeys/MidiQueue.h"
 
 bool programShouldStop_ = false;
 int gXenomaiInited = 0; // required by libbelaextra
 unsigned int gAuxiliaryTaskStackSize = 1 << 17; // required by libbelaextra
+MidiQueue* gMidiQueue = MidiQueue::get_instance();
+std::vector<std::string> MidiOutput::deviceNames_;
+MidiOutput MidiOutput::midiOutput_;
+MidiQueue* MidiOutput::midiQueue_;
 
 static struct option long_options[] = {
 	{"help", no_argument, NULL, 'h'},
@@ -109,8 +114,9 @@ int main (int argc, char* argv[])
     bool autoopenMidiOut = false, autoopenMidiIn = false;
     int oscInputPort = kDefaultOscReceivePort;
     string touchkeysDevicePath;
+    MidiOutput::setMidiQueue(gMidiQueue);
     
-    printf("Touchkeys Bela Port v0.01\n");
+    printf("Touchkeys Bela Port v0.02\n");
 
 	while((ch = getopt_long(argc, argv, "hli:o:t:VP:", long_options, &option_index)) != -1)
 	{
