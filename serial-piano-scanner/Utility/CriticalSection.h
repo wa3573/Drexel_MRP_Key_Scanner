@@ -80,7 +80,6 @@ public:
 
 	inline bool wait(int timeOutMilliseconds = -1) noexcept
 	{
-		double startTime = currentTime();
 		struct timespec timeToWait;
 		int ret = 0;
 		clock_gettime(CLOCK_REALTIME, &timeToWait);

@@ -32,7 +32,7 @@
 #include <iostream>
 #include <vector>
 #include "TouchKeys/Osc.h"
-//#include "MidiInputController.h"
+#include "TouchKeys/MidiInputController.h"
 #include "TouchKeys/MidiKeyboardSegment.h"
 #include "TouchKeys/MidiOutputController.h"
 #include "TouchKeys/TouchkeyDevice.h"
@@ -61,7 +61,7 @@ class KeyboardTesterDisplay;
 const char kDefaultOscTransmitHost[] = "127.0.0.1";
 const char kDefaultOscTransmitPort[] = "8000";
 const int kDefaultOscReceivePort = 8001;
-const int kCalibrationTimeSeconds = 5;
+const int kCalibrationTimeSeconds = 15;
 
 
 class MainApplicationOSCController;
@@ -141,32 +141,37 @@ public:
     // *** MIDI device methods ***
     
 //    // Return a list of IDs and paths to all available MIDI devices
-//    std::vector<std::pair<int, std::string> > availableMIDIInputDevices() {
-//        return midiInputController_.availableMidiDevices();
-//    }
+    std::vector<std::pair<int, std::string> > availableMIDIInputDevices() {
+        return midiInputController_.availableMidiDevices();
+    }
     
     std::vector<std::pair<int, std::string> > availableMIDIOutputDevices() {
         return midiOutputController_.availableMidiDevices();
     }
     
-//    // Return the number of keyboard segments
-//    int midiSegmentsCount() {
-//        return midiInputController_.numSegments();
-//    }
-//    // Return the pointer to a specific segment
-//    MidiKeyboardSegment* midiSegment(int index) {
-//        return midiInputController_.segment(index);
-//    }
-//    // Return a unique signature of segment configuration which
-//    // tells any listeners whether an update has happened
-//    int midiSegmentUniqueIdentifier() {
-//        return midiInputController_.segmentUniqueIdentifier();
-//    }
+    // Return the number of keyboard segments
+    int midiSegmentsCount() {
+        return midiInputController_.numSegments();
+    }
+    // Return the pointer to a specific segment
+    MidiKeyboardSegment* midiSegment(int index) {
+        return midiInputController_.segment(index);
+    }
+    // Return a unique signature of segment configuration which
+    // tells any listeners whether an update has happened
+    int midiSegmentUniqueIdentifier() {
+        return midiInputController_.segmentUniqueIdentifier();
+    }
     // Add a new segment, returning the result. Segments are
     // stored 
     MidiKeyboardSegment* midiSegmentAdd();
     // Remove a segment
     void midiSegmentRemove(MidiKeyboardSegment *segment);
+    void midiSegmentSetMode(MidiKeyboardSegment *segment, int mode);
+    void midiSegmentSetMidiOutputController(MidiKeyboardSegment *segment, MidiOutputController *controller);
+    void midiSegmentsSetMode(int mode);
+    void midiSegmentsSetMidiOutputController(MidiOutputController *controller);
+    void midiSegmentsSetMidiOutputController();
 
     // Select MIDI input/output devices
     void enableMIDIInputPort(int portNumber, bool isPrimary);
@@ -181,13 +186,14 @@ public:
     void disableMIDIOutputPort(int identifier);
     void disableAllMIDIOutputPorts();
     
-//    // Get selected MIDI input/output devices by ID
-//    int selectedMIDIPrimaryInputPort() {
-//        return midiInputController_.primaryActivePort();
-//    }
-//    std::vector<int> selectedMIDIAuxInputPorts() {
-//        return midiInputController_.auxiliaryActivePorts();
-//    }
+    // Get selected MIDI input/output devices by ID
+    int selectedMIDIPrimaryInputPort() {
+        return midiInputController_.primaryActivePort();
+    }
+    std::vector<int> selectedMIDIAuxInputPorts() {
+        return midiInputController_.auxiliaryActivePorts();
+    }
+
     int selectedMIDIOutputPort(int identifier) {
         return midiOutputController_.enabledPort(identifier);
     }
@@ -363,7 +369,7 @@ private:
     // TouchKeys objects
     MainApplicationOSCController *mainOscController_;
     PianoKeyboard keyboardController_;
-//    MidiInputController midiInputController_;
+    MidiInputController midiInputController_;
     MidiOutputController midiOutputController_;
     OscTransmitter oscTransmitter_;
     OscReceiver oscReceiver_;

@@ -18,6 +18,7 @@ public:
 	MidiQueue();
 
 	static MidiQueue* get_instance();
+	static void resize(boost::circular_buffer<MidiMessage>::size_type size);
 	static void push_back(MidiMessage message);
 	static MidiMessage pop_front();
 	static void process();

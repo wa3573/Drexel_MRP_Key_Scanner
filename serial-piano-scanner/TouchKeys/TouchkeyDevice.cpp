@@ -44,7 +44,7 @@ const char* kKeyNames[13] = { "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ",
 
 TouchkeyDevice::TouchkeyDevice(PianoKeyboard& keyboard) :
 		keyboard_(keyboard), device_(-1), autoGathering_(false), shouldStop_(
-				false), sendRawOscMessages_(false), verbose_(2), numOctaves_(0), lowestMidiNote_(
+				false), sendRawOscMessages_(false), verbose_(1), numOctaves_(0), lowestMidiNote_(
 				48), lowestKeyPresentMidiNote_(48), updatedLowestMidiNote_(48), lowestNotePerOctave_(
 				0), deviceSoftwareVersion_(-1), deviceHardwareVersion_(-1), expectedLengthWhite_(
 				kTransmissionLengthWhiteNewHardware), expectedLengthBlack_(
@@ -209,7 +209,7 @@ bool TouchkeyDevice::checkIfDevicePresent(int millisecondsToWait)
 							}
 
 							for (int i = 0; i < status.octaves; i++) {
-								bool foundKey = false;
+//								bool foundKey = false;
 
 								if (verbose_ >= 1)
 									cout << "  Octave " << i << ": ";
@@ -219,7 +219,7 @@ bool TouchkeyDevice::checkIfDevicePresent(int millisecondsToWait)
 											cout << kKeyNames[j] << " ";
 										keysPresent_.insert(
 												octaveNoteToIndex(i, j));
-										foundKey = true;
+//										foundKey = true;
 										if (octaveKeyToMidi(i, j)
 												< lowestKeyPresentMidiNote_)
 											lowestKeyPresentMidiNote_ =
@@ -1033,7 +1033,7 @@ void* TouchkeyDevice::runLoopFunction(Thread* thread)
 	int frameLength;
 	bool controlSeq = false;
 	bool inFrame = false;
-	bool frameError = false;
+//	bool frameError = false;
 
 	/* struct timeval currentTime;
 	 unsigned long long currentTicks = 0, lastTicks = 0;
@@ -1096,7 +1096,7 @@ void* TouchkeyDevice::runLoopFunction(Thread* thread)
 						if (verbose_ >= 1)
 							cout
 									<< "Warning: received frame error, continuing anyway.\n";
-						frameError = true;
+//						frameError = true;
 					} else if (ch == ESCAPE_CHARACTER) { // double-escape means a literal escape character
 						frame[frameLength++] = ch;
 						if (frameLength >= TOUCHKEY_MAX_FRAME_LENGTH) {
@@ -1135,7 +1135,7 @@ void* TouchkeyDevice::runLoopFunction(Thread* thread)
 					if (ch == kControlCharacterFrameBegin) {
 						inFrame = true;
 						frameLength = 0;
-						frameError = false;
+//						frameError = false;
 					} else if (ch == kControlCharacterNak && verbose_ >= 1) {
 						// TODO: pass this on to a checkForAck() call
 						cout
@@ -1161,7 +1161,7 @@ void* TouchkeyDevice::rawDataRunLoopFunction(Thread* thread)
 	int frameLength;
 	bool controlSeq = false;
 	bool inFrame = false;
-	bool frameError = false;
+//	bool frameError = false;
 
 	unsigned char gatherDataCommand[] = { ESCAPE_CHARACTER,
 			kControlCharacterFrameBegin, kFrameTypeSendI2CCommand,
@@ -1170,7 +1170,7 @@ void* TouchkeyDevice::rawDataRunLoopFunction(Thread* thread)
 			ESCAPE_CHARACTER, kControlCharacterFrameEnd };
 
 	//struct timeval currentTime;
-	double currentTime = 0;
+//	double currentTime = 0;
 	double lastTime = 0;
 	//unsigned long long currentTicks = 0, lastTicks = 0;
 
@@ -1240,7 +1240,7 @@ void* TouchkeyDevice::rawDataRunLoopFunction(Thread* thread)
 						if (verbose_ >= 1)
 							cout
 									<< "Warning: received frame error, continuing anyway.\n";
-						frameError = true;
+//						frameError = true;
 					} else if (ch == ESCAPE_CHARACTER) { // double-escape means a literal escape character
 						frame[frameLength++] = ch;
 						if (frameLength >= TOUCHKEY_MAX_FRAME_LENGTH) {
@@ -1279,7 +1279,7 @@ void* TouchkeyDevice::rawDataRunLoopFunction(Thread* thread)
 					if (ch == kControlCharacterFrameBegin) {
 						inFrame = true;
 						frameLength = 0;
-						frameError = false;
+//						frameError = false;
 					} else if (ch == kControlCharacterNak && verbose_ >= 1) {
 						// TODO: pass this on to a checkForAck() call
 						cout
@@ -1292,6 +1292,8 @@ void* TouchkeyDevice::rawDataRunLoopFunction(Thread* thread)
 			}
 		}
 	}
+
+	return NULL;
 }
 
 // Process the contents of a frame that has been received from the device
@@ -1726,12 +1728,12 @@ void TouchkeyDevice::processAnalogFrame(unsigned char * const buffer,
 				+ ((int) buffer[bufferIndex + 3] << 24);
 
 		// Check the timestamp against the last frame from this board to see if any frames have been dropped
-		if (frame > analogLastFrame_[board] + 1) {
+		if (frame > (int) analogLastFrame_[board] + 1) {
 			if (verbose_ >= 1)
 				cout << "WARNING: dropped frame(s) on board " << board << " at "
 						<< frame << " (last was " << analogLastFrame_[board]
 						<< ")" << endl;
-		} else if (frame < analogLastFrame_[board] + 1) {
+		} else if (frame < (int) analogLastFrame_[board] + 1) {
 			if (verbose_ >= 1)
 				cout << "WARNING: repeat frame(s) on board " << board << " at "
 						<< frame << " (last was " << analogLastFrame_[board]
@@ -1740,18 +1742,18 @@ void TouchkeyDevice::processAnalogFrame(unsigned char * const buffer,
 		analogLastFrame_[board] = frame;
 
 		// TESTING
-		if (verbose_ >= 3 || (frame % 500 == 0))
-			cout << "Analog frame octave " << octave << " timestamp " << frame
-					<< endl;
-		if (verbose_ >= 4 || (frame % 500 == 0)) {
-			cout << "Values: ";
-			for (int i = 0; i < 25; i++) {
-				cout << std::setw(5)
-						<< (((signed char) buffer[i * 2 + 6]) * 256
-								+ buffer[i * 2 + 5]) << " ";
-			}
-			cout << endl;
-		}
+//		if (verbose_ >= 3 || (frame % 500 == 0))
+//			cout << "Analog frame octave " << octave << " timestamp " << frame
+//					<< endl;
+//		if (verbose_ >= 4 || (frame % 500 == 0)) {
+//			cout << "Values: ";
+//			for (int i = 0; i < 25; i++) {
+//				cout << std::setw(5)
+//						<< (((signed char) buffer[i * 2 + 6]) * 256
+//								+ buffer[i * 2 + 5]) << " ";
+//			}
+//			cout << endl;
+//		}
 
 		// Process key values individually and add them to the keyboard data structure
 		for (int key = 0; key < 25; key++) {

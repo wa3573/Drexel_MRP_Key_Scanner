@@ -22,7 +22,7 @@ inline pthread_t getCurrentThreadId()
 
 class Thread {
 public:
-	typedef void * (*thread_function_ptr_t)(void *);
+	typedef void* (*thread_function_ptr_t)(void *);
 
 	inline Thread(std::string threadName) : name_(threadName)
 	{
@@ -71,6 +71,7 @@ private:
 
 class ExampleThread: public Thread {
 public:
+	typedef void* (ExampleThread::*ExampleThreadPtr)(void);
 	ExampleThread(std::string threadName) :
 			Thread(threadName)
 	{
@@ -78,8 +79,10 @@ public:
 
 	void startThread()
 	{
+		thread_function_ptr_t p = (thread_function_ptr_t)&ExampleThread::run;
 		int ret1 = pthread_create(getPthread(), NULL,
-				(thread_function_ptr_t) &ExampleThread::run, (void*) this);
+//				(thread_function_ptr_t) &ExampleThread::run, (void*) this);
+				p, (void*) this);
 		if (ret1) {
 			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
 		} else {
@@ -87,7 +90,7 @@ public:
 		}
 	}
 
-	void* run()
+	inline void* run()
 	{
 		printf("Hello from an ExampleThread!\n");
 

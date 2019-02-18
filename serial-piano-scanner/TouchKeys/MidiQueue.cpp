@@ -35,6 +35,12 @@ MidiQueue* MidiQueue::get_instance()
 
 	return instance_;
 }
+
+void MidiQueue::resize(boost::circular_buffer<MidiMessage>::size_type size)
+{
+	queue_.resize(size);
+}
+
 void MidiQueue::push_back(MidiMessage message)
 {
 	queue_.push_back(message);

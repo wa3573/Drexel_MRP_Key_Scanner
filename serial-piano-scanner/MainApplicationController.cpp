@@ -34,10 +34,11 @@
 // Strings for pitch classes (two forms for sharps), for static methods
 const char* kNoteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 const char* kNoteNamesAlternate[12] = {"C", "Db", "D ", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"};
+int gVerboseLevel = 1;
 
 MainApplicationController::MainApplicationController()
-//: midiInputController_(keyboardController_),
-  : oscReceiver_(0, "/touchkeys"),
+  : midiInputController_(keyboardController_),
+  oscReceiver_(0, "/touchkeys"),
   touchkeyController_(keyboardController_),
 //  touchkeyEmulator_(keyboardController_, oscReceiver_),
 //  logPlayback_(0),
@@ -210,13 +211,17 @@ bool MainApplicationController::touchkeyDeviceStartupSequence(const char * path)
     touchkeyErrorMessage_ = "";
     touchkeyErrorOccurred_ = false;
     
+    std::cout << "Setting verbose level to " << gVerboseLevel << std::endl;
+    touchkeyController_.setVerboseLevel(gVerboseLevel);
+
 #ifndef TOUCHKEYS_NO_GUI
     showKeyboardDisplayWindow();
 #endif
     
     // Automatically detect the lowest octave if set
-    if(getPrefsAutodetectOctave())
-        touchkeyDeviceAutodetectLowestMidiNote();
+    touchkeyDeviceAutodetectLowestMidiNote();
+//    if(getPrefsAutodetectOctave())
+
     
     return true;
 }
@@ -547,47 +552,73 @@ void MainApplicationController::stopPlayingLog() {
 
 // Add a new MIDI keyboard segment. This method also handles numbering of the segments
 MidiKeyboardSegment* MainApplicationController::midiSegmentAdd() {
-//    // For now, the segment counter increments with each new segment. Eventually, we could
-//    // consider renumbering every time a segment is removed so that we always have an index
-//    // 0-N which corresponds to the indexes within MidiInputController (and also the layout
-//    // of the tabs).
-//    MidiKeyboardSegment *newSegment = midiInputController_.addSegment(segmentCounter_, 12, 127);
-//
-//    // Set up defaults
-//    newSegment->setModePassThrough();
-//    newSegment->setPolyphony(8);
-//    newSegment->setVoiceStealingEnabled(false);
-//    newSegment->enableAllChannels();
-//    newSegment->setOutputTransposition(0);
-//    newSegment->setUsesKeyboardPitchWheel(true);
-//
-//    // Enable the MIDI output for this segment if it exists in the preferences
-//    loadMIDIOutputFromApplicationPreferences(segmentCounter_);
-//
-//    // Enable standalone mode on the new segment if generally enabled
-//    if(touchkeyStandaloneModeEnabled_)
-//        newSegment->enableTouchkeyStandaloneMode();
-//
-//    segmentCounter_++;
-//
-//    return newSegment;
+    // For now, the segment counter increments with each new segment. Eventually, we could
+    // consider renumbering every time a segment is removed so that we always have an index
+    // 0-N which corresponds to the indexes within MidiInputController (and also the layout
+    // of the tabs).
+    MidiKeyboardSegment *newSegment = midiInputController_.addSegment(segmentCounter_, 12, 127);
+
+    // Set up defaults
+    newSegment->setModePassThrough();
+    newSegment->setPolyphony(8);
+    newSegment->setVoiceStealingEnabled(false);
+    newSegment->enableAllChannels();
+    newSegment->setOutputTransposition(0);
+    newSegment->setUsesKeyboardPitchWheel(true);
+
+    // Enable the MIDI output for this segment if it exists in the preferences
+    loadMIDIOutputFromApplicationPreferences(segmentCounter_);
+
+    // Enable standalone mode on the new segment if generally enabled
+    if(touchkeyStandaloneModeEnabled_)
+        newSegment->enableTouchkeyStandaloneMode();
+
+    segmentCounter_++;
+
+    return newSegment;
 }
 
 // Remove a MIDI keyboard segment.
 void MainApplicationController::midiSegmentRemove(MidiKeyboardSegment *segment) {
-//    if(segment == 0)
-//        return;
-//    // Check if this segment uses a virtual output port. Right now, we have a unique
-//    // output per segment. If it does, then disable the virtual output port.
-//    int identifier = segment->outputPort();
-//    if(midiOutputController_.enabledPort(identifier) == MidiOutputController::kMidiVirtualOutputPortNumber)
-//        midiOutputController_.disablePort(identifier);
-//    midiInputController_.removeSegment(segment);
+    if(segment == 0)
+        return;
+    // Check if this segment uses a virtual output port. Right now, we have a unique
+    // output per segment. If it does, then disable the virtual output port.
+    int identifier = segment->outputPort();
+    if(midiOutputController_.enabledPort(identifier) == MidiOutputController::kMidiVirtualOutputPortNumber)
+        midiOutputController_.disablePort(identifier);
+    midiInputController_.removeSegment(segment);
+}
+
+void MainApplicationController::midiSegmentSetMode(MidiKeyboardSegment *segment, int mode) {
+	segment->setMode(mode);
+}
+
+void MainApplicationController::midiSegmentSetMidiOutputController(MidiKeyboardSegment *segment, MidiOutputController *controller) {
+	segment->setMidiOutputController(controller);
+}
+
+void MainApplicationController::midiSegmentsSetMode(int mode) {
+	for (int i = 0; i < midiInputController_.numSegments(); ++i) {
+		midiSegmentSetMode(midiInputController_.segment(i), mode);
+	}
+}
+
+void MainApplicationController::midiSegmentsSetMidiOutputController(MidiOutputController *controller) {
+	for (int i = 0; i < midiInputController_.numSegments(); ++i) {
+		midiSegmentSetMidiOutputController(midiInputController_.segment(i), controller);
+	}
+}
+
+void MainApplicationController::midiSegmentsSetMidiOutputController() {
+	for (int i = 0; i < midiInputController_.numSegments(); ++i) {
+		midiSegmentSetMidiOutputController(midiInputController_.segment(i), &midiOutputController_);
+	}
 }
 
 // Enable one MIDI input port either as primary or auxiliary
 void MainApplicationController::enableMIDIInputPort(int portNumber, bool isPrimary) {
-//    midiInputController_.enablePort(portNumber, isPrimary);
+    midiInputController_.enablePort(portNumber, isPrimary);
 //    if(isPrimary)
 //        applicationProperties_.getUserSettings()->setValue("MIDIInputPrimary",
 //                                                           midiInputController_.deviceName(portNumber));
@@ -598,7 +629,7 @@ void MainApplicationController::enableMIDIInputPort(int portNumber, bool isPrima
 
 // Enable all available MIDI input ports, with one in particular selected as primary
 void MainApplicationController::enableAllMIDIInputPorts(int primaryPortNumber) {
-//    midiInputController_.enableAllPorts(primaryPortNumber);
+    midiInputController_.enableAllPorts(primaryPortNumber);
 //    applicationProperties_.getUserSettings()->setValue("MIDIInputPrimary",
 //                                                       midiInputController_.deviceName(primaryPortNumber));
 //    applicationProperties_.getUserSettings()->setValue("MIDIInputAuxiliary", "__all__");
@@ -609,13 +640,13 @@ void MainApplicationController::enableAllMIDIInputPorts(int primaryPortNumber) {
 void MainApplicationController::disableMIDIInputPort(int portNumber) {
 //    if(portNumber == selectedMIDIPrimaryInputPort())
 //        applicationProperties_.getUserSettings()->setValue("MIDIInputPrimary", "");
-//    midiInputController_.disablePort(portNumber);
+    midiInputController_.disablePort(portNumber);
 }
 
 // Disable the current primary MIDI input port
 void MainApplicationController::disablePrimaryMIDIInputPort() {
 //    applicationProperties_.getUserSettings()->setValue("MIDIInputPrimary", "");
-//    midiInputController_.disablePrimaryPort();
+    midiInputController_.disablePrimaryPort();
 }
 
 // Disable either all MIDI input ports or all auxiliary inputs
@@ -623,7 +654,7 @@ void MainApplicationController::disableAllMIDIInputPorts(bool auxiliaryOnly) {
 //    applicationProperties_.getUserSettings()->setValue("MIDIInputAuxiliary", "");
 //    if(!auxiliaryOnly)
 //        applicationProperties_.getUserSettings()->setValue("MIDIInputPrimary", "");
-//    midiInputController_.disableAllPorts(auxiliaryOnly);
+    midiInputController_.disableAllPorts(auxiliaryOnly);
 }
 
 // Enable a particular MIDI output port, associating it with a segment
@@ -660,7 +691,7 @@ void MainApplicationController::disableMIDIOutputPort(int identifier) {
 // Disable all MIDI output ports
 void MainApplicationController::disableAllMIDIOutputPorts() {
     std::vector<std::pair<int, int> > enabledPorts = midiOutputController_.enabledPorts();
-    for(int i = 0; i < enabledPorts.size(); i++) {
+    for(unsigned int i = 0; i < enabledPorts.size(); i++) {
         // For each active zone, set output port to disabled in preferences
         std::string zoneName = "MIDIOutputZone";
         zoneName += enabledPorts[i].first;
@@ -674,9 +705,9 @@ void MainApplicationController::disableAllMIDIOutputPorts() {
 void MainApplicationController::midiTouchkeysStandaloneModeEnable() {
     touchkeyStandaloneModeEnabled_ = true;
     // Go through all segments and enable standalone mode
-//    for(int i = 0; i < midiInputController_.numSegments(); i++) {
-//        midiInputController_.segment(i)->enableTouchkeyStandaloneMode();
-//    }
+    for(int i = 0; i < midiInputController_.numSegments(); i++) {
+        midiInputController_.segment(i)->enableTouchkeyStandaloneMode();
+    }
 //
 //    applicationProperties_.getUserSettings()->setValue("MIDIInputPrimary", "__standalone__");
 }
@@ -684,9 +715,9 @@ void MainApplicationController::midiTouchkeysStandaloneModeEnable() {
 void MainApplicationController::midiTouchkeysStandaloneModeDisable() {
     touchkeyStandaloneModeEnabled_ = false;
     // Go through all segments and disable standalone mode
-//    for(int i = 0; i < midiInputController_.numSegments(); i++) {
-//        midiInputController_.segment(i)->disableTouchkeyStandaloneMode();
-//    }
+    for(int i = 0; i < midiInputController_.numSegments(); i++) {
+        midiInputController_.segment(i)->disableTouchkeyStandaloneMode();
+    }
 //
 //    if(applicationProperties_.getUserSettings()->getValue("MIDIInputPrimary") == "__standalone__")
 //        applicationProperties_.getUserSettings()->setValue("MIDIInputPrimary", "");
@@ -887,6 +918,7 @@ bool MainApplicationController::savePresetToFile(const char *filename) {
 //    File outputFile(filename);
 //
 //    return savePresetHelper(outputFile);
+	return true;
 }
 
 // Load settings from a saved XML file
@@ -895,6 +927,7 @@ bool MainApplicationController::loadPresetFromFile(const char *filename) {
 //    File inputFile(filename);
 //
 //    return loadPresetHelper(inputFile);
+	return true;
 }
 
 #ifndef TOUCHKEYS_NO_GUI
@@ -984,6 +1017,7 @@ bool MainApplicationController::getPrefsAutoStartTouchKeys() {
 //    if(!applicationProperties_.getUserSettings()->containsKey("StartupStartTouchKeys"))
 //        return false;
 //    return applicationProperties_.getUserSettings()->getBoolValue("StartupStartTouchKeys");
+	return true;
 }
 
 void MainApplicationController::setPrefsAutoStartTouchKeys(bool autoStart) {
@@ -995,6 +1029,7 @@ bool MainApplicationController::getPrefsAutodetectOctave() {
 //    if(!applicationProperties_.getUserSettings()->containsKey("StartupAutodetectTouchKeysOctave"))
 //        return false;
 //    return applicationProperties_.getUserSettings()->getBoolValue("StartupAutodetectTouchKeysOctave");
+	return true;
 }
 
 void MainApplicationController::setPrefsAutodetectOctave(bool autoDetect) {
@@ -1013,6 +1048,7 @@ bool MainApplicationController::getPrefsStartupPresetNone() {
 //    if(applicationProperties_.getUserSettings()->getValue("StartupPreset") == "__none__")
 //        return true;
 //    return false;
+	return true;
 }
 
 void MainApplicationController::setPrefsStartupPresetVibratoPitchBend() {
@@ -1025,6 +1061,7 @@ bool MainApplicationController::getPrefsStartupPresetVibratoPitchBend() {
 //    if(applicationProperties_.getUserSettings()->getValue("StartupPreset") == "__vib_pb__")
 //        return true;
 //    return false;
+	return true;
 }
 
 void MainApplicationController::setPrefsStartupPresetLastSaved() {
@@ -1037,6 +1074,7 @@ bool MainApplicationController::getPrefsStartupPresetLastSaved() {
 //    if(applicationProperties_.getUserSettings()->getValue("StartupPreset") == "__last__")
 //        return true;
 //    return false;
+	return true;
 }
 
 void MainApplicationController::setPrefsStartupPreset(std::string const& path) {
@@ -1047,6 +1085,7 @@ std::string MainApplicationController::getPrefsStartupPreset() {
 //    if(!applicationProperties_.getUserSettings()->containsKey("StartupPreset"))
 //        return "";
 //    return applicationProperties_.getUserSettings()->getValue("StartupPreset");
+	return std::string();
 }
 
 // Reset application preferences to defaults
@@ -1415,318 +1454,318 @@ int MainApplicationController::midiNoteNumberForName(std::string const& name) {
 // ***** External OSC Control *****
 
 bool MainApplicationOSCController::oscHandlerMethod(const char *path, const char *types, int numValues, lo_arg **values, void *data) {
-//    if(!strncmp(path, "/control", 8)) {
-//        // OSC messages that start with /touchkeys/control are used to control the operation of the
-//        // software and mappings
-//
-//        // First check if the message belongs to one of the segments
-//        if(!strncmp(path, "/control/segment", 16) && strlen(path) > 16) {
-//            // Pick out which segment based on the following number: e.g. /control/segment0/...
-//
-//            std::string subpath(&path[16]);
-//            int separatorLoc = subpath.find_first_of('/');
-//            if(separatorLoc == std::string::npos || separatorLoc == subpath.length() - 1) {
-//                // Malformed input (no slash or it's the last character): ignore
-//                return false;
-//            }
-//            std::stringstream segmentNumberSStream(subpath.substr(0, separatorLoc));
-//
-//            int segmentNumber = 0;
-//            segmentNumberSStream >> segmentNumber;
-//
-//            if(segmentNumber < 0)  // Unknown segment number
-//                return false;
-//
-//            // Pass this message onto the corresponding segment in MidiInputController
-//            // If the segment doesn't exist, it will return false. All further handling is
-//            // done within MidiInputController with its corresponding mutex locked so
-//            // the segments can't change while this message is processed.
-//
-//            subpath = subpath.substr(separatorLoc); // Start at the '/'
-//
-//            if(subpath == "/set-midi-out") {
-//                // Special case for setting the MIDI output, which is done in the main controller
-//                // rather than in the segment itself
-//
-//                if(numValues >= 1) {
-//                    if(types[0] == 'i') {
-//                        MidiKeyboardSegment* segment = controller_.midiInputController_.segment(segmentNumber);
-//                        if(segment == 0)
-//                            oscControlTransmitResult(1); // Failure response
-//                        else {
-//                            if(values[0]->i < 0) {
-//                                // Negative value means disable
-//                                controller_.disableMIDIOutputPort(segment->outputPort());
-//                            }
-//                            else {
-//                                controller_.enableMIDIOutputPort(segment->outputPort(), values[0]->i);
-//                            }
-//                            oscControlTransmitResult(0);
-//                        }
-//                    }
-//#ifndef JUCE_WINDOWS
-//                    else if(types[0] == 's') {
-//                        MidiKeyboardSegment* segment = controller_.midiInputController_.segment(segmentNumber);
-//                        if(segment == 0)
-//                            oscControlTransmitResult(1); // Failure response
-//                        else {
-//                            if(!strcmp(&values[0]->s, "virtual")) {
-//                                char st[20];
-//                                snprintf(st, 20, "TouchKeys %d", segment->outputPort());
-//                                controller_.enableMIDIOutputVirtualPort(segment->outputPort(), st);
-//                                oscControlTransmitResult(0);
-//                            }
-//                        }
-//                    }
-//#endif
-//                }
-//            }
-//            else {
-//                // All other segment messages are handled within MidiKeyboardSegment
-//
-//                OscMessage* response = controller_.midiInputController_.oscControlMessageForSegment(segmentNumber, subpath.c_str(), types, numValues, values, data);
-//                if(response != 0) {
-//                    // Add the right prefix to the response. If it is a simple result status,
-//                    // then give it the generic prefix. Otherwise add the zone beforehand
-//                    if(!strcmp(response->path(), "/result"))
-//                        response->prependPath("/touchkeys/control");
-//                    else {
-//                        char prefix[28];
-//#ifdef _MSC_VER
-//                        _snprintf_s(prefix, 28, _TRUNCATE, "/touchkeys/control/segment%d", segmentNumber);
-//#else
-//                        snprintf(prefix, 28,  "/touchkeys/control/segment%d", segmentNumber);
-//#endif
-//                        response->prependPath(prefix);
-//                    }
-//
-//                    // Send the message and free it
-//                    controller_.oscTransmitter_.sendMessage(response->path(), response->type(), response->message());
-//                    delete response;
-//                }
-//            }
-//        }
-//        else if(!strcmp(path, "/control/preset-load")) {
-//            // Load preset from file
-//            // Argument 0 is the path to the file
-//
-//            if(numValues > 0) {
-//                if(types[0] == 's') {
-//                    bool result = controller_.loadPresetFromFile(&values[0]->s);
-//
-//                    // Send back a message on success/failure
-//                    oscControlTransmitResult(result == true ? 0 : 1);
-//                    return true;
-//                }
-//                else if(types[0] == 'i') {
-//                    // TODO: take a second form of the message which has a numerical
-//                    //       input for selecting presets
-//                }
-//            }
-//            return false;
-//        }
-//        else if(!strcmp(path, "/control/preset-save")) {
-//            // Save preset to file
-//
-//            if(numValues > 0) {
-//                if(types[0] == 's') {
-//                    bool result = controller_.savePresetToFile(&values[0]->s);
-//
-//                    // Send back a message on success/failure
-//                    oscControlTransmitResult(result == true ? 0 : 1);
-//                    return true;
-//                }
-//                else if(types[0] == 'i') {
-//                    // TODO: take a second form of the message which has a numerical
-//                    //       input for selecting presets
-//                }
-//            }
-//            return false;
-//        }
-//        else if(!strcmp(path, "/control/preset-clear")) {
-//            // Clear everything in preset
-//            controller_.clearPreset();
-//            oscControlTransmitResult(0);
-//            return true;
-//        }
-//        else if(!strcmp(path, "/control/tk-list-devices")) {
-//            // Return a list of TouchKeys devices
-//
-//            OscMessage *response = OscTransmitter::createMessage("/touchkeys/control/tk-list-devices/result", "i",
-//                                                                controller_.availableTouchkeyDevices().size(), LO_ARGS_END);
-//
-//            vector<std::string> devices = controller_.availableTouchkeyDevices();
-//            vector<string>::iterator it;
-//            for(it = devices.begin(); it != devices.end(); ++it) {
-//                lo_message_add_string(response->message(), it->c_str());
-//            }
-//
-//            controller_.oscTransmitter_.sendMessage(response->path(), response->type(), response->message());
-//            delete response;
-//
-//            return true;
-//        }
-//        else if(!strcmp(path, "/control/tk-start")) {
-//            // Start the TouchKeys device with the given path
-//            if(numValues > 0) {
-//                if(types[0] == 's') {
-//                    char *device = &values[0]->s;
-//                    bool result = controller_.touchkeyDeviceStartupSequence(device);
-//
-//                    oscControlTransmitResult(result == true ? 0 : 1);
-//                    return true;
-//                }
-//            }
-//        }
-//        else if(!strcmp(path, "/control/tk-stop")) {
-//            // Stop TouchKeys
-//            if(controller_.touchkeyDeviceIsOpen()) {
-//                controller_.closeTouchkeyDevice();
-//                oscControlTransmitResult(0);
-//            }
-//            else {
-//                // Not running, can't close
-//                oscControlTransmitResult(1);
-//            }
-//            return true;
-//        }
-//        else if(!strcmp(path, "/control/tk-set-lowest-midi-note")) {
-//            // Set TouchKeys octave such that the lowest key is at the
-//            // given note. Only 'C' notes are valid.
-//
-//            if(numValues > 0) {
-//                if(types[0] == 'i') {
-//                    int note = values[0]->i;
-//
-//                    if(note % 12 == 0 && note >= 12 && note < 127) {
-//                        controller_.touchkeyDeviceSetLowestMidiNote(note);
-//                        oscControlTransmitResult(0);
-//                    }
-//                    else {
-//                        // Invalid note
-//                        oscControlTransmitResult(1);
-//                    }
-//                    return true;
-//                }
-//            }
-//        }
-//        else if(!strcmp(path, "/control/tk-autodetect")) {
-//            // Autodetect lowest TouchKeys octave
-//            controller_.touchkeyDeviceAutodetectLowestMidiNote();
-//            oscControlTransmitResult(0);
-//            return true;
-//        }
-//        else if(!strcmp(path, "/control/tk-autodetect-stop")) {
-//            // Stop autodetecting TouchKeys octave
-//            controller_.touchkeyDeviceStopAutodetecting();
-//            oscControlTransmitResult(0);
-//            return true;
-//        }
-//        else if(!strcmp(path, "/control/list-midi-in")) {
-//            // List available MIDI input devices
-//            std::vector<std::pair<int, std::string> > midiInputs = controller_.availableMIDIInputDevices();
-//
-//            OscMessage *response = OscTransmitter::createMessage("/list-midi-in/result", "i", midiInputs.size(), LO_ARGS_END);
-//
-//            std::vector<std::pair<int, std::string> >::iterator it;
-//            for(it = midiInputs.begin(); it != midiInputs.end(); ++it) {
-//                lo_message_add_int32(response->message(), it->first);
-//                lo_message_add_string(response->message(), it->second.c_str());
-//            }
-//
-//            controller_.oscTransmitter_.sendMessage(response->path(), response->type(), response->message());
-//            delete response;
-//
-//            return true;
-//        }
-//        else if(!strcmp(path, "/control/list-midi-out")) {
-//            // List available MIDI output devices
-//            std::vector<std::pair<int, std::string> > midiOutputs = controller_.availableMIDIOutputDevices();
-//
-//            OscMessage *response = OscTransmitter::createMessage("/list-midi-out/result", "i", midiOutputs.size(), LO_ARGS_END);
-//
-//            std::vector<std::pair<int, std::string> >::iterator it;
-//            for(it = midiOutputs.begin(); it != midiOutputs.end(); ++it) {
-//                lo_message_add_int32(response->message(), it->first);
-//                lo_message_add_string(response->message(), it->second.c_str());
-//            }
-//
-//            controller_.oscTransmitter_.sendMessage(response->path(), response->type(), response->message());
-//            delete response;
-//
-//            return true;
-//        }
-//        else if(!strcmp(path, "/control/set-midi-in-keyboard")) {
-//            // Set MIDI input device for keyboard
-//            if(numValues > 0) {
-//                if(types[0] == 'i') {
-//                    if(controller_.midiTouchkeysStandaloneModeIsEnabled())
-//                        controller_.midiTouchkeysStandaloneModeDisable();
-//                    if(values[0]->i < 0) {
-//                        // Negative means disable
-//                        controller_.disablePrimaryMIDIInputPort();
-//                    }
-//                    else {
-//                        controller_.enableMIDIInputPort(values[0]->i, true);
-//                    }
-//
-//                    oscControlTransmitResult(0);
-//                    return true;
-//                }
-//                else if(types[0] == 's') {
-//                    if(!strncmp(&values[0]->s, "stand", 5)) {
-//                        // Enable TouchKeys standalone mode in place of MIDI input
-//                        controller_.disablePrimaryMIDIInputPort();
-//                        controller_.midiTouchkeysStandaloneModeEnable();
-//
-//                        oscControlTransmitResult(0);
-//                        return true;
-//                    }
-//                }
-//            }
-//        }
-//        else if(!strcmp(path, "/control/set-midi-in-aux")) {
-//            // Set MIDI auxiliary input device
-//            if(numValues > 0) {
-//                if(types[0] == 'i') {
-//                    controller_.disableAllMIDIInputPorts(true);
-//                    if(values[0]->i >= 0) {
-//                        // Negative values mean leave the port disabled
-//                        controller_.enableMIDIInputPort(values[0]->i, false);
-//                    }
-//
-//                    oscControlTransmitResult(0);
-//                    return true;
-//                }
-//            }
-//
-//        }
-//        else if(!strcmp(path, "/control/add-segment")) {
-//            // Add a new keyboard segment
-//            if(controller_.midiSegmentsCount() >= 8) {
-//                // Max of 8 segments possible
-//                oscControlTransmitResult(1);
-//            }
-//            else {
-//                controller_.midiSegmentAdd();
-//                oscControlTransmitResult(0);
-//            }
-//            return true;
-//        }
-//        else if(!strcmp(path, "/control/delete-segment")) {
-//            // Remove a keyboard segment by number
-//            if(numValues > 0) {
-//                if(types[0] == 'i') {
-//                    int segmentNumber = values[0]->i;
-//
-//                    bool result = controller_.midiInputController_.removeSegment(segmentNumber);
-//                    oscControlTransmitResult(result == true ? 0 : 1);
-//                    return true;
-//                }
-//            }
-//        }
-//    }
-//
+    if(!strncmp(path, "/control", 8)) {
+        // OSC messages that start with /touchkeys/control are used to control the operation of the
+        // software and mappings
+
+        // First check if the message belongs to one of the segments
+        if(!strncmp(path, "/control/segment", 16) && strlen(path) > 16) {
+            // Pick out which segment based on the following number: e.g. /control/segment0/...
+
+            std::string subpath(&path[16]);
+            unsigned int separatorLoc = subpath.find_first_of('/');
+            if(separatorLoc == std::string::npos || separatorLoc == subpath.length() - 1) {
+                // Malformed input (no slash or it's the last character): ignore
+                return false;
+            }
+            std::stringstream segmentNumberSStream(subpath.substr(0, separatorLoc));
+
+            int segmentNumber = 0;
+            segmentNumberSStream >> segmentNumber;
+
+            if(segmentNumber < 0)  // Unknown segment number
+                return false;
+
+            // Pass this message onto the corresponding segment in MidiInputController
+            // If the segment doesn't exist, it will return false. All further handling is
+            // done within MidiInputController with its corresponding mutex locked so
+            // the segments can't change while this message is processed.
+
+            subpath = subpath.substr(separatorLoc); // Start at the '/'
+
+            if(subpath == "/set-midi-out") {
+                // Special case for setting the MIDI output, which is done in the main controller
+                // rather than in the segment itself
+
+                if(numValues >= 1) {
+                    if(types[0] == 'i') {
+                        MidiKeyboardSegment* segment = controller_.midiInputController_.segment(segmentNumber);
+                        if(segment == 0)
+                            oscControlTransmitResult(1); // Failure response
+                        else {
+                            if(values[0]->i < 0) {
+                                // Negative value means disable
+                                controller_.disableMIDIOutputPort(segment->outputPort());
+                            }
+                            else {
+                                controller_.enableMIDIOutputPort(segment->outputPort(), values[0]->i);
+                            }
+                            oscControlTransmitResult(0);
+                        }
+                    }
+#ifndef JUCE_WINDOWS
+                    else if(types[0] == 's') {
+                        MidiKeyboardSegment* segment = controller_.midiInputController_.segment(segmentNumber);
+                        if(segment == 0)
+                            oscControlTransmitResult(1); // Failure response
+                        else {
+                            if(!strcmp(&values[0]->s, "virtual")) {
+                                char st[20];
+                                snprintf(st, 20, "TouchKeys %d", segment->outputPort());
+                                controller_.enableMIDIOutputVirtualPort(segment->outputPort(), st);
+                                oscControlTransmitResult(0);
+                            }
+                        }
+                    }
+#endif
+                }
+            }
+            else {
+                // All other segment messages are handled within MidiKeyboardSegment
+
+                OscMessage* response = controller_.midiInputController_.oscControlMessageForSegment(segmentNumber, subpath.c_str(), types, numValues, values, data);
+                if(response != 0) {
+                    // Add the right prefix to the response. If it is a simple result status,
+                    // then give it the generic prefix. Otherwise add the zone beforehand
+                    if(!strcmp(response->path(), "/result"))
+                        response->prependPath("/touchkeys/control");
+                    else {
+                        char prefix[28];
+#ifdef _MSC_VER
+                        _snprintf_s(prefix, 28, _TRUNCATE, "/touchkeys/control/segment%d", segmentNumber);
+#else
+                        snprintf(prefix, 28,  "/touchkeys/control/segment%d", segmentNumber);
+#endif
+                        response->prependPath(prefix);
+                    }
+
+                    // Send the message and free it
+                    controller_.oscTransmitter_.sendMessage(response->path(), response->type(), response->message());
+                    delete response;
+                }
+            }
+        }
+        else if(!strcmp(path, "/control/preset-load")) {
+            // Load preset from file
+            // Argument 0 is the path to the file
+
+            if(numValues > 0) {
+                if(types[0] == 's') {
+                    bool result = controller_.loadPresetFromFile(&values[0]->s);
+
+                    // Send back a message on success/failure
+                    oscControlTransmitResult(result == true ? 0 : 1);
+                    return true;
+                }
+                else if(types[0] == 'i') {
+                    // TODO: take a second form of the message which has a numerical
+                    //       input for selecting presets
+                }
+            }
+            return false;
+        }
+        else if(!strcmp(path, "/control/preset-save")) {
+            // Save preset to file
+
+            if(numValues > 0) {
+                if(types[0] == 's') {
+                    bool result = controller_.savePresetToFile(&values[0]->s);
+
+                    // Send back a message on success/failure
+                    oscControlTransmitResult(result == true ? 0 : 1);
+                    return true;
+                }
+                else if(types[0] == 'i') {
+                    // TODO: take a second form of the message which has a numerical
+                    //       input for selecting presets
+                }
+            }
+            return false;
+        }
+        else if(!strcmp(path, "/control/preset-clear")) {
+            // Clear everything in preset
+            controller_.clearPreset();
+            oscControlTransmitResult(0);
+            return true;
+        }
+        else if(!strcmp(path, "/control/tk-list-devices")) {
+            // Return a list of TouchKeys devices
+
+            OscMessage *response = OscTransmitter::createMessage("/touchkeys/control/tk-list-devices/result", "i",
+                                                                controller_.availableTouchkeyDevices().size(), LO_ARGS_END);
+
+            vector<std::string> devices = controller_.availableTouchkeyDevices();
+            vector<string>::iterator it;
+            for(it = devices.begin(); it != devices.end(); ++it) {
+                lo_message_add_string(response->message(), it->c_str());
+            }
+
+            controller_.oscTransmitter_.sendMessage(response->path(), response->type(), response->message());
+            delete response;
+
+            return true;
+        }
+        else if(!strcmp(path, "/control/tk-start")) {
+            // Start the TouchKeys device with the given path
+            if(numValues > 0) {
+                if(types[0] == 's') {
+                    char *device = &values[0]->s;
+                    bool result = controller_.touchkeyDeviceStartupSequence(device);
+
+                    oscControlTransmitResult(result == true ? 0 : 1);
+                    return true;
+                }
+            }
+        }
+        else if(!strcmp(path, "/control/tk-stop")) {
+            // Stop TouchKeys
+            if(controller_.touchkeyDeviceIsOpen()) {
+                controller_.closeTouchkeyDevice();
+                oscControlTransmitResult(0);
+            }
+            else {
+                // Not running, can't close
+                oscControlTransmitResult(1);
+            }
+            return true;
+        }
+        else if(!strcmp(path, "/control/tk-set-lowest-midi-note")) {
+            // Set TouchKeys octave such that the lowest key is at the
+            // given note. Only 'C' notes are valid.
+
+            if(numValues > 0) {
+                if(types[0] == 'i') {
+                    int note = values[0]->i;
+
+                    if(note % 12 == 0 && note >= 12 && note < 127) {
+                        controller_.touchkeyDeviceSetLowestMidiNote(note);
+                        oscControlTransmitResult(0);
+                    }
+                    else {
+                        // Invalid note
+                        oscControlTransmitResult(1);
+                    }
+                    return true;
+                }
+            }
+        }
+        else if(!strcmp(path, "/control/tk-autodetect")) {
+            // Autodetect lowest TouchKeys octave
+            controller_.touchkeyDeviceAutodetectLowestMidiNote();
+            oscControlTransmitResult(0);
+            return true;
+        }
+        else if(!strcmp(path, "/control/tk-autodetect-stop")) {
+            // Stop autodetecting TouchKeys octave
+            controller_.touchkeyDeviceStopAutodetecting();
+            oscControlTransmitResult(0);
+            return true;
+        }
+        else if(!strcmp(path, "/control/list-midi-in")) {
+            // List available MIDI input devices
+            std::vector<std::pair<int, std::string> > midiInputs = controller_.availableMIDIInputDevices();
+
+            OscMessage *response = OscTransmitter::createMessage("/list-midi-in/result", "i", midiInputs.size(), LO_ARGS_END);
+
+            std::vector<std::pair<int, std::string> >::iterator it;
+            for(it = midiInputs.begin(); it != midiInputs.end(); ++it) {
+                lo_message_add_int32(response->message(), it->first);
+                lo_message_add_string(response->message(), it->second.c_str());
+            }
+
+            controller_.oscTransmitter_.sendMessage(response->path(), response->type(), response->message());
+            delete response;
+
+            return true;
+        }
+        else if(!strcmp(path, "/control/list-midi-out")) {
+            // List available MIDI output devices
+            std::vector<std::pair<int, std::string> > midiOutputs = controller_.availableMIDIOutputDevices();
+
+            OscMessage *response = OscTransmitter::createMessage("/list-midi-out/result", "i", midiOutputs.size(), LO_ARGS_END);
+
+            std::vector<std::pair<int, std::string> >::iterator it;
+            for(it = midiOutputs.begin(); it != midiOutputs.end(); ++it) {
+                lo_message_add_int32(response->message(), it->first);
+                lo_message_add_string(response->message(), it->second.c_str());
+            }
+
+            controller_.oscTransmitter_.sendMessage(response->path(), response->type(), response->message());
+            delete response;
+
+            return true;
+        }
+        else if(!strcmp(path, "/control/set-midi-in-keyboard")) {
+            // Set MIDI input device for keyboard
+            if(numValues > 0) {
+                if(types[0] == 'i') {
+                    if(controller_.midiTouchkeysStandaloneModeIsEnabled())
+                        controller_.midiTouchkeysStandaloneModeDisable();
+                    if(values[0]->i < 0) {
+                        // Negative means disable
+                        controller_.disablePrimaryMIDIInputPort();
+                    }
+                    else {
+                        controller_.enableMIDIInputPort(values[0]->i, true);
+                    }
+
+                    oscControlTransmitResult(0);
+                    return true;
+                }
+                else if(types[0] == 's') {
+                    if(!strncmp(&values[0]->s, "stand", 5)) {
+                        // Enable TouchKeys standalone mode in place of MIDI input
+                        controller_.disablePrimaryMIDIInputPort();
+                        controller_.midiTouchkeysStandaloneModeEnable();
+
+                        oscControlTransmitResult(0);
+                        return true;
+                    }
+                }
+            }
+        }
+        else if(!strcmp(path, "/control/set-midi-in-aux")) {
+            // Set MIDI auxiliary input device
+            if(numValues > 0) {
+                if(types[0] == 'i') {
+                    controller_.disableAllMIDIInputPorts(true);
+                    if(values[0]->i >= 0) {
+                        // Negative values mean leave the port disabled
+                        controller_.enableMIDIInputPort(values[0]->i, false);
+                    }
+
+                    oscControlTransmitResult(0);
+                    return true;
+                }
+            }
+
+        }
+        else if(!strcmp(path, "/control/add-segment")) {
+            // Add a new keyboard segment
+            if(controller_.midiSegmentsCount() >= 8) {
+                // Max of 8 segments possible
+                oscControlTransmitResult(1);
+            }
+            else {
+                controller_.midiSegmentAdd();
+                oscControlTransmitResult(0);
+            }
+            return true;
+        }
+        else if(!strcmp(path, "/control/delete-segment")) {
+            // Remove a keyboard segment by number
+            if(numValues > 0) {
+                if(types[0] == 'i') {
+                    int segmentNumber = values[0]->i;
+
+                    bool result = controller_.midiInputController_.removeSegment(segmentNumber);
+                    oscControlTransmitResult(result == true ? 0 : 1);
+                    return true;
+                }
+            }
+        }
+    }
+
     return false;
 }
 

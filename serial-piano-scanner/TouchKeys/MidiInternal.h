@@ -13,17 +13,18 @@
 
 class MidiOutput {
 public:
-	MidiOutput(const char* name) : deviceName_(name)
+	inline MidiOutput(const char* name) :
+			deviceName_(name)
 	{
 
 	}
 
-	MidiOutput()
+	inline MidiOutput()
 	{
 
 	}
 
-	~MidiOutput()
+	inline ~MidiOutput()
 	{
 
 	}
@@ -80,8 +81,58 @@ private:
 	const char* deviceName_;
 };
 
-class MidiInput {
+class MidiInputCallback;
 
+class MidiInput {
+public:
+	inline MidiInput()
+	{
+
+	}
+
+	inline ~MidiInput()
+	{
+
+	}
+
+	inline static std::vector<std::string> getDevices()
+	{
+		return std::vector<std::string>();
+	}
+
+	inline static MidiInput* openDevice(int deviceIndex, MidiInputCallback* callback)
+	{
+		return NULL;
+	}
+
+	inline void start()
+	{
+
+	}
+
+	inline void stop()
+	{
+
+	}
 };
 
+class MidiInputCallback {
+public:
+	inline virtual ~MidiInputCallback()
+	{
+
+	}
+
+	inline virtual void handleIncomingMidiMessage(MidiInput *source,
+			const MidiMessage &message)
+	{
+
+	}
+
+	inline virtual void handlePartialSysexMessage(MidiInput *source,
+			const uint8_t *messageData, int numBytesSoFar, double timestamp)
+	{
+
+	}
+};
 #endif /* TOUCHKEYS_MIDIINTERNAL_H_ */

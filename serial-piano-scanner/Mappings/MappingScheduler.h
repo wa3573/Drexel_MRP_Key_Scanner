@@ -135,6 +135,8 @@ private:
     };
     
 public:
+    typedef void* (MappingScheduler::*MappingSchedulerPtr)(void);
+
 	// ***** Constructor *****
 	//
 	// Note: This class is not copy-constructable.
@@ -158,8 +160,10 @@ public:
     
 	void startThread()
 	{
+		thread_function_ptr_t p = (thread_function_ptr_t)&MappingScheduler::run;
+
 		int ret1 = pthread_create(getPthread(), NULL,
-				(thread_function_ptr_t) &MappingScheduler::run, (void*) this);
+				p, (void*) this);
 		if (ret1) {
 			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
 		} else {

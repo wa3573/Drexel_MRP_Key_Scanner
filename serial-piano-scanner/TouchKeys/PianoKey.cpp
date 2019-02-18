@@ -25,6 +25,7 @@
 #include "PianoKey.h"
 #include "../Mappings/MappingFactory.h"
 #include "PianoKeyboard.h"
+#include "MidiInternal.h"
 
 #undef TOUCHKEYS_LEGACY_OSC
 
@@ -96,12 +97,12 @@ void PianoKey::reset() {
 void PianoKey::insertSample(key_position pos, timestamp_type ts) {
     positionBuffer_.insert(pos, ts);
     
-    if((timestamp_diff_type)ts - (timestamp_diff_type)timeOfLastGuiUpdate_ > kPianoKeyGuiUpdateInterval) {
-        timeOfLastGuiUpdate_ = ts;
-//        if(keyboard_.gui() != 0) {
-//            keyboard_.gui()->setAnalogValueForKey(noteNumber_, pos);
-//        }
-    }
+//    if((timestamp_diff_type)ts - (timestamp_diff_type)timeOfLastGuiUpdate_ > kPianoKeyGuiUpdateInterval) {
+//        timeOfLastGuiUpdate_ = ts;
+////        if(keyboard_.gui() != 0) {
+////            keyboard_.gui()->setAnalogValueForKey(noteNumber_, pos);
+////        }
+//    }
     
     /*if((timestamp_diff_type)ts - (timestamp_diff_type)timeOfLastDebugPrint_ > 1.0) {
         timeOfLastDebugPrint_ = ts;
@@ -153,7 +154,7 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
 	ScopedLock sl(stateMutex_);
 	
 	if(who == &idleDetector_) {
-		//std::cout << "Key " << noteNumber_ << ": IdleDetector says: " << idleDetector_.latest() << std::endl;
+//		std::cout << "Key " << noteNumber_ << ": IdleDetector says: " << idleDetector_.latest() << std::endl;
 		
 		if(idleDetector_.latest() == kIdleDetectorIdle) {
             cout << "Key " << noteNumber_ << " --> Idle\n";
@@ -189,13 +190,13 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
             
             // Allocate a new mapping that converts key position gestures to sound
             // control messages. TODO: how do we handle this with the TouchKey data too?
-            //MRPMapping *mapping = new MRPMapping(keyboard_, noteNumber_, &touchBuffer_,
-            //                                   &positionBuffer_, &positionTracker_);
-            //MIDIKeyPositionMapping *mapping = new MIDIKeyPositionMapping(keyboard_, noteNumber_, &touchBuffer_,
-            //                                                             &positionBuffer_, &positionTracker_);
-            //keyboard_.addMapping(noteNumber_, mapping);
-            //mapping->setPercussivenessMIDIChannel(1);
-            //mapping->engage();
+//            MRPMapping *mapping = new MRPMapping(keyboard_, noteNumber_, &touchBuffer_,
+//                                               &positionBuffer_, &positionTracker_);
+//            MIDIKeyPositionMapping *mapping = new MIDIKeyPositionMapping(keyboard_, noteNumber_, &touchBuffer_,
+//                                                                         &positionBuffer_, &positionTracker_);
+//            keyboard_.addMapping(noteNumber_, mapping);
+//            mapping->setPercussivenessMIDIChannel(1);
+//            mapping->engage();
 		}
 	}
     else if(who == &positionTracker_ && !positionTracker_.empty()) {
@@ -328,9 +329,11 @@ void PianoKey::midiNoteOn(MidiKeyboardSegment *who, int velocity, int channel, t
 		touchIsWaiting_ = true;
 		touchWaitingTimestamp_ = keyboard_.schedulerCurrentTimestamp() + touchTimeoutInterval_;
 		// TODO: schedule timeout
-		//		keyboard_.scheduleEvent(this,
-//								boost::bind(&PianoKey::touchTimedOut, this),
-//								touchWaitingTimestamp_);
+
+//		boost::function<double(PianoKey*)> f = boost::bind(&PianoKey::touchTimedOut, this);
+//		keyboard_.scheduleEvent(this,
+//						(double*)f,
+//						touchWaitingTimestamp_);
 	}
 }
 
@@ -405,6 +408,9 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 	
 	keyboard_.sendMessage("/midi/noteon", "iii", noteNumber_, midiChannel_, midiVelocity_, LO_ARGS_END);
     
+
+
+
 //    // Update GUI if it is available. TODO: fix the ordering problem for real!
 //	if(keyboard_.gui() != 0 && midiNoteIsOn_) {
 //		keyboard_.gui()->setMidiActive(noteNumber_, true);
@@ -454,6 +460,8 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 	// First check if the key was previously inactive.  If so, send a message
 	// that the touch has begun
 	if(!touchIsActive_) {
+		std::cout << "Frame inserted from noteNumber " << noteNumber_ << std::endl;
+
 		keyboard_.sendMessage("/touchkeys/on", "i", noteNumber_, LO_ARGS_END);
         keyboard_.tellAllMappingFactoriesTouchBegan(noteNumber_, midiNoteIsOn_, (idleDetector_.idleState() == kIdleDetectorActive),
                                                     &touchBuffer_, &positionBuffer_, &positionTracker_);

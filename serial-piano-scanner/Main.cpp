@@ -90,16 +90,16 @@ void list_devices(MainApplicationController& controller)
 //        }
 //    }
     
-//    cerr << "\nMIDI output devices: \n";
-//    if(midiOutputDevices.empty())
-//        cerr << "  [none found]\n";
-//    else {
-//        for(std::vector<std::pair<int, std::string> >::iterator it = midiOutputDevices.begin();
-//            it != midiOutputDevices.end();
-//            ++it) {
-//            cerr << "  " << it->first << ": " << it->second << "\n";
-//        }
-//    }
+    cerr << "\nMIDI output devices: \n";
+    if(midiOutputDevices.empty())
+        cerr << "  [none found]\n";
+    else {
+        for(std::vector<std::pair<int, std::string> >::iterator it = midiOutputDevices.begin();
+            it != midiOutputDevices.end();
+            ++it) {
+            cerr << "  " << it->first << ": " << it->second << "\n";
+        }
+    }
 }
 
 int main (int argc, char* argv[])
@@ -114,9 +114,33 @@ int main (int argc, char* argv[])
     bool autoopenMidiOut = false, autoopenMidiIn = false;
     int oscInputPort = kDefaultOscReceivePort;
     string touchkeysDevicePath;
-    MidiOutput::setMidiQueue(gMidiQueue);
-    
+    string midiOutputName = "hw:0:0:0";
+    string oscHost = "127.0.0.1";
+    string oscPort = "8000";
+    size_t midiQueueSize = 250;
+
     printf("Touchkeys Bela Port v0.02\n");
+
+    printf("Setting MidiQueue and resizing to %lu items\n", midiQueueSize);
+    MidiOutput::setMidiQueue(gMidiQueue);
+    gMidiQueue->resize(midiQueueSize);
+    
+    printf("Setting MidiOutput to '%s'\n", midiOutputName.c_str());
+    MidiOutput::midiOutput_ = MidiOutput("hw:0:0:0");
+
+    printf("Setting Midi Input Mode to Standalone\n");
+    controller.disablePrimaryMIDIInputPort();
+    controller.midiTouchkeysStandaloneModeEnable();
+
+    printf("Setting Midi Output Mode to polyphonic and associating output controller\n");
+    controller.midiSegmentsSetMode(1);
+    controller.midiSegmentsSetMidiOutputController();
+
+
+    printf("Setting OSC host to %s:%s and enabling output", oscHost.c_str(), oscPort.c_str());
+    controller.oscTransmitClearAddresses();
+    controller.oscTransmitAddAddress(oscHost.c_str(), oscPort.c_str());
+    controller.oscTransmitSetEnabled(true);
 
 	while((ch = getopt_long(argc, argv, "hli:o:t:VP:", long_options, &option_index)) != -1)
 	{

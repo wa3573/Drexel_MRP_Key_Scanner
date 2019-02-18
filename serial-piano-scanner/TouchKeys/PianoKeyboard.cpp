@@ -25,6 +25,7 @@
 
 #include "PianoKeyboard.h"
 #include "TouchkeyDevice.h"
+#include "../Utility/CriticalSection.h"
 #include "../Mappings/Mapping.h"
 #include "MidiKeyboardSegment.h"
 #include "MidiOutputController.h"
@@ -107,9 +108,11 @@ void PianoKeyboard::setKeyboardGUIRange(int lowest, int highest) {
 // Send a message by OSC (and potentially by other means depending on who's listening)
 
 void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
-	//ScopedReadLock sl(oscListenerMutex_);
+//	ScopedReadLock sl(oscListenerMutex_);
 
-    //cout << "sendMessage: " << path << endl;
+//	ScopedLock sl(oscListenerMutex_);
+
+    cout << "sendMessage: " << path << endl;
     
 	// Initialize variable argument list for reading
 	va_list v;
@@ -125,8 +128,8 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 	// Lock the mutex so the list of listeners doesn't change midway through
 
     updateListeners();
-    
-	oscListenerMutex_.enter();
+//
+//	oscListenerMutex_.enter();
     //oscListenerMutex_.enterRead();
 
 	// Now remove the global prefix and compare the rest of the message to the registered handlers.
@@ -146,7 +149,7 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
         numHandlers++; // DEBUG
 	}
     //oscListenerMutex_.exitRead();
-    oscListenerMutex_.exit();
+//    oscListenerMutex_.exit();
 	
     //if(timeInHandlers > 1.0)
     //    cout << "sendMessage(): timeInHandlers = " << timeInHandlers << " for " << numHandlers << " handlers (msg " << path << ")\n";

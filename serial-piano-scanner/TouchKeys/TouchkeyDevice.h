@@ -296,6 +296,7 @@ public:
 //	// ***** Run Loop Functions *****
     class ledUpdateLoop : public Thread {
     public:
+    	typedef void* (ledUpdateLoop::*ledUpdateLoopPtr)(void);
     	ledUpdateLoop() : Thread("ledUpdateLoop")
     	{
     	}
@@ -312,7 +313,8 @@ public:
     	{
     		this->enclosing = enclosing;
 
-    		int ret1 = pthread_create(getPthread(), NULL, (thread_function_ptr_t)&ledUpdateLoop::run, (void*) this);
+    		thread_function_ptr_t p = (thread_function_ptr_t)&ledUpdateLoop::run;
+    		int ret1 = pthread_create(getPthread(), NULL, p, (void*) this);
     		if (ret1) {
     			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
     		} else {
@@ -325,6 +327,7 @@ public:
 
     class runLoop : public Thread {
     public:
+    	typedef void* (runLoop::*runLoopPtr)(void);
     	runLoop() : Thread("runLoop")
     	{
     	}
@@ -333,7 +336,8 @@ public:
     	{
     		this->enclosing = enclosing;
 
-    		int ret1 = pthread_create(getPthread(), NULL, (thread_function_ptr_t)&runLoop::run, (void*) this);
+    		thread_function_ptr_t p = (thread_function_ptr_t)&runLoop::run;
+    		int ret1 = pthread_create(getPthread(), NULL, p, (void*) this);
     		if (ret1) {
     			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
     		} else {
@@ -355,15 +359,17 @@ public:
 
     class rawDataRunLoop : public Thread {
     public:
+    	typedef void* (rawDataRunLoop::*rawDataRunLoopPtr)(void);
     	rawDataRunLoop() : Thread("rawDataRunLoop")
     	{
     	}
 
     	void startThread(TouchkeyDevice* enclosing)
     	{
+    		thread_function_ptr_t p = (thread_function_ptr_t)&rawDataRunLoop::run;
     		this->enclosing = enclosing;
 
-    		int ret1 = pthread_create(getPthread(), NULL, (thread_function_ptr_t)&rawDataRunLoop::run, (void*) this);
+    		int ret1 = pthread_create(getPthread(), NULL, p, (void*) this);
     		if (ret1) {
     			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
     		} else {
