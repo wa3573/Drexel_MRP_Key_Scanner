@@ -267,6 +267,8 @@ public:
 	void calibrationAbort();
 	void calibrationClear();
 
+	void calibrationUpdateQuiescent();
+
 	bool calibrationSaveToFile(std::string const& filename);
 	bool calibrationLoadFromFile(std::string const& filename);
 

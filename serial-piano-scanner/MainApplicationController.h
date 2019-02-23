@@ -61,7 +61,7 @@ class KeyboardTesterDisplay;
 const char kDefaultOscTransmitHost[] = "127.0.0.1";
 const char kDefaultOscTransmitPort[] = "8000";
 const int kDefaultOscReceivePort = 8001;
-const int kCalibrationTimeSeconds = 15;
+
 
 
 class MainApplicationOSCController;
@@ -106,6 +106,7 @@ public:
     
     void startCalibration(int secondsToCalibrate);
     void finishCalibration();
+    void updateQuiescent();
 
     // Start/stop the TouchKeys data collection
     bool startTouchkeyDevice();
@@ -138,6 +139,8 @@ public:
     void touchkeyDeviceStopAutodetecting();
     bool touchkeyDeviceIsAutodetecting();
     
+    void touchkeyDeviceSetVerbosity(int verbose);
+
     // *** MIDI device methods ***
     
 //    // Return a list of IDs and paths to all available MIDI devices

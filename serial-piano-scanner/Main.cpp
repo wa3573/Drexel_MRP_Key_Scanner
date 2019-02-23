@@ -32,6 +32,9 @@
 bool programShouldStop_ = false;
 int gXenomaiInited = 0; // required by libbelaextra
 unsigned int gAuxiliaryTaskStackSize = 1 << 17; // required by libbelaextra
+const int kCalibrationTimeSeconds = 5;
+int gVerboseLevel = 0;
+
 MidiQueue* gMidiQueue = MidiQueue::get_instance();
 std::vector<std::string> MidiOutput::deviceNames_;
 MidiOutput MidiOutput::midiOutput_;
@@ -117,7 +120,7 @@ int main (int argc, char* argv[])
     string midiOutputName = "hw:0:0:0";
     string oscHost = "127.0.0.1";
     string oscPort = "8000";
-    size_t midiQueueSize = 250;
+    size_t midiQueueSize = 1;
 
     printf("Touchkeys Bela Port v0.02\n");
 
@@ -130,17 +133,32 @@ int main (int argc, char* argv[])
 
     printf("Setting Midi Input Mode to Standalone\n");
     controller.disablePrimaryMIDIInputPort();
-    controller.midiTouchkeysStandaloneModeEnable();
+    controller.disableAllMIDIOutputPorts();
+//    controller.midiTouchkeysStandaloneModeEnable();
 
-    printf("Setting Midi Output Mode to polyphonic and associating output controller\n");
-    controller.midiSegmentsSetMode(1);
-    controller.midiSegmentsSetMidiOutputController();
+    printf("Setting lowest midi note to 0\n");
+    controller.touchkeyDeviceSetLowestMidiNote(0);
+
+    printf("Setting verbose level to %d\n", gVerboseLevel);
+    controller.touchkeyDeviceSetVerbosity(gVerboseLevel);
+
+    printf("Updating queiscent values\n");
+    controller.updateQuiescent();
+
+    printf("Calibrating for %d seconds\n", kCalibrationTimeSeconds);
+    controller.startCalibration(kCalibrationTimeSeconds);
+    controller.finishCalibration();
+
+//    printf("Setting Midi Output Mode to polyphonic and associating output controller\n");
+//    controller.midiSegmentsSetMode(0);
+//    controller.midiSegmentsSetMidiOutputController();
 
 
     printf("Setting OSC host to %s:%s and enabling output", oscHost.c_str(), oscPort.c_str());
     controller.oscTransmitClearAddresses();
     controller.oscTransmitAddAddress(oscHost.c_str(), oscPort.c_str());
     controller.oscTransmitSetEnabled(true);
+
 
 	while((ch = getopt_long(argc, argv, "hli:o:t:VP:", long_options, &option_index)) != -1)
 	{

@@ -29,8 +29,10 @@
 //
 #include "MappingScheduler.h"
 #include "Mapping.h"
+#include "MRPMapping.h"
 
 #undef DEBUG_MAPPING_SCHEDULER
+//#define DEBUG_MAPPING_SCHEDULER
 
 using std::cout;
 
@@ -58,7 +60,7 @@ MappingScheduler::~MappingScheduler() {
     while(actionsNow_.Consume(nextAction)) {
         if(nextAction.who != 0 && nextAction.action == kActionUnregisterAndDelete) {
 #ifdef DEBUG_MAPPING_SCHEDULER
-            std::cout << "~MappingScheduler(): Deleting mapping " << who << " (actionsNow)\n";
+            std::cout << "~MappingScheduler(): Deleting mapping " << nextAction.who << " (actionsNow)\n";
 #endif
             delete nextAction.who;
         }
@@ -69,7 +71,7 @@ MappingScheduler::~MappingScheduler() {
 
         if(nextAction.who != 0 && nextAction.action == kActionUnregisterAndDelete) {
 #ifdef DEBUG_MAPPING_SCHEDULER
-            std::cout << "~MappingScheduler(): Deleting mapping " << who << " (actionsLater)\n";
+            std::cout << "~MappingScheduler(): Deleting mapping " << nextAction.who << " (actionsLater)\n";
 #endif
             delete nextAction.who;
         }

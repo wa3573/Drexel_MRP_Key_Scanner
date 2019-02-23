@@ -24,8 +24,11 @@
 
 #include "PianoKey.h"
 #include "../Mappings/MappingFactory.h"
+//#include "../Mappings/MIDIKeyPositionMapping.h"
+
 #include "PianoKeyboard.h"
 #include "MidiInternal.h"
+#include "../Mappings/MRPMapping.h"
 
 #undef TOUCHKEYS_LEGACY_OSC
 
@@ -46,6 +49,11 @@ PianoKey::PianoKey(PianoKeyboard& keyboard, int noteNumber, int bufferLength)
 {    
 	enable();
 	registerForTrigger(&idleDetector_);
+    mrpMapping_ = new MRPMapping(keyboard_, NULL, noteNumber_, &touchBuffer_,
+                                       &positionBuffer_, &positionTracker_);
+//            MIDIKeyPositionMapping *mapping = new MIDIKeyPositionMapping(keyboard_, noteNumber_, &touchBuffer_,
+//                                                                         &positionBuffer_, &positionTracker_);
+    keyboard_.addMapping(noteNumber_, mrpMapping_ );
 }
 
 // Destructor
@@ -79,7 +87,9 @@ void PianoKey::enable() {
 	if(state_ != kKeyStateDisabled) {
 		return;
 	}
-	changeState(kKeyStateUnknown);	
+	changeState(kKeyStateUnknown);
+
+
 }
 
 // Reset the key to its default state
@@ -163,13 +173,14 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
                                                            &touchBuffer_, &positionBuffer_, &positionTracker_);
             
             // Remove any mapping present on this key
-            //keyboard_.removeMapping(noteNumber_);
+//            keyboard_.removeMapping(noteNumber_);
+            mrpMapping_->disengage();
             
             positionTracker_.disengage();
             unregisterForTrigger(&positionTracker_);
 			terminateActivity();
 			changeState(kKeyStateIdle);
-            keyboard_.setKeyLEDColorRGB(noteNumber_, 0, 0, 0);
+//            keyboard_.setKeyLEDColorRGB(noteNumber_, 0, 0, 0);
 		}
 		else if(idleDetector_.latest() == kIdleDetectorActive && state_ != kKeyStateUnknown) {
             cout << "Key " << noteNumber_ << " --> Active\n";
@@ -181,7 +192,7 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
 			// TODO: set up min/max listener
 			// TODO: may want to change the parameters on the idleDetector
 			changeState(kKeyStateActive);
-            //keyboard_.setKeyLEDColorRGB(noteNumber_, 1.0, 0.0, 0);
+//            keyboard_.setKeyLEDColorRGB(noteNumber_, 1.0, 0.0, 0);
             
             // Engage the position tracker that handles specific measurement of key states
             registerForTrigger(&positionTracker_);
@@ -190,13 +201,11 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
             
             // Allocate a new mapping that converts key position gestures to sound
             // control messages. TODO: how do we handle this with the TouchKey data too?
-//            MRPMapping *mapping = new MRPMapping(keyboard_, noteNumber_, &touchBuffer_,
-//                                               &positionBuffer_, &positionTracker_);
-//            MIDIKeyPositionMapping *mapping = new MIDIKeyPositionMapping(keyboard_, noteNumber_, &touchBuffer_,
-//                                                                         &positionBuffer_, &positionTracker_);
-//            keyboard_.addMapping(noteNumber_, mapping);
+
+            mrpMapping_->reset();
+            mrpMapping_->engage();
 //            mapping->setPercussivenessMIDIChannel(1);
-//            mapping->engage();
+
 		}
 	}
     else if(who == &positionTracker_ && !positionTracker_.empty()) {

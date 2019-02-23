@@ -693,6 +693,13 @@ void TouchkeyDevice::calibrationClear()
 	isCalibrated_ = false;
 }
 
+void TouchkeyDevice::calibrationUpdateQuiescent()
+{
+	for (int i = 0; i < keyCalibratorsLength_; i++) {
+		keyCalibrators_[i]->calibrationUpdateQuiescent();
+	}
+}
+
 // TODO: calibrationSaveToFile()
 // Save calibration data to a file
 bool TouchkeyDevice::calibrationSaveToFile(std::string const& filename)

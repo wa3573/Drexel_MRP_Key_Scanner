@@ -34,7 +34,7 @@
 // Strings for pitch classes (two forms for sharps), for static methods
 const char* kNoteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 const char* kNoteNamesAlternate[12] = {"C", "Db", "D ", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"};
-int gVerboseLevel = 1;
+
 
 MainApplicationController::MainApplicationController()
   : midiInputController_(keyboardController_),
@@ -193,10 +193,6 @@ bool MainApplicationController::touchkeyDeviceStartupSequence(const char * path)
 #endif
     
 
-    // Step 3.5: do calibration for a set period of time
-    startCalibration(kCalibrationTimeSeconds);
-    finishCalibration();
-
     // Step 4: start data collection from the device
     if(!startTouchkeyDevice()) {
         touchkeyErrorMessage_ = "Failed to start";
@@ -210,9 +206,6 @@ bool MainApplicationController::touchkeyDeviceStartupSequence(const char * path)
     // Success!
     touchkeyErrorMessage_ = "";
     touchkeyErrorOccurred_ = false;
-    
-    std::cout << "Setting verbose level to " << gVerboseLevel << std::endl;
-    touchkeyController_.setVerboseLevel(gVerboseLevel);
 
 #ifndef TOUCHKEYS_NO_GUI
     showKeyboardDisplayWindow();
@@ -355,11 +348,16 @@ bool MainApplicationController::touchkeyDeviceCheckForPresence(int waitMilliseco
     return true;
 }
 
+void MainApplicationController::touchkeyDeviceSetVerbosity(int verbose)
+{
+	touchkeyController_.setVerboseLevel(verbose);
+}
+
 void MainApplicationController::startCalibration(int secondsToCalibrate)
 {
 
 	std::cout << "Running calibration for " << secondsToCalibrate << " seconds..." << std::endl;
-	touchkeyController_.calibrationStart(0);
+	touchkeyController_.calibrationStart(NULL);
 
 	usleep(secondsToCalibrate * 1E6);
 }
@@ -369,6 +367,11 @@ void MainApplicationController::finishCalibration()
 	touchkeyController_.calibrationFinish();
 
 	std::cout << "Calibration finished" << std::endl;
+}
+
+void MainApplicationController::updateQuiescent()
+{
+	touchkeyController_.calibrationUpdateQuiescent();
 }
 
 // Start/stop the TouchKeys data collection

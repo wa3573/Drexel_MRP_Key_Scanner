@@ -38,6 +38,7 @@
 //#include "MidiKeyboardSegment.h"
 #include "../Utility/Scheduler.h"
 #include "../Utility/IIRFilter.h"
+//#include "../Mappings/MRPMapping.h"
 
 const unsigned int kPianoKeyStateBufferLength = 20;	// How many previous states to save
 const unsigned int kPianoKeyIdleBufferLength = 10;  // How many idle/active transitions to save
@@ -47,6 +48,8 @@ const key_position kPianoKeyDefaultIdlePositionThreshold = scale_key_position(.0
 const int kPianoKeyDefaultIdleCounter = 20;
 const timestamp_diff_type kPianoKeyDefaultTouchTimeoutInterval = microseconds_to_timestamp(0); // was 20000
 const timestamp_diff_type kPianoKeyGuiUpdateInterval = microseconds_to_timestamp(15000); // How frequently to update the position display
+
+class MRPMapping;
 
 // Possible key states
 enum {
@@ -222,6 +225,8 @@ private:
     MidiKeyboardSegment *touchWaitingSource_;  // Who we're waiting from a touch for
 	timestamp_type touchWaitingTimestamp_;			// When the timeout will occur
 	timestamp_diff_type touchTimeoutInterval_;		// How long to wait for a touch before timing out
+	MRPMapping* mrpMapping_;
+
 };
 
 #endif /* KEYCONTROL_PIANOKEY_H */
