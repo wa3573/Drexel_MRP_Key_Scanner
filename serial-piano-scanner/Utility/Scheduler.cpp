@@ -138,6 +138,12 @@ void Scheduler::clear() {
 	// No need to signal the condition variable.  If the thread is waiting, it can keep waiting.
 }
 
+void* Scheduler::run_static(void* args) {
+	Scheduler* scheduler = (Scheduler*) args;
+	scheduler->run();
+
+	return NULL;
+}
 // This function runs in its own thread (from the Juce parent class).  It looks for the next event
 // in the queue.  When its time arrives, the event is executed and removed from the queue.
 // When the queue is empty, or the next event has not arrived yet, the thread sleeps.

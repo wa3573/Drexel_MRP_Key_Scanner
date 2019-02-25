@@ -156,14 +156,14 @@ public:
 	bool isRunning() { return isRunning_; }
 	
     // The main Juce::Thread run loop
+	static void* run_static(void* args);
 	void* run();
     
 	void startThread()
 	{
-		thread_function_ptr_t p = (thread_function_ptr_t)&MappingScheduler::run;
+//		thread_function_ptr_t p = (thread_function_ptr_t)&MappingScheduler::run;
 
-		int ret1 = pthread_create(getPthread(), NULL,
-				p, (void*) this);
+		int ret1 = pthread_create(getPthread(), NULL, run_static, (void*) this);
 		if (ret1) {
 			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
 		} else {

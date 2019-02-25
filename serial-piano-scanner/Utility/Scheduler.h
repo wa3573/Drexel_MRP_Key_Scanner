@@ -94,12 +94,13 @@ public:
 	//static void staticRunLoop(Scheduler* sch, timestamp_type starting_timestamp) { sch->runLoop(starting_timestamp); }
 
 	// The main Thread run loop
+	static void* run_static(void* args);
 	void* run();
 
 	void startThread()
 	{
-		thread_function_ptr_t p = (thread_function_ptr_t)&Scheduler::run;
-		int ret1 = pthread_create(getPthread(), NULL, p, (void*) this);
+//		thread_function_ptr_t p = (thread_function_ptr_t)&Scheduler::run_static;
+		int ret1 = pthread_create(getPthread(), NULL, run_static, (void*) this);
 		if (ret1) {
 			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
 		} else {

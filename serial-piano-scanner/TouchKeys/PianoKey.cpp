@@ -300,7 +300,7 @@ void PianoKey::terminateActivity() {
 	
 }
 
-#pragma mark MIDI Methods
+//#pragma mark MIDI Methods
 // ***** MIDI Methods *****
 
 // Note On message from associated MIDI keyboard: record channel we should use
@@ -412,8 +412,9 @@ void PianoKey::midiNoteOnHelper(MidiKeyboardSegment *who) {
 	}
     
     // Before the note starts, inform the mapping factory in case there are default values to be sent out.
-    if(keyboard_.mappingFactory(who) != 0)
+    if(keyboard_.mappingFactory(who) != 0) {
         keyboard_.mappingFactory(who)->noteWillBegin(noteNumber_, midiChannel_, midiVelocity_);
+    }
 	
 	keyboard_.sendMessage("/midi/noteon", "iii", noteNumber_, midiChannel_, midiVelocity_, LO_ARGS_END);
     
@@ -431,9 +432,9 @@ void PianoKey::midiNoteOff(MidiKeyboardSegment *who, timestamp_type timestamp) {
 	midiNoteIsOn_ = false;
 	midiOffTimestamp_ = timestamp;
     
-    if(keyboard_.mappingFactory(who) != 0)
+    if(keyboard_.mappingFactory(who) != 0) {
         keyboard_.mappingFactory(who)->midiNoteOff(noteNumber_, touchIsActive_, (idleDetector_.idleState() == kIdleDetectorActive),
-                                               &touchBuffer_, &positionBuffer_, &positionTracker_);
+                                               &touchBuffer_, &positionBuffer_, &positionTracker_); }
     
 	keyboard_.sendMessage("/midi/noteoff", "ii", noteNumber_, midiChannel_, LO_ARGS_END);
     
@@ -456,15 +457,15 @@ void PianoKey::midiAftertouch(MidiKeyboardSegment *who, int value, timestamp_typ
 	keyboard_.sendMessage("/midi/aftertouch-poly", "iii", noteNumber_, midiChannel_, value, LO_ARGS_END);
 }
 
-#pragma mark Touch Methods
+//#pragma mark Touch Methods
 // ***** Touch Methods *****
 
 // Insert a new frame of touchkey data, making any necessary status changes
 // (i.e. touch active, possibly changing number of active touches)
 
 void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestamp) {
-    if(!touchSensorsArePresent_)
-        return;
+    if(!touchSensorsArePresent_) {
+        return; }
 
 	// First check if the key was previously inactive.  If so, send a message
 	// that the touch has begun

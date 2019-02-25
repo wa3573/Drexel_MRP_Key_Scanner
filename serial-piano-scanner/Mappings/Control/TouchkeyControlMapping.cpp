@@ -286,7 +286,7 @@ void TouchkeyControlMapping::triggerReceived(TriggerSource* who, timestamp_type 
 timestamp_type TouchkeyControlMapping::performMapping() {
     //ScopedLock sl(rawValueAccessMutex_);
     
-    timestamp_type currentTimestamp = keyboard_.schedulerCurrentTimestamp();
+//    timestamp_type currentTimestamp = keyboard_.schedulerCurrentTimestamp();
     bool newSamplePresent = false;
     
     // Go through the filtered distance samples that are remaining to process.

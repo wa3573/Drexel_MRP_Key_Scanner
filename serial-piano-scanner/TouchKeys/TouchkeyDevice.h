@@ -303,6 +303,14 @@ public:
     	{
     	}
 
+    	static void* run_static(void* args)
+    	{
+    		ledUpdateLoop* l = (ledUpdateLoop*) args;
+    		l->run();
+
+    		return NULL;
+    	}
+
     	void* run()
     	{
     		enclosing->ledUpdateLoopFunction(this);
@@ -315,8 +323,8 @@ public:
     	{
     		this->enclosing = enclosing;
 
-    		thread_function_ptr_t p = (thread_function_ptr_t)&ledUpdateLoop::run;
-    		int ret1 = pthread_create(getPthread(), NULL, p, (void*) this);
+//    		thread_function_ptr_t p = (thread_function_ptr_t)&ledUpdateLoop::run;
+    		int ret1 = pthread_create(getPthread(), NULL, run_static, (void*) this);
     		if (ret1) {
     			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
     		} else {
@@ -338,13 +346,20 @@ public:
     	{
     		this->enclosing = enclosing;
 
-    		thread_function_ptr_t p = (thread_function_ptr_t)&runLoop::run;
-    		int ret1 = pthread_create(getPthread(), NULL, p, (void*) this);
+//    		thread_function_ptr_t p = (thread_function_ptr_t)&runLoop::run;
+    		int ret1 = pthread_create(getPthread(), NULL, run_static, (void*) this);
     		if (ret1) {
     			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
     		} else {
     			init();
     		}
+    	}
+
+    	static void* run_static(void* args)
+    	{
+    		runLoop* l = (runLoop*) args;
+    		l->run();
+    		return NULL;
     	}
 
     	void* run()
@@ -368,15 +383,22 @@ public:
 
     	void startThread(TouchkeyDevice* enclosing)
     	{
-    		thread_function_ptr_t p = (thread_function_ptr_t)&rawDataRunLoop::run;
+//    		thread_function_ptr_t p = (thread_function_ptr_t)&rawDataRunLoop::run;
     		this->enclosing = enclosing;
 
-    		int ret1 = pthread_create(getPthread(), NULL, p, (void*) this);
+    		int ret1 = pthread_create(getPthread(), NULL, run_static, (void*) this);
     		if (ret1) {
     			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
     		} else {
     			init();
     		}
+    	}
+
+    	static void* run_static(void* args)
+    	{
+    		rawDataRunLoop* l = (rawDataRunLoop*) args;
+    		l->run();
+    		return NULL;
     	}
 
     	void* run()

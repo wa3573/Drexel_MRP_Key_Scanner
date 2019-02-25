@@ -465,7 +465,7 @@ OscMessage* MidiKeyboardSegment::oscControlMethod(const char *path, const char *
         std::string subpath(&path[9]);
         
         int separatorLoc = subpath.find_first_of('/');
-        if(separatorLoc == std::string::npos || separatorLoc == subpath.length() - 1) {
+        if(separatorLoc == (int) std::string::npos || separatorLoc == (int) subpath.length() - 1) {
             // Malformed input (no slash or it's the last character): ignore
             return 0;
         }
@@ -825,10 +825,10 @@ void MidiKeyboardSegment::addMappingFactory(MappingFactory* factory, bool autoGe
         while(!isUnique) {
             isUnique = true;
             
-            for(int i = 0; i < mappingFactories_.size(); i++) {
+            for(unsigned int i = 0; i < mappingFactories_.size(); i++) {
                 std::string compareName = mappingFactories_[i]->getName();
                 int lastSeparator = compareName.find_last_of('/');
-                if((lastSeparator != std::string::npos) && (lastSeparator < compareName.size() - 1))
+                if((lastSeparator != (int) std::string::npos) && (lastSeparator < (int) compareName.size() - 1))
                     compareName = compareName.substr(lastSeparator + 1);
                 
                 if(name == compareName) {
@@ -1249,9 +1249,9 @@ void MidiKeyboardSegment::modePolyphonicNoteOn(unsigned char note, unsigned char
                 // in the pedal but not actively held. This is true whether or not
                 // voice stealing is enabled.
                 int oldNote = oldestNoteInPedal();
-                int oldChannel = -1;
-                if(retransmitChannelForNote_.count(oldNote) > 0)
-                    oldChannel = retransmitChannelForNote_[oldNote];
+//                int oldChannel = -1;
+//                if(retransmitChannelForNote_.count(oldNote) > 0)
+//                    oldChannel = retransmitChannelForNote_[oldNote];
                 if(oldNote >= 0) {
 #ifdef DEBUG_MIDI_KEYBOARD_SEGMENT
                     cout << "Stealing note " << oldNote << " from pedal for note " << (int)note << endl;
@@ -1265,9 +1265,9 @@ void MidiKeyboardSegment::modePolyphonicNoteOn(unsigned char note, unsigned char
                 if(useVoiceStealing_) {
                     // Find the voice with the oldest timestamp and turn it off
                     int oldNote = oldestNote();
-                    int oldChannel = -1;
-                    if(retransmitChannelForNote_.count(oldNote) > 0)
-                        oldChannel = retransmitChannelForNote_[oldNote];
+//                    int oldChannel = -1;
+//                    if(retransmitChannelForNote_.count(oldNote) > 0)
+//                        oldChannel = retransmitChannelForNote_[oldNote];
                     if(oldNote < 0) {
                         // Shouldn't happen...
 #ifdef DEBUG_MIDI_KEYBOARD_SEGMENT
@@ -1392,8 +1392,9 @@ void MidiKeyboardSegment::modePolyphonicMPENoteOnCallback(const char *path, cons
     // If there are multiple segments of the keyboard active, there may be OSC
     // messages generated from keys that didn't come from us. Don't grab them by mistake.
     // FIXME: the real fix here is to include a source ID with the OSC message
-    if(!respondsToNote(midiNote))
+    if(!respondsToNote(midiNote)) {
         return;
+    }
 	
 	// Send the Note On message to the correct channel
 	if(midiOutputController_ != 0) {

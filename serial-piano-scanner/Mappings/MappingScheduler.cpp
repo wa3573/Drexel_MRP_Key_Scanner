@@ -203,6 +203,12 @@ void MappingScheduler::unregisterAndDelete(Mapping *who) {
     waitableEvent_.signal();
 }
 
+void* MappingScheduler::run_static(void* args) {
+	MappingScheduler* s = (MappingScheduler*) args;
+	s->run();
+
+	return NULL;
+}
 // This function runs in its own thread (from the Juce::Thread parent class). Every time
 // it is signaled, it executes all the Mapping actions in the actionsNow_ category and then
 // looks for the next delayed action.
@@ -302,6 +308,8 @@ void* MappingScheduler::run() {
 
         waitableEvent_.reset();             // Clear the signal
     }
+
+    return NULL;
 }
 
 // Perform a mapping action: either execute the mapping or unschedule it,

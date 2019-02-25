@@ -195,13 +195,13 @@ private:
             typename boost::circular_buffer<DataType>::reverse_iterator rit = inputHistory_->rbegin();
             
             // Feedforward part
-            for(int i = 1; i < bCoefficients_.size() && rit != inputHistory_->rend(); i++) {
+            for(unsigned int i = 1; i < bCoefficients_.size() && rit != inputHistory_->rend(); i++) {
                 result += *rit * bCoefficients_[i];
                 rit++;
             }
             // Feedback part
             rit = outputHistory_->rbegin();
-            for(int i = 0; i < aCoefficients_.size() && rit != outputHistory_->rend(); i++) {
+            for(unsigned int i = 0; i < aCoefficients_.size() && rit != outputHistory_->rend(); i++) {
                 result -= *rit * aCoefficients_[i];
                 rit++;
             }

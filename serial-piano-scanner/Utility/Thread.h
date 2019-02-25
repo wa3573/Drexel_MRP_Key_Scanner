@@ -79,15 +79,23 @@ public:
 
 	void startThread()
 	{
-		thread_function_ptr_t p = (thread_function_ptr_t)&ExampleThread::run;
+//		thread_function_ptr_t p = (thread_function_ptr_t)&ExampleThread::run;
 		int ret1 = pthread_create(getPthread(), NULL,
 //				(thread_function_ptr_t) &ExampleThread::run, (void*) this);
-				p, (void*) this);
+				run_static, (void*) this);
 		if (ret1) {
 			fprintf(stderr, "Error - pthread_create() return code: %d\n", ret1);
 		} else {
 			init();
 		}
+	}
+
+	inline static void* run_static(void* args)
+	{
+		ExampleThread* t = (ExampleThread*) args;
+		t->run();
+
+		return NULL;
 	}
 
 	inline void* run()
