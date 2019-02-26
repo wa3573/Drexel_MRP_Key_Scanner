@@ -169,7 +169,7 @@ public:
         if(!this->empty())
             return this->latest();
         //std::cout << "IIRFilterNode: empty\n";
-        return missing_value<DataType>::missing();
+        return missingValue_;
     }
 
 	// ***** Evaluator *****
@@ -236,6 +236,7 @@ private:
     
 	Node<DataType>& input_;
 	bool autoCalculate_;        // Whether we're automatically calculating new output values
+	DataType missingValue_ = DataType();
 
     // Variables below are for filter calculation. We need to hold the past input samples
     // ourselves because we can't consistently count on enough samples in the source buffer.

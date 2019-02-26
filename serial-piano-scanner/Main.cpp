@@ -32,7 +32,7 @@
 bool programShouldStop_ = false;
 int gXenomaiInited = 0; // required by libbelaextra
 unsigned int gAuxiliaryTaskStackSize = 1 << 17; // required by libbelaextra
-const int kCalibrationTimeSeconds = 5;
+const int kCalibrationTimeSeconds = 10;
 int gVerboseLevel = 0;
 
 MidiQueue* gMidiQueue = MidiQueue::get_instance();
@@ -117,10 +117,10 @@ int main (int argc, char* argv[])
     bool autoopenMidiOut = false, autoopenMidiIn = false;
     int oscInputPort = kDefaultOscReceivePort;
     string touchkeysDevicePath;
-    string midiOutputName = "hw:0:0:0";
-    string oscHost = "127.0.0.1";
-    string oscPort = "8000";
-    size_t midiQueueSize = 1;
+    string midiOutputName = "hw:0:0:0"; // Legacy MIDI
+    string oscHost = "127.0.0.1"; // Address to transmit OSC messages to
+    string oscPort = "8001"; // Port for that address
+    size_t midiQueueSize = 1; // Will likely be unused
 
     printf("Touchkeys Bela Port v0.02\n");
 
@@ -142,17 +142,15 @@ int main (int argc, char* argv[])
     printf("Setting verbose level to %d\n", gVerboseLevel);
     controller.touchkeyDeviceSetVerbosity(gVerboseLevel);
 
-    printf("Updating queiscent values\n");
-    controller.updateQuiescent();
-
     printf("Calibrating for %d seconds\n", kCalibrationTimeSeconds);
     controller.startCalibration(kCalibrationTimeSeconds);
     controller.finishCalibration();
 
+    printf("Updating queiscent values\n");
+    controller.updateQuiescent();
 //    printf("Setting Midi Output Mode to polyphonic and associating output controller\n");
 //    controller.midiSegmentsSetMode(0);
 //    controller.midiSegmentsSetMidiOutputController();
-
 
     printf("Setting OSC host to %s:%s and enabling output", oscHost.c_str(), oscPort.c_str());
     controller.oscTransmitClearAddresses();

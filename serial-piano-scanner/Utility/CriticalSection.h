@@ -70,7 +70,7 @@ class WaitableEvent {
 public:
 	inline WaitableEvent(bool manualReset = false) noexcept
 	{
-
+		pthread_cond_init(&cv_, NULL);
 	}
 
 	inline ~WaitableEvent()

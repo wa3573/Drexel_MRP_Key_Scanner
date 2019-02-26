@@ -26,7 +26,7 @@
 
 #undef DEBUG_OSC
 
-#pragma mark OscHandler
+//#pragma mark OscHandler
 
 OscHandler::~OscHandler()
 {
@@ -46,7 +46,7 @@ OscHandler::~OscHandler()
 	}
 }
 
-#pragma mark -- Private Methods
+//#pragma mark -- Private Methods
 
 // Call this internal method to add a listener to the OSC controller.  Returns true on success.
 
@@ -85,7 +85,7 @@ bool OscHandler::removeAllOscListeners()
 	return true;
 }
 
-#pragma mark OscMessageSource
+//#pragma mark OscMessageSource
 
 // Adds a specific object listening for a specific OSC message.  The object will be
 // added to the internal map from strings to objects.  All messages are preceded by
@@ -305,7 +305,7 @@ void OscMessageSource::updateListeners()
     noteListenersToAdd_.clear();
 }
 
-#pragma mark OscReceiver
+//#pragma mark OscReceiver
 
 // OscReceiver::handler()
 // The main handler method for incoming OSC messages.  From here, we farm out the processing depending
@@ -356,7 +356,7 @@ int OscReceiver::handler(const char *path, const char *types, lo_arg **argv, int
         // Strip off the last component of the path
         int pathSeparator = subpath.find_last_of('/');
 
-        if(pathSeparator == string::npos)   // Not found --> no match
+        if(pathSeparator == (int) string::npos)   // Not found --> no match
             break;
         else {
             // Reduce string by one path level and add *; compare again
@@ -430,7 +430,7 @@ bool OscReceiver::setPort(const int port)
     return false;
 }
 
-#pragma mark OscTransmitter
+//#pragma mark OscTransmitter
 
 // Add a new transmit address.  Returns the index of the new address.
 
@@ -449,7 +449,7 @@ int OscTransmitter::addAddress(const char * host, const char * port, int proto)
 
 void OscTransmitter::removeAddress(int index)
 {
-	if(index >= addresses_.size() || index < 0)
+	if(index >= (int) addresses_.size() || index < 0)
 		return;
 	addresses_.erase(addresses_.begin() + index);
 }
@@ -469,8 +469,9 @@ void OscTransmitter::clearAddresses()
 
 void OscTransmitter::sendMessage(const char * path, const char * type, ...)
 {
-    if(!enabled_)
+    if(!enabled_) {
         return;
+    }
     
 	va_list v;
 	
@@ -533,10 +534,13 @@ void OscTransmitter::sendMessage(const char * path, const char * type, const lo_
 
 void OscTransmitter::sendByteArray(const char * path, const unsigned char * data, int length)
 {
-    if(!enabled_)
+    if(!enabled_) {
         return;
-	if(length == 0)
+    }
+
+	if(length == 0) {
 		return;
+	}
 	
 	lo_blob b = lo_blob_new(length, data);
 	
