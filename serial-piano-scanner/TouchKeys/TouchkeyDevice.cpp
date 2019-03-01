@@ -972,60 +972,15 @@ bool TouchkeyDevice::openDevice(const char * inputDevicePath)
 //	// If the device is already open, close it
 	if (isOpen())
 		closeDevice();
-//
-	// Open the device
-//#ifdef _MSC_VER
-//	// Open the serial port
-//	serialHandle_ = CreateFile(inputDevicePath, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-//	if(serialHandle_ == INVALID_HANDLE_VALUE) {
-//		Logger::writeToLog("Unable to open serial port " + String(inputDevicePath));
-//		return false;
-//	}
-//
-//	// Set some serial parameters, though they don't actually affect the operation
-//	// of the port since it is all native USB
-//	DCB serialParams = { 0 };
-//	serialParams.DCBlength = sizeof(serialParams);
-//
-//	if(!BuildCommDCBA("baud=1000000 data=8 parity=N stop=1 dtr=on rts=on", &serialParams)) {
-//		Logger::writeToLog("Unable to create port settings\n");
-//		CloseHandle(serialHandle_);
-//		serialHandle_ = INVALID_HANDLE_VALUE;
-//		return false;
-//	}
-//
-//	if(!SetCommState(serialHandle_, &serialParams)) {
-//		Logger::writeToLog("Unable to set comm state\n");
-//		CloseHandle(serialHandle_);
-//		serialHandle_ = INVALID_HANDLE_VALUE;
-//		return false;
-//	}
-//
-//	// Set timeouts
-//	COMMTIMEOUTS timeout = { 0 };
-//	timeout.ReadIntervalTimeout = MAXDWORD;
-//	timeout.ReadTotalTimeoutConstant = 0;
-//	timeout.ReadTotalTimeoutMultiplier = 0;
-//	timeout.WriteTotalTimeoutConstant = 0;
-//	timeout.WriteTotalTimeoutMultiplier = 0;
-//
-//	if(!SetCommTimeouts(serialHandle_, &timeout)) {
-//		Logger::writeToLog("Unable to set timeouts\n");
-//		CloseHandle(serialHandle_);
-//		serialHandle_ = INVALID_HANDLE_VALUE;
-//		return false;
-//	}
-//#else
+
 	device_ = open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY);
 
-//
 	if (device_ < 0) {
 //		fprintf(stderr, "%s", explain_open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY, 0));
 		return false;
 	}
-//#endif
+
 	return true;
-//	return false;
 }
 //
 //// Close the touchkey serial device

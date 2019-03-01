@@ -58,11 +58,14 @@ PianoKey::PianoKey(PianoKeyboard& keyboard, int noteNumber, int bufferLength)
     TouchkeyControlMapping* touchkeyControlMapping1 = new TouchkeyControlMapping(keyboard_, NULL, noteNumber_,
     		&touchBuffer_, &positionBuffer_, &positionTracker_);
 
-    touchkeyControlMapping1->setInputParameter(TouchkeyControlMapping::kInputParameterYPosition, TouchkeyControlMapping::kTypeAbsolute);
+	touchkeyControlMapping1->setInputParameter(
+			TouchkeyControlMapping::kInputParameterYPosition,
+			TouchkeyControlMapping::kTypeNoteOnsetRelative);
     touchkeyControlMapping1->setRange(0.0, 1.0, 0.0, 127.0, 0.0);
     touchkeyControlMapping1->setThreshold(0.0);
     touchkeyControlMapping1->setIgnoresMultipleFingers(false, false);
     touchkeyControlMapping1->setDirection(TouchkeyControlMapping::kDirectionPositive);
+    touchkeyControlMapping1->setName("/touchkeys/ypos");
 
     touchkeysMapping_ = touchkeyControlMapping1;
     keyboard_.addMapping(noteNumber_, touchkeysMapping_);
@@ -131,45 +134,6 @@ void PianoKey::reset() {
 // Insert a new sample in the key buffer
 void PianoKey::insertSample(key_position pos, timestamp_type ts) {
     positionBuffer_.insert(pos, ts);
-    
-//    if((timestamp_diff_type)ts - (timestamp_diff_type)timeOfLastGuiUpdate_ > kPianoKeyGuiUpdateInterval) {
-//        timeOfLastGuiUpdate_ = ts;
-////        if(keyboard_.gui() != 0) {
-////            keyboard_.gui()->setAnalogValueForKey(noteNumber_, pos);
-////        }
-//    }
-    
-    /*if((timestamp_diff_type)ts - (timestamp_diff_type)timeOfLastDebugPrint_ > 1.0) {
-        timeOfLastDebugPrint_ = ts;
-        key_position kmin = missing_value<key_position>::missing(), kmax = missing_value<key_position>::missing();
-        key_position mean = 0;
-        int count = 0;
-        Node<key_position>::iterator it = positionBuffer_.begin();
-        while(it != positionBuffer_.end()) {
-            if(missing_value<key_position>::isMissing(*it))
-               continue;
-            if(missing_value<key_position>::isMissing(kmin) || *it < kmin)
-                kmin = *it;
-            if(missing_value<key_position>::isMissing(kmax) || *it > kmax)
-                kmax = *it;
-            mean += *it;
-            it++;
-            count++;
-        }
-        mean /= (key_position)count;
-        
-        key_position var = 0;
-        it = positionBuffer_.begin();
-        while(it != positionBuffer_.end()) {
-            if(missing_value<key_position>::isMissing(*it))
-                continue;
-            var += (*it - mean)*(*it - mean);
-            it++;
-        }
-        var /= (key_position)count;
-        
-        std::cout << "Key " << noteNumber_ << " mean " << mean << " var " << var << std::endl;
-    }*/
 }
 
 // If a key is active, force it to become idle, stopping any processes that it has created
@@ -201,7 +165,7 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
 //            keyboard_.removeMapping(noteNumber_);
 
 #ifdef TOUCHKEYS_MAPPINGS
-            touchkeysMapping_->disengage();
+//            touchkeysMapping_->disengage();
 #else
             mrpMapping_->disengage();
 #endif
@@ -233,7 +197,7 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
             // control messages. TODO: how do we handle this with the TouchKey data too?
 
 #ifdef TOUCHKEYS_MAPPINGS
-            touchkeysMapping_->engage();
+//            touchkeysMapping_->engage();
 #else
             mrpMapping_->engage();
 #endif
@@ -508,7 +472,12 @@ void PianoKey::touchInsertFrame(KeyTouchFrame& newFrame, timestamp_type timestam
 		keyboard_.sendMessage("/touchkeys/on", "i", noteNumber_, LO_ARGS_END);
         keyboard_.tellAllMappingFactoriesTouchBegan(noteNumber_, midiNoteIsOn_, (idleDetector_.idleState() == kIdleDetectorActive),
                                                     &touchBuffer_, &positionBuffer_, &positionTracker_);
-    }
+#ifdef TOUCHKEYS_MAPPINGS
+            touchkeysMapping_->engage();
+#else
+//            mrpMapping_->engage();
+#endif
+	}
 	
 	touchIsActive_ = true;
 	
@@ -669,6 +638,11 @@ void PianoKey::touchOff(timestamp_type timestamp) {
     keyboard_.tellAllMappingFactoriesTouchEnded(noteNumber_, midiNoteIsOn_, (idleDetector_.idleState() == kIdleDetectorActive),
                                                &touchBuffer_, &positionBuffer_, &positionTracker_);
     
+#ifdef TOUCHKEYS_MAPPINGS
+            touchkeysMapping_->disengage();
+#else
+//            mrpMapping_->engage();
+#endif
 	touchEvents_.clear();
 	
 	// Create a new event that records the timestamp of the idle event

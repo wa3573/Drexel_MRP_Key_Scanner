@@ -129,7 +129,7 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 
     updateListeners();
 //
-//	oscListenerMutex_.enter();
+	oscListenerMutex_.enter();
     //oscListenerMutex_.enterRead();
 
 	// Now remove the global prefix and compare the rest of the message to the registered handlers.
@@ -149,7 +149,7 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
         numHandlers++; // DEBUG
 	}
     //oscListenerMutex_.exitRead();
-//    oscListenerMutex_.exit();
+    oscListenerMutex_.exit();
 	
     //if(timeInHandlers > 1.0)
     //    cout << "sendMessage(): timeInHandlers = " << timeInHandlers << " for " << numHandlers << " handlers (msg " << path << ")\n";

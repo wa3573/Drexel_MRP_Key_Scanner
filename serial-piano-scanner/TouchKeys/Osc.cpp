@@ -56,6 +56,7 @@ bool OscHandler::addOscListener(const string& path)
 		return false;
 	if(oscListenerPaths_.count(path) > 0)
 		return false;
+
 	oscListenerPaths_.insert(path);
 	oscController_->addListener(path, this);
 	return true;
@@ -339,7 +340,7 @@ int OscReceiver::handler(const char *path, const char *types, lo_arg **argv, int
     updateListeners();
     
 	// Lock the mutex so the list of listeners doesn't change midway through
-//    oscListenerMutex_.enter();
+    oscListenerMutex_.enter();
 	
 	// Now remove the global prefix and compare the rest of the message to the registered handlers.
 	multimap<string, OscHandler*>::iterator it;
@@ -377,7 +378,7 @@ int OscReceiver::handler(const char *path, const char *types, lo_arg **argv, int
         matched = true;
     }
 	
-//    oscListenerMutex_.exit();
+    oscListenerMutex_.exit();
     
 	if(matched)		// This message has been handled
 		return 0;

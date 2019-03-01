@@ -244,8 +244,9 @@ void TouchkeyControlMapping::triggerReceived(TriggerSource* who, timestamp_type 
                     }
                     
                     // If MIDI note is on and we don't previously have a value, this is it
-                    if(noteIsOn_ && missing_value<float>::isMissing(midiOnsetValue_)) {
-                        midiOnsetValue_ = lastValue_;
+//                    if(noteIsOn_ && missing_value<float>::isMissing(midiOnsetValue_)) {
+                    if(missing_value<float>::isMissing(midiOnsetValue_)) {
+                    	midiOnsetValue_ = lastValue_;
                         if(inputType_ == kTypeNoteOnsetRelative) {
                             clearBuffers();
 #ifdef DEBUG_CONTROL_MAPPING
@@ -256,23 +257,23 @@ void TouchkeyControlMapping::triggerReceived(TriggerSource* who, timestamp_type 
                     
                     if(noteIsOn_) {
                         // Insert the latest sample into the buffer depending on how the data should be processed
-                        if(inputType_ == kTypeAbsolute) {
-                            rawValues_.insert(lastValue_, timestamp);
-                        }
-                        else if(inputType_ == kTypeFirstTouchRelative) {
-                            rawValues_.insert(lastValue_ - touchOnsetValue_, timestamp);
-                        }
-                        else if(inputType_ == kTypeNoteOnsetRelative) {
-                            rawValues_.insert(lastValue_ - midiOnsetValue_, timestamp);
-                        }
-                        
-                        // Move the current scheduled event up to the present time.
-                        // FIXME: this may be more inefficient than just doing everything in the current thread!
+					if(inputType_ == kTypeAbsolute) {
+						rawValues_.insert(lastValue_, timestamp);
+					}
+					else if(inputType_ == kTypeFirstTouchRelative) {
+						rawValues_.insert(lastValue_ - touchOnsetValue_, timestamp);
+					}
+					else if(inputType_ == kTypeNoteOnsetRelative) {
+						rawValues_.insert(lastValue_ - midiOnsetValue_, timestamp);
+					}
+
+					// Move the current scheduled event up to the present time.
+					// FIXME: this may be more inefficient than just doing everything in the current thread!
 #ifdef NEW_MAPPING_SCHEDULER
-                        keyboard_.mappingScheduler().scheduleNow(this);
+					keyboard_.mappingScheduler().scheduleNow(this);
 #else
-                        keyboard_.unscheduleEvent(this);
-                        keyboard_.scheduleEvent(this, mappingAction_, keyboard_.schedulerCurrentTimestamp());
+					keyboard_.unscheduleEvent(this);
+					keyboard_.scheduleEvent(this, mappingAction_, keyboard_.schedulerCurrentTimestamp());
 #endif
                     }
                 }

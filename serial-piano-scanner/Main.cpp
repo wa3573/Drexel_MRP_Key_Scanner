@@ -35,7 +35,7 @@ unsigned int gAuxiliaryTaskStackSize = 1 << 17; // required by libbelaextra
 
 const int kCalibrationTimeSeconds = 20;
 const int kVerboseLevel = 0;
-const bool kShouldCalibrate = false;
+const bool kShouldCalibrate = true;
 const string kMidiOutputName = "hw:0:0:0"; // Legacy MIDI
 const string kOscHost = "127.0.0.1"; // OSC to localhost
 //const string kOscHost = "192.168.7.2"; // Address to transmit OSC messages to
@@ -136,8 +136,8 @@ int main (int argc, char* argv[])
 
     printf("Setting Midi Input Mode to Standalone\n");
     controller.disablePrimaryMIDIInputPort();
-    controller.disableAllMIDIOutputPorts();
-//    controller.midiTouchkeysStandaloneModeEnable();
+//    controller.disableAllMIDIOutputPorts();
+    controller.midiTouchkeysStandaloneModeEnable();
 
     printf("Setting lowest midi note to 0\n");
     controller.touchkeyDeviceSetLowestMidiNote(0);
@@ -146,8 +146,8 @@ int main (int argc, char* argv[])
     controller.touchkeyDeviceSetVerbosity(kVerboseLevel);
 
 //    printf("Setting Midi Output Mode to polyphonic and associating output controller\n");
-//    controller.midiSegmentsSetMode(0);
-//    controller.midiSegmentsSetMidiOutputController();
+    controller.midiSegmentsSetMode(1);
+    controller.midiSegmentsSetMidiOutputController();
 
     printf("Setting OSC host to %s:%s and enabling output", kOscHost.c_str(), kOscPort.c_str());
     controller.oscTransmitClearAddresses();

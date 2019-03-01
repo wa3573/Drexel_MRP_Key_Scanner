@@ -17,21 +17,29 @@ class CriticalSection {
 public:
 	inline CriticalSection() noexcept
 	{
+		mutex_ = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+		attr_ = (pthread_mutexattr_t*) malloc(sizeof(pthread_mutexattr_t));
+
+		pthread_mutexattr_init(attr_);
+		pthread_mutexattr_settype(attr_, PTHREAD_MUTEX_RECURSIVE);
+		pthread_mutex_init(mutex_, attr_);
 	}
 
-	inline virtual ~CriticalSection() noexcept
+	inline ~CriticalSection() noexcept
 	{
-
+		pthread_mutex_destroy(mutex_);
+		free(mutex_);
+		free(attr_);
 	}
 
 	inline void enter() noexcept
 	{
-		pthread_mutex_lock(&mutex_);
+		pthread_mutex_lock(mutex_);
 	}
 
 	inline bool tryEnter() noexcept
 	{
-		int ret = pthread_mutex_trylock(&mutex_);
+		int ret = pthread_mutex_trylock(mutex_);
 
 		if (ret == 0) {
 			return true;
@@ -42,27 +50,31 @@ public:
 
 	inline void exit() noexcept
 	{
-		pthread_mutex_unlock(&mutex_);
+		pthread_mutex_unlock(mutex_);
 	}
 
 private:
-	pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;;
+	pthread_mutex_t* mutex_;
+	pthread_mutexattr_t* attr_;
+
 };
 
-class ScopedLock : public CriticalSection {
+class ScopedLock {
 
 public:
-	inline ScopedLock() {
-		this->enter();
-	}
-
-	inline ScopedLock(CriticalSection section) {
-		section.enter();
+	inline ScopedLock(CriticalSection& section)
+		: criticalSection_(section)
+	{
+		criticalSection_.enter();
 	}
 
 	inline ~ScopedLock() {
-		this->exit();
+		criticalSection_.exit();
 	}
+
+private:
+
+	CriticalSection& criticalSection_;
 };
 
 
