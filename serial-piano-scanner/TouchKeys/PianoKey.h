@@ -46,10 +46,11 @@ const unsigned int kPianoKeyPositionTrackerBufferLength = 30; // How many state 
 const key_position kPianoKeyDefaultIdleActivityThreshold = scale_key_position(.020);
 const key_position kPianoKeyDefaultIdlePositionThreshold = scale_key_position(.05);
 const int kPianoKeyDefaultIdleCounter = 20;
-const timestamp_diff_type kPianoKeyDefaultTouchTimeoutInterval = microseconds_to_timestamp(0); // was 20000
+const timestamp_diff_type kPianoKeyDefaultTouchTimeoutInterval = microseconds_to_timestamp(20000); // was 20000
 const timestamp_diff_type kPianoKeyGuiUpdateInterval = microseconds_to_timestamp(15000); // How frequently to update the position display
 
 class MRPMapping;
+class Mapping;
 
 // Possible key states
 enum {
@@ -226,6 +227,8 @@ private:
 	timestamp_type touchWaitingTimestamp_;			// When the timeout will occur
 	timestamp_diff_type touchTimeoutInterval_;		// How long to wait for a touch before timing out
 	MRPMapping* mrpMapping_;
+//	std::vector<Mapping*> touchkeyMappings_;
+	Mapping* touchkeysMapping_;
 
 };
 

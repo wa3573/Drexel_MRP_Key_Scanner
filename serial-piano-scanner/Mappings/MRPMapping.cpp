@@ -403,7 +403,7 @@ timestamp_type MRPMapping::performMapping() {
                         it++;
                 }
                 
-                std::cout << "pitch = " << pitch << std::endl;
+//                std::cout << "pitch = " << pitch << std::endl;
             }
             else
                 pitch = 0.0;
@@ -568,7 +568,7 @@ timestamp_type MRPMapping::findTimestampOfPartialPress() {
             // we haven't yet encountered a partial press or we have found
             // a state before the partial press, in which case the previous
             // state we found was the first.
-                        cout << "index " << index << " state " << (*positionTracker_)[index].state << endl;
+//                        cout << "index " << index << " state " << (*positionTracker_)[index].state << endl;
             if(foundPartialPressState) {
                 return earliestPartialPressTimestamp;
             }

@@ -8,6 +8,9 @@
 #ifndef UTILITY_XML_H_
 #define UTILITY_XML_H_
 
+#include <map>
+#include <vector>
+
 template<class T>
 inline bool mapHasKey(std::map<std::string, T> map, std::string attributeName)
 {
@@ -132,6 +135,11 @@ public:
 		}
 
 		return NULL;
+	}
+
+	inline int getIntAttribute(std::string attribute)
+	{
+		return 0;
 	}
 
 	inline void addChildElement(XmlElement* element)

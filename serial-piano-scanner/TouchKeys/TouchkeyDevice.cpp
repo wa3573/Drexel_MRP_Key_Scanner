@@ -37,6 +37,7 @@
 #include <poll.h>
 //#include <libexplain/open.h>
 
+const int kCalibrationTimeSeconds = 5;
 const char* kKeyNames[13] = { "C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ",
 		"G#", "A ", "A#", "B ", "c " };
 
@@ -652,15 +653,19 @@ void TouchkeyDevice::calibrationStart(std::vector<int>* keysToCalibrate)
 void TouchkeyDevice::calibrationFinish()
 {
 	bool calibratedAtLeastOneKey = false;
+	bool keysCalibrated[keyCalibratorsLength_];
 
 	for (int i = 0; i < keyCalibratorsLength_; i++) {
 		// Check if calibration was successful
 		if (keyCalibrators_[i]->calibrationFinish()) {
 			calibratedAtLeastOneKey = true;
+			keysCalibrated[i] = true;
 //            // Update the display if available
 //            if(keyboard_.gui() != 0) {
 //                keyboard_.gui()->setAnalogCalibrationStatusForKey(i + lowestMidiNote_, true);
 //            }
+		} else {
+			keysCalibrated[i] = false;
 		}
 	}
 
@@ -668,6 +673,24 @@ void TouchkeyDevice::calibrationFinish()
 	isCalibrated_ = calibratedAtLeastOneKey;
 	std::cout << "calibratedAtLeastOneKey = " << calibratedAtLeastOneKey
 			<< std::endl;
+
+	// [12 Y] [13 N] ...
+
+	std::cout << "Calibrated Keys: " << std::endl;
+	for (int i = 0; i < keyCalibratorsLength_; i++) {
+		char calibrated;
+		if (keysCalibrated[i]) {
+			calibrated = 'Y';
+		} else {
+			calibrated = 'N';
+		}
+
+		std::cout << "[" << i << " " << calibrated << "] ";
+
+		if (i % 12 == 0) {
+			std::cout << std::endl;
+		}
+	}
 }
 
 // Abort a calibration in progress, without saving its results. Pass it on to all Calibrators.
@@ -2156,6 +2179,11 @@ void TouchkeyDevice::deviceDrainOutput()
 //#else
 	tcdrain(device_);
 //#endif
+}
+
+PianoKeyCalibrator* TouchkeyDevice::getCalibrator(int key)
+{
+	return keyCalibrators_[key];
 }
 
 TouchkeyDevice::~TouchkeyDevice()

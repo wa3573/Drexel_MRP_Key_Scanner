@@ -32,8 +32,15 @@
 bool programShouldStop_ = false;
 int gXenomaiInited = 0; // required by libbelaextra
 unsigned int gAuxiliaryTaskStackSize = 1 << 17; // required by libbelaextra
-const int kCalibrationTimeSeconds = 10;
-int gVerboseLevel = 0;
+
+const int kCalibrationTimeSeconds = 20;
+const int kVerboseLevel = 0;
+const bool kShouldCalibrate = false;
+const string kMidiOutputName = "hw:0:0:0"; // Legacy MIDI
+const string kOscHost = "127.0.0.1"; // OSC to localhost
+//const string kOscHost = "192.168.7.2"; // Address to transmit OSC messages to
+const string kOscPort = "8001"; // Port for that address
+const size_t kMidiQueueSize = 1; // Will likely be unused
 
 MidiQueue* gMidiQueue = MidiQueue::get_instance();
 std::vector<std::string> MidiOutput::deviceNames_;
@@ -117,18 +124,14 @@ int main (int argc, char* argv[])
     bool autoopenMidiOut = false, autoopenMidiIn = false;
     int oscInputPort = kDefaultOscReceivePort;
     string touchkeysDevicePath;
-    string midiOutputName = "hw:0:0:0"; // Legacy MIDI
-    string oscHost = "127.0.0.1"; // Address to transmit OSC messages to
-    string oscPort = "8001"; // Port for that address
-    size_t midiQueueSize = 1; // Will likely be unused
 
     printf("Touchkeys Bela Port v0.02\n");
 
-    printf("Setting MidiQueue and resizing to %lu items\n", midiQueueSize);
+    printf("Setting MidiQueue and resizing to %lu items\n", kMidiQueueSize);
     MidiOutput::setMidiQueue(gMidiQueue);
-    gMidiQueue->resize(midiQueueSize);
+    gMidiQueue->resize(kMidiQueueSize);
     
-    printf("Setting MidiOutput to '%s'\n", midiOutputName.c_str());
+    printf("Setting MidiOutput to '%s'\n", kMidiOutputName.c_str());
     MidiOutput::midiOutput_ = MidiOutput("hw:0:0:0");
 
     printf("Setting Midi Input Mode to Standalone\n");
@@ -139,22 +142,16 @@ int main (int argc, char* argv[])
     printf("Setting lowest midi note to 0\n");
     controller.touchkeyDeviceSetLowestMidiNote(0);
 
-    printf("Setting verbose level to %d\n", gVerboseLevel);
-    controller.touchkeyDeviceSetVerbosity(gVerboseLevel);
+    printf("Setting verbose level to %d\n", kVerboseLevel);
+    controller.touchkeyDeviceSetVerbosity(kVerboseLevel);
 
-    printf("Calibrating for %d seconds\n", kCalibrationTimeSeconds);
-    controller.startCalibration(kCalibrationTimeSeconds);
-    controller.finishCalibration();
-
-    printf("Updating queiscent values\n");
-    controller.updateQuiescent();
 //    printf("Setting Midi Output Mode to polyphonic and associating output controller\n");
 //    controller.midiSegmentsSetMode(0);
 //    controller.midiSegmentsSetMidiOutputController();
 
-    printf("Setting OSC host to %s:%s and enabling output", oscHost.c_str(), oscPort.c_str());
+    printf("Setting OSC host to %s:%s and enabling output", kOscHost.c_str(), kOscPort.c_str());
     controller.oscTransmitClearAddresses();
-    controller.oscTransmitAddAddress(oscHost.c_str(), oscPort.c_str());
+    controller.oscTransmitAddAddress(kOscHost.c_str(), kOscPort.c_str());
     controller.oscTransmitSetEnabled(true);
 
 
@@ -240,6 +237,13 @@ int main (int argc, char* argv[])
             sigemptyset(&sigIntHandler.sa_mask);
             sigIntHandler.sa_flags = 0;
             sigaction(SIGINT, &sigIntHandler, NULL);
+
+            if (kShouldCalibrate) {
+				usleep(1e+6); // Wait for some status frames
+				printf("Calibrating for %d seconds\n", kCalibrationTimeSeconds);
+				controller.startCalibration(kCalibrationTimeSeconds);
+				controller.finishCalibration();
+            }
 
             // Wait until interrupt signal is received
             while(!programShouldStop_) {

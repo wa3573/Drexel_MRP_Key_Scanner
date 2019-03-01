@@ -25,11 +25,8 @@
 #define KEYCONTROL_PIANO_KEY_CALIBRATOR_H
 
 #include <iostream>
-#include <pthread.h>
-
-#include "PianoTypes.h"
-//#include <boost/circular_buffer.hpp>
-//#include "circular_buffer.h"
+#include <boost/circular_buffer.hpp>
+#include "../Utility/Xml.h"
 //#include "../JuceLibraryCode/JuceHeader.h"
 #include "../Utility/Types.h"
 #include "PianoKeyboard.h"
@@ -97,8 +94,8 @@ public:
 	// These methods load and save calibration data from an XML string.  The PianoKeyCalibrator object handles
 	// the relevant file I/O.
 	
-//	void loadFromXml(const XmlElement& baseElement);
-//	bool saveToXml(XmlElement& baseElement);
+	void loadFromXml(const XmlElement& baseElement);
+	bool saveToXml(XmlElement& baseElement);
 	
 private:
 	// ***** Helper Methods *****
@@ -125,17 +122,13 @@ private:
 	int press_;                     // Fully pressed value for the sensor
 	int newPress_;                  // Value-in-training for press
 	
-//	boost::circular_buffer<int>* history_;  // Buffer holds history of raw values for calibrating
-	boost::circular_buffer<int>* history_;
+	boost::circular_buffer<int>* history_;  // Buffer holds history of raw values for calibrating
 	
 	// Table of warping values to correct for sensor non-linearity
 	key_position* warpTable_;
     
-//	pthread_mutex_t calibrationMutex_;	// This mutex protects access to the entire calibration structure
-//	pthread_mutex_t historyMutex_;		// This mutex is specifically tied to the history_ buffers
-	pthread_mutex_t calibrationMutex_ = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_t historyMutex_ = PTHREAD_MUTEX_INITIALIZER;
-
+	CriticalSection calibrationMutex_;	// This mutex protects access to the entire calibration structure
+	CriticalSection historyMutex_;		// This mutex is specifically tied to the history_ buffers
 };
 
 #endif /* KEYCONTROL_PIANO_KEY_CALIBRATOR_H */

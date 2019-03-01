@@ -7,17 +7,17 @@
 
 #include "MidiQueue.h"
 
-#ifdef ON_BELA
-#include <libpd/z_libpd.h>
-extern "C" {
-#include <libpd/s_stuff.h>
-};
-#else
-#include <z_libpd.h>
-extern "C" {
-#include <s_stuff.h>
-};
-#endif
+//#ifdef ON_BELA
+//#include <libpd/z_libpd.h>
+//extern "C" {
+//#include <libpd/s_stuff.h>
+//};
+//#else
+//#include <z_libpd.h>
+//extern "C" {
+//#include <s_stuff.h>
+//};
+//#endif
 
 MidiQueue* MidiQueue::instance_;
 boost::circular_buffer<MidiMessage> MidiQueue::queue_;

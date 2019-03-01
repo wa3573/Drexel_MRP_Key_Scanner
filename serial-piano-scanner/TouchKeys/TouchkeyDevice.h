@@ -271,6 +271,7 @@ public:
 
 	bool calibrationSaveToFile(std::string const& filename);
 	bool calibrationLoadFromFile(std::string const& filename);
+	PianoKeyCalibrator* getCalibrator(int key);
 
     // ***** Data Logging *****
     void createLogFiles(string keyTouchLogFilename, string analogLogFilename, string path);

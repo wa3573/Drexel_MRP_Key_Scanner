@@ -123,17 +123,17 @@ timestamp_type TimestampSynchronizer::synchronizedTimestamp(int rawFrameNumber) 
 		
 		if(bufferLengthCounter_ >= kTimestampSynchronizerHistoryLength) {
 			//timestamp_diff_type currentLatency = clockTime - frameTime;
-			timestamp_diff_type maxLatency = 0, minLatency = 1000000.0;
-			
-			Node<pair<int, timestamp_type> >::iterator it;
-			
-			for(it = history_.begin(); it != history_.end(); ++it) {
-				timestamp_diff_type l = (it.timestamp() - it->second);
-				if(l > maxLatency)
-					maxLatency = l;
-				if(l < minLatency)
-					minLatency = l;
-			}
+//			timestamp_diff_type maxLatency = 0, minLatency = 1000000.0;
+//
+//			Node<pair<int, timestamp_type> >::iterator it;
+//
+//			for(it = history_.begin(); it != history_.end(); ++it) {
+//				timestamp_diff_type l = (it.timestamp() - it->second);
+//				if(l > maxLatency)
+//					maxLatency = l;
+//				if(l < minLatency)
+//					minLatency = l;
+//			}
 			
 			//cout << "frame " << rawFrameNumber << ": rate = " << currentSampleInterval_ << " clock = " << clockTime << " frame = " << frameTime << " latency = " 
 			//	<< currentLatency << " max = " << maxLatency << " min = " << minLatency << endl;

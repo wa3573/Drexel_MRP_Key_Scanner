@@ -22,8 +22,6 @@
 
 #include "PianoKeyCalibrator.h"
 
-#include <unistd.h>
-
 // Constructor
 PianoKeyCalibrator::PianoKeyCalibrator(bool pressValueGoesDown, key_position* warpTable)
 : status_(kPianoKeyNotCalibrated), prevStatus_(kPianoKeyNotCalibrated),
@@ -41,14 +39,12 @@ PianoKeyCalibrator::~PianoKeyCalibrator() {
 key_position PianoKeyCalibrator::evaluate(int rawValue) {
 	key_position calibratedValue, calibratedValueDenominator;
 
-//    ScopedLock sl(calibrationMutex_);
-    pthread_mutex_lock(&calibrationMutex_);
+    ScopedLock sl(calibrationMutex_);
 	
 	switch(status_) {
 		case kPianoKeyCalibrated:
 			if(missing_value<int>::isMissing(quiescent_) ||
 			   missing_value<int>::isMissing(press_)) {
-				pthread_mutex_unlock(&calibrationMutex_);
 				return missing_value<key_position>::missing();
 			}
 			
@@ -70,17 +66,14 @@ key_position PianoKeyCalibrator::evaluate(int rawValue) {
 			if(warpTable_ != 0) {
 				// TODO: warping
 			}
-			pthread_mutex_unlock(&calibrationMutex_);
 			return calibratedValue;
 		case kPianoKeyInCalibration:
-//			historyMutex_.enter();
-			pthread_mutex_lock(&historyMutex_);
+			historyMutex_.enter();
 
 			// Add the sample to the calibration buffer, and wait until we have enough samples to do anything
 			history_->push_back(rawValue);
 			if(history_->size() < kPianoKeyCalibrationPressLength) {
-//				historyMutex_.exit();
-				pthread_mutex_unlock(&historyMutex_);
+				historyMutex_.exit();
 				return missing_value<key_position>::missing();
 			}
             
@@ -102,13 +95,10 @@ key_position PianoKeyCalibrator::evaluate(int rawValue) {
 			}
 			
 			// Don't return a value while calibrating
-//			historyMutex_.exit();
-			pthread_mutex_unlock(&historyMutex_);
-			pthread_mutex_unlock(&calibrationMutex_);
+			historyMutex_.exit();
 			return missing_value<key_position>::missing();
 		case kPianoKeyNotCalibrated:	// Don't do anything
 		default:
-			pthread_mutex_unlock(&calibrationMutex_);
 			return missing_value<key_position>::missing();
 	}
 }
@@ -118,20 +108,16 @@ void PianoKeyCalibrator::calibrationStart() {
 	if(status_ == kPianoKeyInCalibration)	// Throw away the old results if we're already in progress
 		calibrationAbort();					// This will clear the slate
 	
-//    historyMutex_.enter();
-    pthread_mutex_lock(&historyMutex_);
+    historyMutex_.enter();
     if(history_ != 0)
         delete history_;
     history_ = new boost::circular_buffer<int>(kPianoKeyCalibrationBufferSize);
-//    historyMutex_.exit();
-    pthread_mutex_unlock(&historyMutex_);
+    historyMutex_.exit();
     
-//	calibrationMutex_.enter();
-    pthread_mutex_lock(&calibrationMutex_);
+	calibrationMutex_.enter();
     newPress_ = quiescent_ = missing_value<int>::missing();
 	changeStatus(kPianoKeyInCalibration);
-//	calibrationMutex_.exit();
-	pthread_mutex_unlock(&calibrationMutex_);
+	calibrationMutex_.exit();
 }
 
 // Finish calibrating and accept the new results. Returns true if
@@ -145,8 +131,7 @@ bool PianoKeyCalibrator::calibrationFinish() {
 	if(status_ != kPianoKeyInCalibration)
 		return false;
     
-//    ScopedLock sl(calibrationMutex_);
-	pthread_mutex_lock(&calibrationMutex_);
+    ScopedLock sl(calibrationMutex_);
     
     // Check that we were successfully able to update the quiescent value
     // (should always be the case but this is a sanity check)
@@ -169,14 +154,12 @@ bool PianoKeyCalibrator::calibrationFinish() {
     }
     
     cleanup();
-    pthread_mutex_unlock(&calibrationMutex_);
     return updatedCalibration;
 }
 
 // Finish calibrating without saving results
 void PianoKeyCalibrator::calibrationAbort() {
-//    ScopedLock sl(calibrationMutex_);
-	pthread_mutex_lock(&calibrationMutex_);
+    ScopedLock sl(calibrationMutex_);
 	cleanup();
 	if(prevStatus_ == kPianoKeyCalibrated) {	// There may or may not have been valid data in press_ and quiescent_ before, depending on whether
 		changeStatus(kPianoKeyCalibrated);	// they were previously calibrated.
@@ -184,54 +167,50 @@ void PianoKeyCalibrator::calibrationAbort() {
 	else {
 		changeStatus(kPianoKeyNotCalibrated);
 	}
-	pthread_mutex_unlock(&calibrationMutex_);
 }
 
 // Clear the existing calibration, reverting to an uncalibrated state
 void PianoKeyCalibrator::calibrationClear() {
 	if(status_ == kPianoKeyInCalibration)
 		calibrationAbort();
-//    ScopedLock sl(calibrationMutex_);
-	pthread_mutex_lock(&calibrationMutex_);
+    ScopedLock sl(calibrationMutex_);
 	status_ = prevStatus_ = kPianoKeyNotCalibrated;
-	pthread_mutex_unlock(&calibrationMutex_);
 }
 
 // Generate new quiescent values without changing the press values
 void PianoKeyCalibrator::calibrationUpdateQuiescent() {
 	calibrationStart();
 //	Thread::sleep(250);			// Wait 0.25 seconds for data to collect
-	usleep(250E6);
+
+	usleep(250e+3);
 	internalUpdateQuiescent();
 	calibrationAbort();
 }
 
-/* See RapidXML for reimplementation */
+// Load calibration data from an XML string
+void PianoKeyCalibrator::loadFromXml(const XmlElement& baseElement) {
+	// Abort any calibration in progress and reset to default values
+	if(status_ == kPianoKeyInCalibration)
+		calibrationAbort();
+	calibrationClear();
+	
+	XmlElement *calibrationElement = baseElement.getChildByName("Calibration");
+	
+	if(calibrationElement != 0) {
+        if(calibrationElement->hasAttribute("quiescent") &&
+           calibrationElement->hasAttribute("press")) {
+            quiescent_ = calibrationElement->getIntAttribute("quiescent");
+            press_ = calibrationElement->getIntAttribute("press");
+            changeStatus(kPianoKeyCalibrated);
+        }
+	}
+}
 
-//// Load calibration data from an XML string
-//void PianoKeyCalibrator::loadFromXml(const XmlElement& baseElement) {
-//	// Abort any calibration in progress and reset to default values
-//	if(status_ == kPianoKeyInCalibration)
-//		calibrationAbort();
-//	calibrationClear();
-//
-//	XmlElement *calibrationElement = baseElement.getChildByName("Calibration");
-//
-//	if(calibrationElement != 0) {
-//        if(calibrationElement->hasAttribute("quiescent") &&
-//           calibrationElement->hasAttribute("press")) {
-//            quiescent_ = calibrationElement->getIntAttribute("quiescent");
-//            press_ = calibrationElement->getIntAttribute("press");
-//            changeStatus(kPianoKeyCalibrated);
-//        }
-//	}
-//}
-//
-//// Saves calibration data within the provided XML Element.  Child elements
-//// will be added for each sequence.  Returns true if valid data was saved.
-//bool PianoKeyCalibrator::saveToXml(XmlElement& baseElement) {
-//	if(status_ != kPianoKeyCalibrated)
-//		return false;
+// Saves calibration data within the provided XML Element.  Child elements
+// will be added for each sequence.  Returns true if valid data was saved.
+bool PianoKeyCalibrator::saveToXml(XmlElement& baseElement) {
+	if(status_ != kPianoKeyCalibrated)
+		return false;
 //
 //    XmlElement *newElement = baseElement.createNewChildElement("Calibration");
 //
@@ -240,44 +219,37 @@ void PianoKeyCalibrator::calibrationUpdateQuiescent() {
 //
 //    newElement->setAttribute("quiescent", quiescent_);
 //    newElement->setAttribute("press", press_);
-//
-//	return true;
-//}
+
+	return true;
+}
 
 // ***** Internal Methods *****
 
 // Internal method to clean up after a calibration session.
 void PianoKeyCalibrator::cleanup() {
-//    ScopedLock sl(historyMutex_);
-	pthread_mutex_lock(&historyMutex_);
+    ScopedLock sl(historyMutex_);
     if(history_ != 0)
         delete history_;
     history_ = 0;
     newPress_ = missing_value<int>::missing();
-    pthread_mutex_unlock(&historyMutex_);
 }
 
 // This internal method actually calculates the new quiescent values.  Used by calibrationUpdateQuiescent()
 // and calibrationFinish(). Returns true if successful.
 bool PianoKeyCalibrator::internalUpdateQuiescent() {
-//    ScopedLock sl(historyMutex_);
-	pthread_mutex_lock(&historyMutex_);
+    ScopedLock sl(historyMutex_);
     if(history_ == 0) {
-    	pthread_mutex_unlock(&historyMutex_);
         return false;
     }
     if(history_->size() < kPianoKeyCalibrationPressLength) {
-    	pthread_mutex_unlock(&historyMutex_);
         return false;
     }
     quiescent_  = averagePosition(kPianoKeyCalibrationBufferSize);
-    pthread_mutex_unlock(&historyMutex_);
     return true;
 }
 
 // Get the average position of several samples in the buffer. 
 int PianoKeyCalibrator::averagePosition(int length) {
-//	boost::circular_buffer<int>::reverse_iterator rit = history_->rbegin();
 	boost::circular_buffer<int>::reverse_iterator rit = history_->rbegin();
 	int count = 0, sum = 0;
 	

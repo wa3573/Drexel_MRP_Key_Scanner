@@ -770,24 +770,26 @@ std::string MidiKeyboardSegment::mappingFactoryNameForIndex(int index) {
 
 // Return a new object of the given mapping factory type
 MappingFactory* MidiKeyboardSegment::createMappingFactoryForIndex(int index) {
-    switch(index) {
-        case 0:
-            return new TouchkeyControlMappingFactory(keyboard_, *this);
-        case 1:
-            return new TouchkeyVibratoMappingFactory(keyboard_, *this);
-        case 2:
-            return new TouchkeyPitchBendMappingFactory(keyboard_, *this);
-        case 3:
-//            return new TouchkeyKeyDivisionMappingFactory(keyboard_, *this);
-        case 4:
-            return new TouchkeyMultiFingerTriggerMappingFactory(keyboard_, *this);
-        case 5:
-            return new TouchkeyOnsetAngleMappingFactory(keyboard_, *this);
-        case 6:
-            return new TouchkeyReleaseAngleMappingFactory(keyboard_, *this);
-        default:
-            return 0;
-    }
+//    switch(index) {
+//        case 0:
+//            return new TouchkeyControlMappingFactory(keyboard_, *this);
+//        case 1:
+//            return new TouchkeyVibratoMappingFactory(keyboard_, *this);
+//        case 2:
+//            return new TouchkeyPitchBendMappingFactory(keyboard_, *this);
+//        case 3:
+////            return new TouchkeyKeyDivisionMappingFactory(keyboard_, *this);
+//        case 4:
+//            return new TouchkeyMultiFingerTriggerMappingFactory(keyboard_, *this);
+//        case 5:
+//            return new TouchkeyOnsetAngleMappingFactory(keyboard_, *this);
+//        case 6:
+//            return new TouchkeyReleaseAngleMappingFactory(keyboard_, *this);
+//        default:
+//            return 0;
+//    }
+
+	return NULL;
 }
 
 // Return whethera  given mapping is experimental or not
@@ -1025,25 +1027,25 @@ bool MidiKeyboardSegment::loadPreset(XmlElement const* preset) {
         MappingFactory *factory;
         std::string const& factoryType = element->getStringAttribute("type");
         
-        if(factoryType == "Control")
-            factory = new TouchkeyControlMappingFactory(keyboard_, *this);
-        else if(factoryType == "Vibrato")
-            factory = new TouchkeyVibratoMappingFactory(keyboard_, *this);
-        else if(factoryType == "PitchBend")
-            factory = new TouchkeyPitchBendMappingFactory(keyboard_, *this);
-//        else if(factoryType == "KeyDivision")
-//            factory = new TouchkeyKeyDivisionMappingFactory(keyboard_, *this);
-        else if(factoryType == "MultiFingerTrigger")
-            factory = new TouchkeyMultiFingerTriggerMappingFactory(keyboard_, *this);
-        else if(factoryType == "OnsetAngle")
-            factory = new TouchkeyOnsetAngleMappingFactory(keyboard_, *this);
-        else if(factoryType == "ReleaseAngle")
-            factory = new TouchkeyReleaseAngleMappingFactory(keyboard_, *this);
-        else {
-            // Type unknown or unsupported; ignore and continue
-            element = element->getNextElementWithTagName("MappingFactory");
-            continue;
-        }
+//        if(factoryType == "Control")
+//            factory = new TouchkeyControlMappingFactory(keyboard_, *this);
+//        else if(factoryType == "Vibrato")
+//            factory = new TouchkeyVibratoMappingFactory(keyboard_, *this);
+//        else if(factoryType == "PitchBend")
+//            factory = new TouchkeyPitchBendMappingFactory(keyboard_, *this);
+////        else if(factoryType == "KeyDivision")
+////            factory = new TouchkeyKeyDivisionMappingFactory(keyboard_, *this);
+//        else if(factoryType == "MultiFingerTrigger")
+//            factory = new TouchkeyMultiFingerTriggerMappingFactory(keyboard_, *this);
+//        else if(factoryType == "OnsetAngle")
+//            factory = new TouchkeyOnsetAngleMappingFactory(keyboard_, *this);
+//        else if(factoryType == "ReleaseAngle")
+//            factory = new TouchkeyReleaseAngleMappingFactory(keyboard_, *this);
+//        else {
+//            // Type unknown or unsupported; ignore and continue
+//            element = element->getNextElementWithTagName("MappingFactory");
+//            continue;
+//        }
         
         // Tell factory to load its settings from this element
         if(!factory->loadPreset(element)) {

@@ -115,7 +115,7 @@
                     					
                     <sourceEntries>
                         						
-                        <entry excluding="TrackerTest.cpp|StatusFrame.cpp|SerialInterface.cpp|Frame.cpp|AnalogFrame.cpp|GPIOcontrol.cpp|PruSpiKeysDriver.cpp|Keys.cpp|Calibrate.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="Mappings/Vibrato/TouchkeyVibratoMappingFactory.cpp|Mappings/Vibrato/TouchkeyVibratoMapping.cpp|Mappings/ReleaseAngle/TouchkeyReleaseAngleMappingFactory.cpp|Mappings/ReleaseAngle/TouchkeyReleaseAngleMapping.cpp|Mappings/PitchBend/TouchkeyPitchBendMappingFactory.cpp|Mappings/PitchBend/TouchkeyPitchBendMapping.cpp|Mappings/OnsetAngle/TouchkeyOnsetAngleMappingFactory.cpp|Mappings/OnsetAngle/TouchkeyOnsetAngleMapping.cpp|Mappings/MultiFingerTrigger/TouchkeyMultiFingerTriggerMappingFactory.cpp|Mappings/MultiFingerTrigger/TouchkeyMultiFingerTriggerMapping.cpp|Mappings/Control/TouchkeyControlMappingFactory.cpp|TrackerTest.cpp|StatusFrame.cpp|SerialInterface.cpp|Frame.cpp|AnalogFrame.cpp|GPIOcontrol.cpp|PruSpiKeysDriver.cpp|Keys.cpp|Calibrate.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                         					
                     </sourceEntries>
                     				

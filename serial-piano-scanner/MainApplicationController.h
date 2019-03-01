@@ -36,6 +36,7 @@
 #include "TouchKeys/MidiKeyboardSegment.h"
 #include "TouchKeys/MidiOutputController.h"
 #include "TouchKeys/TouchkeyDevice.h"
+#include "TouchKeys/PianoKeyInfo.h"
 //#include "TouchkeyOscEmulator.h"
 #include "Mappings/Vibrato/TouchkeyVibratoMappingFactory.h"
 #include "Mappings/PitchBend/TouchkeyPitchBendMappingFactory.h"
@@ -413,6 +414,7 @@ private:
     // Logging info
     bool loggingActive_, isPlayingLog_;
     std::string loggingDirectory_;
+    PianoKeyInfo pianoKeyInfo_ = PianoKeyInfo(touchkeyController_, keyboardController_);
 };
 
 

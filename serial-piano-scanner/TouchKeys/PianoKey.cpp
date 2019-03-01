@@ -29,8 +29,10 @@
 #include "PianoKeyboard.h"
 #include "MidiInternal.h"
 #include "../Mappings/MRPMapping.h"
+#include "../Mappings/Control/TouchkeyControlMapping.h"
 
 #undef TOUCHKEYS_LEGACY_OSC
+//#define TOUCHKEYS_MAPPINGS
 
 // Default constructor
 PianoKey::PianoKey(PianoKeyboard& keyboard, int noteNumber, int bufferLength) 
@@ -49,17 +51,40 @@ PianoKey::PianoKey(PianoKeyboard& keyboard, int noteNumber, int bufferLength)
 {    
 	enable();
 	registerForTrigger(&idleDetector_);
-    mrpMapping_ = new MRPMapping(keyboard_, NULL, noteNumber_, &touchBuffer_,
-                                       &positionBuffer_, &positionTracker_);
 //            MIDIKeyPositionMapping *mapping = new MIDIKeyPositionMapping(keyboard_, noteNumber_, &touchBuffer_,
 //                                                                         &positionBuffer_, &positionTracker_);
+
+#ifdef TOUCHKEYS_MAPPINGS
+    TouchkeyControlMapping* touchkeyControlMapping1 = new TouchkeyControlMapping(keyboard_, NULL, noteNumber_,
+    		&touchBuffer_, &positionBuffer_, &positionTracker_);
+
+    touchkeyControlMapping1->setInputParameter(TouchkeyControlMapping::kInputParameterYPosition, TouchkeyControlMapping::kTypeAbsolute);
+    touchkeyControlMapping1->setRange(0.0, 1.0, 0.0, 127.0, 0.0);
+    touchkeyControlMapping1->setThreshold(0.0);
+    touchkeyControlMapping1->setIgnoresMultipleFingers(false, false);
+    touchkeyControlMapping1->setDirection(TouchkeyControlMapping::kDirectionPositive);
+
+    touchkeysMapping_ = touchkeyControlMapping1;
+    keyboard_.addMapping(noteNumber_, touchkeysMapping_);
+
+#else
+    mrpMapping_ = new MRPMapping(keyboard_, NULL, noteNumber_, &touchBuffer_,
+                                       &positionBuffer_, &positionTracker_);
     keyboard_.addMapping(noteNumber_, mrpMapping_ );
+#endif
 }
 
 // Destructor
 PianoKey::~PianoKey() {
     // Remove any mappings we've created
     //keyboard_.removeMapping(noteNumber_);
+
+#ifdef TOUCHKEYS_MAPPINGS
+	delete touchkeysMapping_;
+#else
+	delete mrpMapping_;
+#endif
+
 }
 
 
@@ -174,7 +199,12 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
             
             // Remove any mapping present on this key
 //            keyboard_.removeMapping(noteNumber_);
+
+#ifdef TOUCHKEYS_MAPPINGS
+            touchkeysMapping_->disengage();
+#else
             mrpMapping_->disengage();
+#endif
             
             positionTracker_.disengage();
             unregisterForTrigger(&positionTracker_);
@@ -202,8 +232,11 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
             // Allocate a new mapping that converts key position gestures to sound
             // control messages. TODO: how do we handle this with the TouchKey data too?
 
-            mrpMapping_->reset();
+#ifdef TOUCHKEYS_MAPPINGS
+            touchkeysMapping_->engage();
+#else
             mrpMapping_->engage();
+#endif
 //            mapping->setPercussivenessMIDIChannel(1);
 
 		}
@@ -216,30 +249,30 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
             
             KeyPositionTracker::Event recentEvent;
             std::pair<timestamp_type, key_velocity> velocityInfo;
-            cout << "Key " << noteNumber_ << " --> State " << positionTrackerState << endl;
+//            cout << "Key " << noteNumber_ << " --> State " << positionTrackerState << endl;
             
             switch(positionTrackerState) {
                 case kPositionTrackerStatePartialPressAwaitingMax:
                     //keyboard_.setKeyLEDColorRGB(noteNumber_, 1.0, 0.0, 0);
                     recentEvent = positionTracker_.pressStart();
-                    cout << "  start = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
+//                    cout << "  start = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
                     break;
                 case kPositionTrackerStatePartialPressFoundMax:
                     //keyboard_.setKeyLEDColorRGB(noteNumber_, 1.0, 0.6, 0);
                     recentEvent = positionTracker_.currentMax();
-                    cout << "  max = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
+//                    cout << "  max = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
                     break;
                 case kPositionTrackerStatePressInProgress:                    
                     //keyboard_.setKeyLEDColorRGB(noteNumber_, 0.8, 0.8, 0);
                     velocityInfo = positionTracker_.pressVelocity();
-                    cout << "  escapement time = " << velocityInfo.first << " velocity = " << velocityInfo.second << endl;
+//                    cout << "  escapement time = " << velocityInfo.first << " velocity = " << velocityInfo.second << endl;
                     break;
                 case kPositionTrackerStateDown:
                     //keyboard_.setKeyLEDColorRGB(noteNumber_, 0, 1.0, 0);
                     recentEvent = positionTracker_.pressStart();
-                    cout << "  start = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
+//                    cout << "  start = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
                     recentEvent = positionTracker_.pressFinish();
-                    cout << "  finish = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
+//                    cout << "  finish = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
                     velocityInfo = positionTracker_.pressVelocity();
                     cout << "  escapement time = " << velocityInfo.first << " velocity = " << velocityInfo.second << endl;
                     
@@ -253,7 +286,7 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
                 case kPositionTrackerStateReleaseInProgress:
                     //keyboard_.setKeyLEDColorRGB(noteNumber_, 0, 0, 1.0);
                     recentEvent = positionTracker_.releaseStart();
-                    cout << "  start = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
+//                    cout << "  start = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
 //                    if(keyboard_.graphGUI() != 0) {
 //                        keyboard_.graphGUI()->setKeyReleaseStart(positionTracker_.releaseStart().position, positionTracker_.releaseStart().timestamp);
 //                        keyboard_.graphGUI()->copyKeyDataFromBuffer(positionBuffer_, positionTracker_.pressStart().index - 10,
@@ -264,7 +297,7 @@ void PianoKey::triggerReceived(TriggerSource* who, timestamp_type timestamp) {
                 case kPositionTrackerStateReleaseFinished:
                     //keyboard_.setKeyLEDColorRGB(noteNumber_, 0.5, 0, 1.0);
                     recentEvent = positionTracker_.releaseFinish();
-                    cout << "  finish = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
+//                    cout << "  finish = (" << recentEvent.index << ", " << recentEvent.position << ", " << recentEvent.timestamp << ")\n";
 //                    if(keyboard_.graphGUI() != 0) {
 //                        keyboard_.graphGUI()->setKeyReleaseStart(positionTracker_.releaseStart().position, positionTracker_.releaseStart().timestamp);
 //                        keyboard_.graphGUI()->setKeyReleaseFinish(positionTracker_.releaseFinish().position, positionTracker_.releaseFinish().timestamp);

@@ -34,6 +34,7 @@
 // Strings for pitch classes (two forms for sharps), for static methods
 const char* kNoteNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 const char* kNoteNamesAlternate[12] = {"C", "Db", "D ", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"};
+std::vector<int> gKeysToMonitor;
 
 
 MainApplicationController::MainApplicationController()
@@ -203,6 +204,15 @@ bool MainApplicationController::touchkeyDeviceStartupSequence(const char * path)
     }
 #endif
     
+    // Wait to capture some frames
+//    usleep(1e+6);
+    // Start monitoring some keys
+//    std::vector<int> keysToMonitor;
+//    gKeysToMonitor.push_back(65);
+//
+//    pianoKeyInfo_.setPianoKeys(gKeysToMonitor);
+//    pianoKeyInfo_.startThread();
+
     // Success!
     touchkeyErrorMessage_ = "";
     touchkeyErrorOccurred_ = false;
@@ -357,6 +367,7 @@ void MainApplicationController::startCalibration(int secondsToCalibrate)
 {
 
 	std::cout << "Running calibration for " << secondsToCalibrate << " seconds..." << std::endl;
+//	touchkeyController_.calibrationStart(&gKeysToMonitor);
 	touchkeyController_.calibrationStart(NULL);
 
 	usleep(secondsToCalibrate * 1E6);
@@ -381,6 +392,7 @@ bool MainApplicationController::startTouchkeyDevice() {
 
 void MainApplicationController::stopTouchkeyDevice() {
     touchkeyController_.stopAutoGathering();
+    pianoKeyInfo_.stopThread(-1);
 }
 
 // Status queries on TouchKeys

@@ -112,7 +112,7 @@ void PianoKeyboard::sendMessage(const char * path, const char * type, ...) {
 
 //	ScopedLock sl(oscListenerMutex_);
 
-    cout << "sendMessage: " << path << endl;
+//    cout << "sendMessage: " << path << endl;
     
 	// Initialize variable argument list for reading
 	va_list v;
