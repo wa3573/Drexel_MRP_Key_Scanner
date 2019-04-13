@@ -94,8 +94,8 @@ public:
 	// These methods load and save calibration data from an XML string.  The PianoKeyCalibrator object handles
 	// the relevant file I/O.
 	
-	void loadFromXml(const XmlElement& baseElement);
-	bool saveToXml(XmlElement& baseElement);
+	void loadFromXml(tinyxml2::XMLElement* baseElement);
+	bool saveToXml(tinyxml2::XMLElement* baseElement);
 	
 private:
 	// ***** Helper Methods *****

@@ -108,6 +108,8 @@ public:
     void startCalibration(int secondsToCalibrate);
     void finishCalibration();
     void updateQuiescent();
+    bool saveCalibration(std::string const& filename);
+    bool loadCalibration(std::string const& filename);
 
     // Start/stop the TouchKeys data collection
     bool startTouchkeyDevice();

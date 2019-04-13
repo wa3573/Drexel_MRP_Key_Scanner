@@ -365,12 +365,13 @@ void MainApplicationController::touchkeyDeviceSetVerbosity(int verbose)
 
 void MainApplicationController::startCalibration(int secondsToCalibrate)
 {
-
-	std::cout << "Running calibration for " << secondsToCalibrate << " seconds..." << std::endl;
-//	touchkeyController_.calibrationStart(&gKeysToMonitor);
-	touchkeyController_.calibrationStart(NULL);
-
-	usleep(secondsToCalibrate * 1E6);
+	if (secondsToCalibrate > 0) {
+		std::cout << "Running calibration for " << secondsToCalibrate << " seconds..." << std::endl;
+		touchkeyController_.calibrationStart(NULL);
+		usleep(secondsToCalibrate * 1E6);
+	} else {
+		touchkeyController_.calibrationStart(NULL);
+	}
 }
 
 void MainApplicationController::finishCalibration()
@@ -383,6 +384,16 @@ void MainApplicationController::finishCalibration()
 void MainApplicationController::updateQuiescent()
 {
 	touchkeyController_.calibrationUpdateQuiescent();
+}
+
+bool MainApplicationController::saveCalibration(std::string const& filename)
+{
+	return touchkeyController_.calibrationSaveToFile(filename);
+}
+
+bool MainApplicationController::loadCalibration(std::string const& filename)
+{
+	return touchkeyController_.calibrationLoadFromFile(filename);
 }
 
 // Start/stop the TouchKeys data collection
@@ -921,6 +932,38 @@ bool MainApplicationController::oscHandlerMethod(const char *path, const char *t
                 touchkeyDeviceStopAutodetecting();
             }
             return false; // Others may still want to handle this message
+        }
+    } else if(!strcmp(path, "/control/calibration/start")) {
+    	std::cout << "Beginning calibration" << std::endl;
+		startCalibration(0);
+    } else if(!strcmp(path, "/control/calibration/finish")) {
+    	std::cout << "Finishing calibration...";
+
+    	finishCalibration();
+
+    } else if(!strcmp(path, "/control/calibration/load")) {
+        if(types[0] != 's') {
+            return false;   // Ill-formed message
+        }
+
+        const std::string filename = std::string(&values[0]->s);
+        std::cout << "Loading calibration from '" << filename << "'... ";
+        if (loadCalibration(filename)) {
+        	std::cout << "Successful" << std::endl;
+        } else {
+        	std::cout << "Failed" << std::endl;
+        }
+    } else if(!strcmp(path, "/control/calibration/save")) {
+        if(types[0] != 's') {
+            return false;   // Ill-formed message
+        }
+
+        const std::string filename = std::string(&values[0]->s);
+        std::cout << "Saving calibration to '" << filename << "' ... ";
+        if (saveCalibration(filename)) {
+        	std::cout << "Successful" << std::endl;
+        } else {
+        	std::cout << "Failed" << std::endl;
         }
     }
     

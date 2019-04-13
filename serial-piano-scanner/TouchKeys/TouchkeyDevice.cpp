@@ -723,7 +723,7 @@ void TouchkeyDevice::calibrationUpdateQuiescent()
 	}
 }
 
-// TODO: calibrationSaveToFile()
+// TODO: test calibrationSaveToFile()
 // Save calibration data to a file
 bool TouchkeyDevice::calibrationSaveToFile(std::string const& filename)
 {
@@ -759,7 +759,7 @@ bool TouchkeyDevice::calibrationSaveToFile(std::string const& filename)
 //
 //		// Now save the generated tree to a file
 //
-//		if(!baseElement.writeToFile(File(filename.c_str()), "")) {
+//		if(!baseElement.writeToFile(filename.c_str(), "")) {
 //			std::cerr << "TouchkeyDevice: could not write calibration file " << filename << "\n";
 //			throw 1;
 //		}
@@ -771,7 +771,54 @@ bool TouchkeyDevice::calibrationSaveToFile(std::string const& filename)
 //	}
 //
 //	return true;
-	return false;
+
+	int i;
+
+	if(!isCalibrated()) {
+		std::cerr << "TouchKeys not calibrated, so can't save calibration data.\n";
+		return false;
+	}
+
+	// Create an XML structure and save it to file.
+	try {
+		tinyxml2::XMLDocument doc;
+
+		tinyxml2::XMLElement* baseElement = doc.NewElement("TouchkeyDeviceCalibration");
+//		tinyxml2::XMLElement baseElement("TouchkeyDeviceCalibration");
+		bool savedValidData = false;
+
+		for(i = 0; i < keyCalibratorsLength_; i++) {
+			tinyxml2::XMLElement* calibratorElement = doc.NewElement("Key");
+//			tinyxml2::XMLElement calibratorElement("Key");
+			calibratorElement->SetAttribute("id", i);
+
+			// Tell each individual calibrator to add its data to the XML tree
+			if(keyCalibrators_[i]->saveToXml(calibratorElement)) {
+				baseElement->InsertEndChild(calibratorElement);
+				savedValidData = true;
+			}
+		}
+
+		if(!savedValidData) {
+			std::cerr << "TouchkeyDevice: unable to find valid calibration data to save.\n";
+			throw 1;
+		}
+
+		// Now save the generated tree to a file
+
+		doc.InsertEndChild(baseElement);
+		if(!doc.SaveFile(filename.c_str())) {
+			std::cerr << "TouchkeyDevice: could not write calibration file " << filename << "\n";
+			throw 1;
+		}
+
+		//lastCalibrationFile_ = filename;
+	}
+	catch(...) {
+		return false;
+	}
+
+	return true;
 }
 
 // TODO: calibrationLoadFromFile()
@@ -784,13 +831,13 @@ bool TouchkeyDevice::calibrationLoadFromFile(std::string const& filename)
 //
 //	// Open the file and read the new values
 //	try {
-//        XmlDocument doc(File(filename.c_str()));
+//        XmlDocument doc(filename.c_str());
 //		XmlElement *baseElement = doc.getDocumentElement();
 //        XmlElement *deviceCalibrationElement, *calibratorElement;
 //
 //		if(baseElement == 0) {
 //			std::cerr << "TouchkeyDevice: unable to load patch table file: \"" << filename << "\". Error was:\n";
-//			std::cerr << doc.getLastParseError() << std::endl;
+////			std::cerr << doc.getLastParseError() << std::endl;
 //			throw 1;
 //		}
 //
@@ -823,11 +870,7 @@ bool TouchkeyDevice::calibrationLoadFromFile(std::string const& filename)
 //
 //        calibrationInProgress_ = false;
 //        isCalibrated_ = true;
-//        if(keyboard_.gui() != 0) {
-//            for(int i = lowestMidiNote_; i <  lowestMidiNote_ + 12*numOctaves_; i++) {
-//                keyboard_.gui()->setAnalogCalibsendNoterationStatusForKey(i, true);
-//            }
-//        }
+//
 //		//lastCalibrationFile_ = filename;
 //
 //        delete baseElement;
@@ -839,7 +882,56 @@ bool TouchkeyDevice::calibrationLoadFromFile(std::string const& filename)
 //	// TODO: reset key states?
 //
 //	return true;
-	return false;
+
+	calibrationClear();
+
+	// Open the file and read the new values
+	try {
+		tinyxml2::XMLDocument doc;
+		tinyxml2::XMLElement *baseElement, *calibratorElement;
+
+		tinyxml2::XMLError ret = doc.LoadFile(filename.c_str());
+		if(ret != tinyxml2::XML_SUCCESS) {
+			std::cerr << "TouchkeyDevice: unable to load patch table file: \"" << filename << "\". Error was:\n";
+			std::cerr << doc.ErrorStr() << " (Line " << doc.ErrorLineNum() << ")\n";
+			throw 1;
+		}
+
+		// All calibration data is encapsulated within the root element <PianoBarCalibration>
+		baseElement = doc.FirstChildElement("TouchkeyDeviceCalibration");
+		if(baseElement == NULL) {
+			std::cerr << "TouchkeyDevice: malformed calibration file, aborting.\n";
+			throw 1;
+		}
+
+		// Go through and find each key's calibration information
+		calibratorElement = baseElement->FirstChildElement("Key");
+		if(calibratorElement == NULL) {
+			std::cerr << "TouchkeyDevice: warning: no keys found\n";
+		}
+		else {
+			while(calibratorElement != NULL) {
+				int keyId;
+
+				if(calibratorElement->QueryIntAttribute("id", &keyId) == tinyxml2::XML_SUCCESS) {
+					if(keyId >= 0 && keyId < keyCalibratorsLength_)
+						keyCalibrators_[keyId]->loadFromXml(calibratorElement);
+				}
+				calibratorElement = calibratorElement->NextSiblingElement("Key");
+			}
+		}
+
+        calibrationInProgress_ = false;
+        isCalibrated_ = true;
+		//lastCalibrationFile_ = filename;
+	}
+	catch(...) {
+		return false;
+	}
+
+	// TODO: reset key states?
+
+	return true;
 }
 
 // Initialize the calibrators
@@ -967,18 +1059,73 @@ void* TouchkeyDevice::ledUpdateLoopFunction(Thread* thread)
 	return NULL;
 }
 
+int set_interface_attribs(int fd, int speed)
+{
+    struct termios tty;
+
+    if (tcgetattr(fd, &tty) < 0) {
+        printf("Error from tcgetattr: %s\n", strerror(errno));
+        return -1;
+    }
+
+    cfsetospeed(&tty, (speed_t)speed);
+    cfsetispeed(&tty, (speed_t)speed);
+
+    tty.c_cflag |= (CLOCAL | CREAD);    /* ignore modem controls */
+    tty.c_cflag &= ~CSIZE;
+    tty.c_cflag |= CS8;         /* 8-bit characters */
+    tty.c_cflag &= ~PARENB;     /* no parity bit */
+    tty.c_cflag &= ~CSTOPB;     /* only need 1 stop bit */
+    tty.c_cflag &= ~CRTSCTS;    /* no hardware flowcontrol */
+
+    /* setup for non-canonical mode */
+    tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+    tty.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+    tty.c_oflag &= ~OPOST;
+
+    /* fetch bytes as they become available */
+    tty.c_cc[VMIN] = 1;
+    tty.c_cc[VTIME] = 1;
+
+    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+        printf("Error from tcsetattr: %s\n", strerror(errno));
+        return -1;
+    }
+    return 0;
+}
+
+void set_mincount(int fd, int mcount)
+{
+    struct termios tty;
+
+    if (tcgetattr(fd, &tty) < 0) {
+        printf("Error tcgetattr: %s\n", strerror(errno));
+        return;
+    }
+
+    tty.c_cc[VMIN] = mcount ? 1 : 0;
+    tty.c_cc[VTIME] = 5;        /* half second timer */
+
+    if (tcsetattr(fd, TCSANOW, &tty) < 0)
+        printf("Error tcsetattr: %s\n", strerror(errno));
+}
+
 bool TouchkeyDevice::openDevice(const char * inputDevicePath)
 {
 //	// If the device is already open, close it
 	if (isOpen())
 		closeDevice();
 
-	device_ = open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY);
+//	device_ = open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY);
+	device_ = open (inputDevicePath, O_RDWR | O_NOCTTY | O_SYNC);
 
 	if (device_ < 0) {
 //		fprintf(stderr, "%s", explain_open(inputDevicePath, O_RDWR | O_NOCTTY | O_NDELAY, 0));
 		return false;
 	}
+
+	set_interface_attribs(device_, B9600);
+	set_mincount(device_, 0);                // set to timed read
 
 	return true;
 }
@@ -2104,7 +2251,23 @@ void TouchkeyDevice::hexDump(ostream& str, unsigned char * buffer, int length)
 // Read from the TouchKeys device
 long TouchkeyDevice::deviceRead(char *buffer, unsigned int count)
 {
-	return read(device_, buffer, count);
+	long ret = read(device_, buffer, count);
+
+#ifdef DEBUG_SERIAL
+	if (ret > 0) {
+		std::cout << "Read " << ret << " bytes: ";
+
+		for (long i = 0; i < ret; i++) {
+			std::cout << " " << std::hex << buffer[i] << " ";
+		}
+
+		std::cout << std::endl;
+	} else if (ret < 0) {
+		std::cerr << errno << std::endl;
+	}
+#endif
+
+	return ret;
 }
 
 // Write to the TouchKeys device

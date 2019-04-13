@@ -1,0 +1,227 @@
+<TouchkeyDeviceCalibration>
+    <Key id="21">
+        <Calibration quiescent="2026" press="245"/>
+    </Key>
+    <Key id="22">
+        <Calibration quiescent="383" press="12"/>
+    </Key>
+    <Key id="23">
+        <Calibration quiescent="1831" press="336"/>
+    </Key>
+    <Key id="24">
+        <Calibration quiescent="2268" press="291"/>
+    </Key>
+    <Key id="25">
+        <Calibration quiescent="407" press="49"/>
+    </Key>
+    <Key id="26">
+        <Calibration quiescent="2378" press="297"/>
+    </Key>
+    <Key id="27">
+        <Calibration quiescent="549" press="60"/>
+    </Key>
+    <Key id="28">
+        <Calibration quiescent="2950" press="347"/>
+    </Key>
+    <Key id="29">
+        <Calibration quiescent="2746" press="347"/>
+    </Key>
+    <Key id="30">
+        <Calibration quiescent="449" press="13"/>
+    </Key>
+    <Key id="31">
+        <Calibration quiescent="3149" press="381"/>
+    </Key>
+    <Key id="33">
+        <Calibration quiescent="2747" press="327"/>
+    </Key>
+    <Key id="34">
+        <Calibration quiescent="359" press="4"/>
+    </Key>
+    <Key id="35">
+        <Calibration quiescent="2723" press="355"/>
+    </Key>
+    <Key id="36">
+        <Calibration quiescent="2835" press="333"/>
+    </Key>
+    <Key id="37">
+        <Calibration quiescent="401" press="52"/>
+    </Key>
+    <Key id="38">
+        <Calibration quiescent="2986" press="309"/>
+    </Key>
+    <Key id="39">
+        <Calibration quiescent="460" press="39"/>
+    </Key>
+    <Key id="40">
+        <Calibration quiescent="2566" press="266"/>
+    </Key>
+    <Key id="41">
+        <Calibration quiescent="3210" press="334"/>
+    </Key>
+    <Key id="42">
+        <Calibration quiescent="446" press="18"/>
+    </Key>
+    <Key id="43">
+        <Calibration quiescent="2708" press="288"/>
+    </Key>
+    <Key id="44">
+        <Calibration quiescent="428" press="51"/>
+    </Key>
+    <Key id="45">
+        <Calibration quiescent="2917" press="249"/>
+    </Key>
+    <Key id="46">
+        <Calibration quiescent="434" press="10"/>
+    </Key>
+    <Key id="47">
+        <Calibration quiescent="2795" press="327"/>
+    </Key>
+    <Key id="48">
+        <Calibration quiescent="3639" press="364"/>
+    </Key>
+    <Key id="49">
+        <Calibration quiescent="768" press="44"/>
+    </Key>
+    <Key id="50">
+        <Calibration quiescent="3712" press="416"/>
+    </Key>
+    <Key id="51">
+        <Calibration quiescent="601" press="52"/>
+    </Key>
+    <Key id="52">
+        <Calibration quiescent="3705" press="415"/>
+    </Key>
+    <Key id="53">
+        <Calibration quiescent="3713" press="467"/>
+    </Key>
+    <Key id="54">
+        <Calibration quiescent="591" press="12"/>
+    </Key>
+    <Key id="55">
+        <Calibration quiescent="3712" press="336"/>
+    </Key>
+    <Key id="56">
+        <Calibration quiescent="659" press="63"/>
+    </Key>
+    <Key id="57">
+        <Calibration quiescent="3664" press="322"/>
+    </Key>
+    <Key id="58">
+        <Calibration quiescent="752" press="39"/>
+    </Key>
+    <Key id="59">
+        <Calibration quiescent="3744" press="416"/>
+    </Key>
+    <Key id="60">
+        <Calibration quiescent="3706" press="326"/>
+    </Key>
+    <Key id="61">
+        <Calibration quiescent="643" press="42"/>
+    </Key>
+    <Key id="62">
+        <Calibration quiescent="3696" press="400"/>
+    </Key>
+    <Key id="63">
+        <Calibration quiescent="645" press="52"/>
+    </Key>
+    <Key id="64">
+        <Calibration quiescent="3751" press="318"/>
+    </Key>
+    <Key id="65">
+        <Calibration quiescent="3772" press="331"/>
+    </Key>
+    <Key id="66">
+        <Calibration quiescent="781" press="33"/>
+    </Key>
+    <Key id="67">
+        <Calibration quiescent="3429" press="341"/>
+    </Key>
+    <Key id="68">
+        <Calibration quiescent="510" press="46"/>
+    </Key>
+    <Key id="69">
+        <Calibration quiescent="3233" press="301"/>
+    </Key>
+    <Key id="70">
+        <Calibration quiescent="528" press="15"/>
+    </Key>
+    <Key id="71">
+        <Calibration quiescent="3772" press="372"/>
+    </Key>
+    <Key id="72">
+        <Calibration quiescent="2982" press="281"/>
+    </Key>
+    <Key id="73">
+        <Calibration quiescent="651" press="31"/>
+    </Key>
+    <Key id="74">
+        <Calibration quiescent="3748" press="442"/>
+    </Key>
+    <Key id="75">
+        <Calibration quiescent="843" press="70"/>
+    </Key>
+    <Key id="76">
+        <Calibration quiescent="3736" press="383"/>
+    </Key>
+    <Key id="77">
+        <Calibration quiescent="3518" press="324"/>
+    </Key>
+    <Key id="78">
+        <Calibration quiescent="619" press="51"/>
+    </Key>
+    <Key id="79">
+        <Calibration quiescent="3395" press="289"/>
+    </Key>
+    <Key id="80">
+        <Calibration quiescent="540" press="46"/>
+    </Key>
+    <Key id="81">
+        <Calibration quiescent="3757" press="329"/>
+    </Key>
+    <Key id="82">
+        <Calibration quiescent="570" press="11"/>
+    </Key>
+    <Key id="83">
+        <Calibration quiescent="3497" press="385"/>
+    </Key>
+    <Key id="84">
+        <Calibration quiescent="3721" press="295"/>
+    </Key>
+    <Key id="85">
+        <Calibration quiescent="590" press="45"/>
+    </Key>
+    <Key id="86">
+        <Calibration quiescent="3253" press="282"/>
+    </Key>
+    <Key id="87">
+        <Calibration quiescent="670" press="43"/>
+    </Key>
+    <Key id="88">
+        <Calibration quiescent="3483" press="307"/>
+    </Key>
+    <Key id="89">
+        <Calibration quiescent="3129" press="270"/>
+    </Key>
+    <Key id="90">
+        <Calibration quiescent="641" press="25"/>
+    </Key>
+    <Key id="91">
+        <Calibration quiescent="3110" press="267"/>
+    </Key>
+    <Key id="92">
+        <Calibration quiescent="622" press="57"/>
+    </Key>
+    <Key id="93">
+        <Calibration quiescent="2766" press="253"/>
+    </Key>
+    <Key id="94">
+        <Calibration quiescent="552" press="57"/>
+    </Key>
+    <Key id="95">
+        <Calibration quiescent="3346" press="318"/>
+    </Key>
+    <Key id="96">
+        <Calibration quiescent="3762" press="352"/>
+    </Key>
+</TouchkeyDeviceCalibration>

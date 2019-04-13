@@ -188,37 +188,41 @@ void PianoKeyCalibrator::calibrationUpdateQuiescent() {
 }
 
 // Load calibration data from an XML string
-void PianoKeyCalibrator::loadFromXml(const XmlElement& baseElement) {
+void PianoKeyCalibrator::loadFromXml(tinyxml2::XMLElement* baseElement) {
 	// Abort any calibration in progress and reset to default values
 	if(status_ == kPianoKeyInCalibration)
 		calibrationAbort();
 	calibrationClear();
 	
-	XmlElement *calibrationElement = baseElement.getChildByName("Calibration");
+	tinyxml2::XMLElement *calibrationElement = baseElement->FirstChildElement("Calibration");
 	
-	if(calibrationElement != 0) {
-        if(calibrationElement->hasAttribute("quiescent") &&
-           calibrationElement->hasAttribute("press")) {
-            quiescent_ = calibrationElement->getIntAttribute("quiescent");
-            press_ = calibrationElement->getIntAttribute("press");
-            changeStatus(kPianoKeyCalibrated);
+	if(calibrationElement != NULL) {
+        int quiescent, press;
+
+        if(calibrationElement->QueryIntAttribute("quiescent", &quiescent) == tinyxml2::XML_SUCCESS) {
+            if(calibrationElement->QueryIntAttribute("press", &press) == tinyxml2::XML_SUCCESS) {
+                // Found both values: update our state accordingly
+                quiescent_ = quiescent;
+                press_ = press;
+                changeStatus(kPianoKeyCalibrated);
+            }
         }
 	}
 }
 
 // Saves calibration data within the provided XML Element.  Child elements
 // will be added for each sequence.  Returns true if valid data was saved.
-bool PianoKeyCalibrator::saveToXml(XmlElement& baseElement) {
+bool PianoKeyCalibrator::saveToXml(tinyxml2::XMLElement *baseElement) {
 	if(status_ != kPianoKeyCalibrated)
 		return false;
-//
-//    XmlElement *newElement = baseElement.createNewChildElement("Calibration");
-//
-//    if(newElement == 0)
-//        return false;
-//
-//    newElement->setAttribute("quiescent", quiescent_);
-//    newElement->setAttribute("press", press_);
+
+	tinyxml2::XMLElement* newElement = baseElement->GetDocument()->NewElement("Calibration");
+//    tinyxml2::XMLElement* newElement = tinyxml2::XMLDocument::NewElement("Calibration");
+    newElement->SetAttribute("quiescent", quiescent_);
+    newElement->SetAttribute("press", press_);
+
+    if(baseElement->InsertEndChild(newElement) == NULL)
+        return false;
 
 	return true;
 }

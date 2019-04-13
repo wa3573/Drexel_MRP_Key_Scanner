@@ -10,6 +10,7 @@
 
 #include <map>
 #include <vector>
+#include "tinyxml2.h"
 
 template<class T>
 inline bool mapHasKey(std::map<std::string, T> map, std::string attributeName)
@@ -31,7 +32,7 @@ public:
 	}
 
 	XmlAttribute(std::string name, std::string value) :
-		name_(name), value_(value)
+			name_(name), value_(value)
 	{
 
 	}
@@ -81,7 +82,13 @@ class XmlElement {
 public:
 	inline XmlElement(std::string tagName)
 	{
-		tagName_ = tagName;
+//		tinyElement_ = new tinyxml2::XMLElement();
+//		tinyElement_->SetName(tagName.c_str());
+	}
+
+	inline XmlElement(tinyxml2::XMLElement* element)
+	{
+		tinyElement_ = element;
 	}
 
 	inline XmlElement()
@@ -89,57 +96,43 @@ public:
 
 	}
 
+	inline ~XmlElement()
+	{
+//		delete tinyElement_;
+	}
+
 	inline XmlElement* getChildByName(std::string childName)
 	{
-		std::map<std::string, XmlElement*>::iterator it = childrenMap_.find(
-				childName);
-
-		if (it != childrenMap_.end()) {
-			return (*it).second;
-		}
-
-		return NULL;
+		return new XmlElement(
+				tinyElement_->FirstChildElement(childName.c_str()));
 	}
 
 	inline XmlElement* getChildByName(std::string childName) const
 	{
-		std::map<std::string, XmlElement*>::const_iterator it =
-				childrenMap_.find(childName);
 
-		if (it != childrenMap_.end()) {
-			return (*it).second;
-		}
-
-		return NULL;
+		return const_cast<XmlElement*>(new XmlElement(
+				tinyElement_->FirstChildElement(childName.c_str())));
 	}
 
 	inline bool hasAttribute(std::string attributeName)
 	{
-		std::map<std::string, XmlAttribute*>::iterator it = attributeMap_.find(
-				attributeName);
-
-		if (it != attributeMap_.end()) {
-			return true;
-		}
-
-		return false;
+		return tinyElement_->QueryAttribute(attributeName.c_str(), (int*) NULL)
+				== tinyxml2::XML_SUCCESS;
 	}
 
 	inline std::string getStringAttribute(std::string attribute)
 	{
-		std::map<std::string, XmlAttribute*>::iterator it = attributeMap_.find(
-				attribute);
-
-		if (it != attributeMap_.end()) {
-			return (*it).second->getName();
-		}
 
 		return NULL;
 	}
 
 	inline int getIntAttribute(std::string attribute)
 	{
-		return 0;
+		int ret = 0;
+
+		tinyElement_->QueryAttribute(attribute.c_str(), &ret);
+
+		return ret;
 	}
 
 	inline void addChildElement(XmlElement* element)
@@ -154,22 +147,57 @@ public:
 
 	inline void setAttribute(std::string name, std::string value)
 	{
+	}
 
-		if (!mapHasKey(attributeMap_, name)) {
-			XmlAttribute* newAttribute = new XmlAttribute(name, value);
-			attributeMap_[name] = newAttribute;
-			attributes_.push_back(newAttribute);
-		}
+	inline void setAttribute(std::string name, int value)
+	{
+		tinyElement_->SetAttribute(name.c_str(), value);
+	}
 
-		attributeMap_[name]->setValue(value);
+	inline XmlElement* createNewChildElement(std::string tagName)
+	{
+//		tinyxml2::XMLElement* child = new tinyxml2::XMLElement(tagName);
+//		return tinyElement_->InsertEndChild(child);
+		return NULL;
+	}
+
+	inline bool writeToFile(const char* filename, std::string dtd)
+	{
+		tinyxml2::XMLDocument doc;
+
+		doc.InsertEndChild(tinyElement_);
+		return doc.SaveFile(filename);
 	}
 
 private:
+	tinyxml2::XMLElement* tinyElement_;
 	std::string tagName_;
-	std::map<std::string, XmlElement*> childrenMap_;
-	std::vector<XmlElement*> children_;
-	std::map<std::string, XmlAttribute*> attributeMap_;
-	std::vector<XmlAttribute*> attributes_;
+};
+
+class XmlDocument {
+public:
+	inline XmlDocument()
+	{
+		tinyDocument_ = new tinyxml2::XMLDocument();
+	}
+
+	inline XmlDocument(const char* filename)
+	{
+		tinyDocument_ = new tinyxml2::XMLDocument(filename);
+	}
+
+	inline ~XmlDocument()
+	{
+		delete tinyDocument_;
+	}
+
+	inline XmlElement* getDocumentElement()
+	{
+		return new XmlElement(tinyDocument_->RootElement());
+	}
+
+private:
+	tinyxml2::XMLDocument* tinyDocument_;
 };
 
 #endif /* UTILITY_XML_H_ */

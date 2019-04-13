@@ -6,7 +6,7 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -14,9 +14,9 @@
 
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
   =====================================================================
- 
+
   Main.cpp: main startup routines, connecting to Juce library
 */
 
@@ -37,7 +37,8 @@ const int kCalibrationTimeSeconds = 20;
 const int kVerboseLevel = 0;
 const bool kShouldCalibrate = true;
 const string kMidiOutputName = "hw:0:0:0"; // Legacy MIDI
-const string kOscHost = "127.0.0.1"; // OSC to localhost
+//const string kOscHost = "127.0.0.1"; // OSC to localhost
+const string kOscHost = "192.168.9.3"; // Bela over eth0
 //const string kOscHost = "192.168.7.2"; // Address to transmit OSC messages to
 const string kOscPort = "8001"; // Port for that address
 const size_t kMidiQueueSize = 1; // Will likely be unused
@@ -79,7 +80,7 @@ void list_devices(MainApplicationController& controller)
     std::vector<std::string> touchkeysDevices(controller.availableTouchkeyDevices());
 //    std::vector<std::pair<int, std::string> > midiInputDevices(controller.availableMIDIInputDevices());
     std::vector<std::pair<int, std::string> > midiOutputDevices(controller.availableMIDIOutputDevices());
-    
+
     cerr << "TouchKeys devices: \n";
     if(touchkeysDevices.empty())
         cerr << "  [none found]\n";
@@ -99,7 +100,7 @@ void list_devices(MainApplicationController& controller)
 //            cerr << "  " << it->first << ": " << it->second << "\n";
 //        }
 //    }
-    
+
     cerr << "\nMIDI output devices: \n";
     if(midiOutputDevices.empty())
         cerr << "  [none found]\n";
@@ -115,7 +116,7 @@ void list_devices(MainApplicationController& controller)
 int main (int argc, char* argv[])
 {
     MainApplicationController controller;
-    
+
     int ch, option_index;
     int midiInputNum = 0, midiOutputNum = 0;
     bool useVirtualMidiOutput = false;
@@ -125,12 +126,12 @@ int main (int argc, char* argv[])
     int oscInputPort = kDefaultOscReceivePort;
     string touchkeysDevicePath;
 
-    printf("Touchkeys Bela Port v0.02\n");
+    printf("Touchkeys Bela Port v0.5\n");
 
     printf("Setting MidiQueue and resizing to %lu items\n", kMidiQueueSize);
     MidiOutput::setMidiQueue(gMidiQueue);
     gMidiQueue->resize(kMidiQueueSize);
-    
+
     printf("Setting MidiOutput to '%s'\n", kMidiOutputName.c_str());
     MidiOutput::midiOutput_ = MidiOutput("hw:0:0:0");
 
@@ -149,7 +150,7 @@ int main (int argc, char* argv[])
     controller.midiSegmentsSetMode(1);
     controller.midiSegmentsSetMidiOutputController();
 
-    printf("Setting OSC host to %s:%s and enabling output", kOscHost.c_str(), kOscPort.c_str());
+    printf("Setting OSC host to %s:%s and enabling output\n", kOscHost.c_str(), kOscPort.c_str());
     controller.oscTransmitClearAddresses();
     controller.oscTransmitAddAddress(kOscHost.c_str(), kOscPort.c_str());
     controller.oscTransmitSetEnabled(true);
@@ -187,17 +188,17 @@ int main (int argc, char* argv[])
             break;
 		}
 	}
-    
-    
+
+
     if(shouldStart) {
         // Main initialization: open TouchKeys and MIDI devices
         controller.initialise();
-        
+
         // Always enable OSC input without GUI, since it is how we control
         // the system
         controller.oscReceiveSetPort(oscInputPort);
         controller.oscReceiveSetEnabled(true);
-        
+
         try {
             // Open MIDI devices
             if(autoopenMidiIn) {
@@ -218,7 +219,7 @@ int main (int argc, char* argv[])
                     controller.enableMIDIOutputPort(0, midiOutputNum);
                 }
             }
-            
+
             // Start the TouchKeys
             if(autostartTouchkeys) {
                 cout << "Starting the TouchKeys on " << touchkeysDevicePath << " ... ";
@@ -229,10 +230,10 @@ int main (int argc, char* argv[])
                 else
                     cout << "succeeded!\n";
             }
-            
+
             // Set up interrupt catching so we can stop with Ctrl-C
             struct sigaction sigIntHandler;
-            
+
             sigIntHandler.sa_handler = sigint_handler;
             sigemptyset(&sigIntHandler.sa_mask);
             sigIntHandler.sa_flags = 0;
@@ -243,7 +244,13 @@ int main (int argc, char* argv[])
 				printf("Calibrating for %d seconds\n", kCalibrationTimeSeconds);
 				controller.startCalibration(kCalibrationTimeSeconds);
 				controller.finishCalibration();
+				std::string filename = "calibration_" + std::to_string(Time::getMillisecondCounterHiRes()) + ".xml";
+				if (controller.saveCalibration(filename)) {
+					std::cout << "Calibration saved successfully to: " + filename << std::endl;
+				}
             }
+
+//            controller.loadCalibration("calibration_1551996860873.000000.xml");
 
             // Wait until interrupt signal is received
             while(!programShouldStop_) {
@@ -251,13 +258,13 @@ int main (int argc, char* argv[])
             }
         }
         catch(...) {
-            
+
         }
-        
+
         // Stop TouchKeys if still running
         if(controller.touchkeyDeviceIsRunning())
             controller.stopTouchkeyDevice();
     }
-    
+
     return 0;
 }
