@@ -49,6 +49,8 @@ const int kPianoKeyDefaultIdleCounter = 20;
 const timestamp_diff_type kPianoKeyDefaultTouchTimeoutInterval = microseconds_to_timestamp(20000); // was 20000
 const timestamp_diff_type kPianoKeyGuiUpdateInterval = microseconds_to_timestamp(15000); // How frequently to update the position display
 
+const bool kKeyPositionLoggingActive = true;
+
 class MRPMapping;
 class Mapping;
 
@@ -157,7 +159,6 @@ public:
 	// and wants to wait to integrate the two.  If the touch data doesn't materialize, this function
 	// is called by the scheduler.
 	timestamp_type touchTimedOut();
-	
 private:
 	// ***** MIDI Methods (private) *****
 	
@@ -228,6 +229,8 @@ private:
 	timestamp_diff_type touchTimeoutInterval_;		// How long to wait for a touch before timing out
 	MRPMapping* mrpMapping_;
 //	std::vector<Mapping*> touchkeyMappings_;
+
+	bool loggingActive_;
 	Mapping* touchkeysMapping_;
 
 };

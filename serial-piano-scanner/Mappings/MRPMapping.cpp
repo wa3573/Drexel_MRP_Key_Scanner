@@ -201,8 +201,8 @@ timestamp_type MRPMapping::performMapping() {
                             timestamp_type timeOfDownTransition = neighborMapper->positionTracker_->latestTimestamp();
                             timestamp_type timeOfOurPartialActivation = findTimestampOfPartialPress();
                             
-                            cout << "Found key " << neighborNote << " in Down state\n";
-                            
+//                            cout << "Found key " << neighborNote << " in Down state\n";
+//
                             if(!missing_value<timestamp_type>::isMissing(timeOfOurPartialActivation)) {
                                 if(timeOfOurPartialActivation > timeOfDownTransition) {
                                     // The neighbor note went down before us; pitch bend should engage
@@ -232,9 +232,9 @@ timestamp_type MRPMapping::performMapping() {
                             // Here we've found a neighboring note in the Down state. But did it precede our transition?
                             timestamp_type timeOfDownTransition = neighborMapper->positionTracker_->latestTimestamp();
                             timestamp_type timeOfOurPartialActivation = findTimestampOfPartialPress();
-                            
-                            cout << "Found key " << neighborNote << " in Down state\n";
-                            
+//
+//                            cout << "Found key " << neighborNote << " in Down state\n";
+//
                             if(!missing_value<timestamp_type>::isMissing(timeOfOurPartialActivation)) {
                                 if(timeOfOurPartialActivation > timeOfDownTransition) {
                                     // The neighbor note went down before us; pitch bend should engage
@@ -465,7 +465,7 @@ timestamp_type MRPMapping::performMapping() {
         keyboard_.sendMessage("/mrp/quality/intensity",
                               "iif", (int)kDefaultMIDIChannel, (int)newNoteNumber, (float)intensity, LO_ARGS_END);
         //keyboard_.testLog_ << currentTimestamp << " /mrp/quality/intensity iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << intensity << endl;
-        std::cout << currentTimestamp << " /mrp/quality/intensity iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << intensity << endl;
+//        std::cout << currentTimestamp << " /mrp/quality/intensity iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << intensity << endl;
     }
     if(brightness != lastBrightness_) {
                 int newNoteNumber = noteNumber_;
@@ -473,7 +473,7 @@ timestamp_type MRPMapping::performMapping() {
         keyboard_.sendMessage("/mrp/quality/brightness",
                               "iif", (int)kDefaultMIDIChannel, (int)newNoteNumber, (float)brightness, LO_ARGS_END);
         //keyboard_.testLog_ << currentTimestamp << " /mrp/quality/brightness iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << brightness << endl;
-        std::cout << currentTimestamp << " /mrp/quality/brightness iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << brightness << endl;
+//        std::cout << currentTimestamp << " /mrp/quality/brightness iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << brightness << endl;
     }
     if(pitch != lastPitch_) {
                 int newNoteNumber = noteNumber_;
@@ -481,7 +481,7 @@ timestamp_type MRPMapping::performMapping() {
         keyboard_.sendMessage("/mrp/quality/pitch",
                               "iif", (int)kDefaultMIDIChannel, (int)newNoteNumber, (float)pitch, LO_ARGS_END);
         //keyboard_.testLog_ << currentTimestamp << " /mrp/quality/pitch iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << pitch << endl;
-        std::cout << currentTimestamp << " /mrp/quality/pitch iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << pitch << endl;
+//        std::cout << currentTimestamp << " /mrp/quality/pitch iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << pitch << endl;
     }
     if(harmonic != lastHarmonic_) {
         int newNoteNumber = noteNumber_;
@@ -489,7 +489,7 @@ timestamp_type MRPMapping::performMapping() {
         keyboard_.sendMessage("/mrp/quality/harmonic",
                               "iif", (int)kDefaultMIDIChannel, (int)newNoteNumber, (float)harmonic, LO_ARGS_END);
         //keyboard_.testLog_ << currentTimestamp << " /mrp/quality/harmonic iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << harmonic << endl;
-        std::cout << currentTimestamp << " /mrp/quality/harmonic iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << harmonic << endl;
+//        std::cout << currentTimestamp << " /mrp/quality/harmonic iif " << kDefaultMIDIChannel << " " << newNoteNumber << " " << harmonic << endl;
     }
     
     lastIntensity_ = intensity;

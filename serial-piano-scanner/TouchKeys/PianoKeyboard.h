@@ -227,6 +227,7 @@ public:
     
     MappingScheduler& mappingScheduler() { return *mappingScheduler_; }
 	
+    void logInsert(timestamp_type timestamp, key_position position);
 	// ***** Member Variables *****
 public:
     // This mutex is grabbed by any thread which is supplying performance
@@ -285,6 +286,8 @@ private:
     // Scheduler specifically used for coordinating mappings
     MappingScheduler *mappingScheduler_;
 
+    // Logging
+    std::ofstream keyPositionLog_;
 };
 
 #endif /* KEYCONTROL_PIANOKEYBOARD_H */

@@ -31,6 +31,7 @@
 #include "MidiOutputController.h"
 #include "../Mappings/MappingFactory.h"
 #include "../Mappings/MappingScheduler.h"
+#include <string>
 
 // Constructor
 PianoKeyboard::PianoKeyboard() 
@@ -39,15 +40,20 @@ PianoKeyboard::PianoKeyboard()
   lowestMidiNote_(0), highestMidiNote_(0), numberOfPedals_(0),
   isInitialized_(false), isRunning_(false), isCalibrated_(false), calibrationInProgress_(false)
 {
-	  // Start a thread by which we can schedule future events
-	  futureEventScheduler_.start(0);
-      
-      // Build the key list
-      for(int i = 0; i <= 127; i++)
-          keys_.push_back(new PianoKey(*this, i, kDefaultKeyHistoryLength));
-      
-      mappingScheduler_ = new MappingScheduler(*this);
-      mappingScheduler_->start();
+	std::string tempFilename = "key_postion_" + std::to_string(Time::getMillisecondCounterHiRes()) + ".log";
+	const char* logFilename = tempFilename.c_str();
+	keyPositionLog_.open(logFilename, ios::out | ios::binary);
+	keyPositionLog_.seekp(0);
+
+	// Start a thread by which we can schedule future events
+	futureEventScheduler_.start(0);
+
+	// Build the key list
+	for(int i = 0; i <= 127; i++)
+	  keys_.push_back(new PianoKey(*this, i, kDefaultKeyHistoryLength));
+
+	mappingScheduler_ = new MappingScheduler(*this);
+	mappingScheduler_->start();
 }
 
 // Reset all keys and pedals to their default state.
@@ -306,6 +312,10 @@ void PianoKeyboard::tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool mi
     }
 }
 
+void PianoKeyboard::logInsert(timestamp_type timestamp, key_position position) {
+	keyPositionLog_ << timestamp << "," << position << std::endl;
+}
+
 // Destructor
 
 PianoKeyboard::~PianoKeyboard() {
@@ -319,4 +329,6 @@ PianoKeyboard::~PianoKeyboard() {
 //		delete (*it);
     mappingScheduler_->stop();
     delete mappingScheduler_;
+
+    keyPositionLog_.close();
 }

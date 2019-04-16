@@ -32,6 +32,8 @@
 #include "../TouchKeys/PianoKeyboard.h"
 #include "../Utility/IIRFilter.h"
 #include "Mapping.h"
+#include <iostream>
+#include <fstream>
 
 // How many velocity samples to save in the buffer. Make sure this is
 // enough to cover the frequency of updates.

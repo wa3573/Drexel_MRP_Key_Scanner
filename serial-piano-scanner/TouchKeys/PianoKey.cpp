@@ -47,7 +47,8 @@ PianoKey::PianoKey(PianoKeyboard& keyboard, int noteNumber, int bufferLength)
   touchSensorsArePresent_(true), touchIsActive_(false), 
   touchBuffer_(bufferLength), touchIsWaiting_(false), touchWaitingSource_(0),
   touchWaitingTimestamp_(0),
-  touchTimeoutInterval_(kPianoKeyDefaultTouchTimeoutInterval)
+  touchTimeoutInterval_(kPianoKeyDefaultTouchTimeoutInterval),
+  loggingActive_(kKeyPositionLoggingActive)
 {    
 	enable();
 	registerForTrigger(&idleDetector_);
@@ -75,6 +76,8 @@ PianoKey::PianoKey(PianoKeyboard& keyboard, int noteNumber, int bufferLength)
                                        &positionBuffer_, &positionTracker_);
     keyboard_.addMapping(noteNumber_, mrpMapping_ );
 #endif
+
+
 }
 
 // Destructor
@@ -134,6 +137,10 @@ void PianoKey::reset() {
 // Insert a new sample in the key buffer
 void PianoKey::insertSample(key_position pos, timestamp_type ts) {
     positionBuffer_.insert(pos, ts);
+
+    if (loggingActive_) {
+    	keyboard_.logInsert(ts, pos);
+    }
 }
 
 // If a key is active, force it to become idle, stopping any processes that it has created
