@@ -50,6 +50,7 @@ const timestamp_diff_type kPianoKeyDefaultTouchTimeoutInterval = microseconds_to
 const timestamp_diff_type kPianoKeyGuiUpdateInterval = microseconds_to_timestamp(15000); // How frequently to update the position display
 
 const bool kKeyPositionLoggingActive = true;
+const int kKeyPositionLoggingSampleFrequency = 2;
 
 class MRPMapping;
 class Mapping;
@@ -231,6 +232,7 @@ private:
 //	std::vector<Mapping*> touchkeyMappings_;
 
 	bool loggingActive_;
+	unsigned int logCount_;
 	Mapping* touchkeysMapping_;
 
 };

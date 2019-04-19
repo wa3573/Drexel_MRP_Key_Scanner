@@ -312,8 +312,8 @@ void PianoKeyboard::tellAllMappingFactoriesKeyMotionIdle(int noteNumber, bool mi
     }
 }
 
-void PianoKeyboard::logInsert(timestamp_type timestamp, key_position position) {
-	keyPositionLog_ << timestamp << "," << position << std::endl;
+void PianoKeyboard::logInsert(timestamp_type timestamp, int noteNumber, key_position position) {
+	keyPositionLog_ << timestamp << "," << noteNumber << "," << position << std::endl;
 }
 
 // Destructor

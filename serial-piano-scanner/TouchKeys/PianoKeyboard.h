@@ -227,7 +227,7 @@ public:
     
     MappingScheduler& mappingScheduler() { return *mappingScheduler_; }
 	
-    void logInsert(timestamp_type timestamp, key_position position);
+    void logInsert(timestamp_type timestamp, int noteNumber, key_position position);
 	// ***** Member Variables *****
 public:
     // This mutex is grabbed by any thread which is supplying performance

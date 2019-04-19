@@ -32,6 +32,7 @@
 #include "../Mappings/Control/TouchkeyControlMapping.h"
 
 #undef TOUCHKEYS_LEGACY_OSC
+#define KEY_POSITION_LOGGING
 //#define TOUCHKEYS_MAPPINGS
 
 // Default constructor
@@ -138,9 +139,14 @@ void PianoKey::reset() {
 void PianoKey::insertSample(key_position pos, timestamp_type ts) {
     positionBuffer_.insert(pos, ts);
 
-    if (loggingActive_) {
-    	keyboard_.logInsert(ts, pos);
+#ifdef KEY_POSITION_LOGGING
+    // Insert key position into the log if key is active
+    // Switch these conditional statements to make the log only save samples periodically...
+//    if (state_ == kKeyStateActive && logCount_ % kKeyPositionLoggingSampleFrequency == 0) {
+    if (state_ == kKeyStateActive) {
+    	keyboard_.logInsert(ts, noteNumber_, pos);
     }
+#endif
 }
 
 // If a key is active, force it to become idle, stopping any processes that it has created
